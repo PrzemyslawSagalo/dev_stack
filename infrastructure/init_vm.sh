@@ -16,7 +16,7 @@ sudo apt install git \
 # Configure git
 git config --global user.name "Przemyslaw Sagalo"
 git config --global user.email $EMAIL
-ssh-keygen -t ed25519 -C EMAIL
+ssh-keygen -t ed25519 -C $EMAIL
 
 # Install noevim latest
 wget https://github.com/neovim/neovim/releases/download/v0.8.0/nvim-linux64.deb
