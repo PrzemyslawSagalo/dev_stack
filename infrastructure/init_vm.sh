@@ -19,6 +19,9 @@ done
 echo "name: $NAME"
 echo "email: $EMAIL"
 
+# Crete dir for configs
+mkdir -p ~/.config
+
 # Install dev tools
 sudo apt update -y 
 sudo apt install git \
