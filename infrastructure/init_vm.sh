@@ -46,6 +46,8 @@ nvim -v
 ## Install packer
 git clone --depth 1 https://github.com/wbthomason/packer.nvim\
  		    ~/.local/share/nvim/site/pack/packer/start/packer.nvim
+git clone https://github.com/PrzemyslawSagalo/nvim.git\
+          ~/.config/nvim
 
 # Install docker and docker-compose
 sudo apt update -y
