@@ -45,7 +45,8 @@ git clone --depth 1 https://github.com/wbthomason/packer.nvim\
  		    ~/.local/share/nvim/site/pack/packer/start/packer.nvim
 
 # Install docker and docker-compose
-sudo apt update -y && sudo apt install docker.io
+sudo apt update -y
+sudo apt install docker.io -y
 sudo systemctl enable --now docker
 sudo usermod -aG docker ubuntu
 
