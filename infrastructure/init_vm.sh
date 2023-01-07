@@ -1,6 +1,23 @@
 #!/bin/bash
 
-EMAIL="przemyslaw.sagalo@gmail.com"
+# Exit immediately if a pipeline returns a non-zero status.
+set -e 
+
+# Pares input flags
+# Option descriptions
+# n - Your name to put it into git config
+# e - Your email to put it into git config
+NAME=''
+EMAIL=''
+while getopts n:e: options
+do
+    case "${options}" in
+        n) NAME=${OPTARG};;
+        e) EMAIL=${OPTARG};;
+    esac
+done
+echo "name: $NAME"
+echo "email: $EMAIL"
 
 # Install dev tools
 sudo apt update -y 
@@ -14,7 +31,7 @@ sudo apt install git \
 	         dos2unix -y
 
 # Configure git
-git config --global user.name "Przemyslaw Sagalo"
+git config --global user.name $NAME
 git config --global user.email $EMAIL
 ssh-keygen -t ed25519 -C $EMAIL
 
@@ -25,7 +42,7 @@ rm -f ./nvim-linux64.deb
 nvim -v
 ## Install packer
 git clone --depth 1 https://github.com/wbthomason/packer.nvim\
- ~/.local/share/nvim/site/pack/packer/start/packer.nvim
+ 		    ~/.local/share/nvim/site/pack/packer/start/packer.nvim
 
 # Install docker and docker-compose
 sudo apt update -y && sudo apt install docker.io
