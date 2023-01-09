@@ -44,11 +44,13 @@ sudo apt install ./nvim-linux64.deb -y
 rm -f ./nvim-linux64.deb
 nvim -v
 ## Install packer
-rm -rf "/home/$(whoami)/.local/share/nvim/site/pack/packer/start/packer.nvim"
+rm -rf "/home/$(whoami)/.local/share/nvim/site/pack/packer"
 git clone --depth 1 https://github.com/wbthomason/packer.nvim\
  		    ~/.local/share/nvim/site/pack/packer/start/packer.nvim
 git clone https://github.com/PrzemyslawSagalo/nvim.git\
           ~/.config/nvim
+sudo apt update -y
+sudo apt instll - y exuberant-ctags # needed by tagbar extension for neovim
 
 # Install docker and docker-compose
 sudo apt update -y
