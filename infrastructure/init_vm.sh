@@ -50,7 +50,10 @@ git clone --depth 1 https://github.com/wbthomason/packer.nvim\
 git clone https://github.com/PrzemyslawSagalo/nvim.git\
           ~/.config/nvim
 sudo apt update -y
-sudo apt instll -y exuberant-ctags # needed by tagbar extension for neovim
+# needed by tagbar extension for neovim
+sudo apt instll -y exuberant-ctags \
+		   nodejs \
+		   npm
 
 # Install docker and docker-compose
 sudo apt update -y
