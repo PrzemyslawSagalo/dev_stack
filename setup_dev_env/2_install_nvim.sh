@@ -19,13 +19,13 @@ if [ "$OS" == "ubuntu" ]; then
                         exuberant-ctags \
                         fuse \
                         libfuse2 \
-                        gettext
+                        gettext gcc make
 elif [ "$OS" == "amzn" ]; then
     sudo dnf update -y
     sudo dnf install -y ctags \
                         fuse \
                         fuse-libs \
-                        gettext
+                        gettext gcc make
     # Install the latest version of ripgrep
     LATEST_RG_URL=$(curl -s https://api.github.com/repos/BurntSushi/ripgrep/releases/latest | grep browser_download_url | grep x86_64-unknown-linux-musl.tar.gz | cut -d '"' -f 4)
     LATEST_RG_FILE=$(basename $LATEST_RG_URL)
@@ -52,6 +52,18 @@ nvm alias default 23
 echo "nvm use 23 > /dev/null" >> ~/.bashrc
 
 source ~/.bashrc
+
+# Install native tree-sitter CLI for Amazon Linux (resolves glibc/npm issues)
+if [ "$OS" == "amzn" ]; then
+    mkdir -p ~/bin
+    curl -sL https://github.com/tree-sitter/tree-sitter/releases/download/v0.22.6/tree-sitter-linux-x64.gz -o ~/bin/tree-sitter.gz
+    gzip -df ~/bin/tree-sitter.gz
+    chmod +x ~/bin/tree-sitter
+    # Add ~/bin to PATH if not already there
+    if [[ ":$PATH:" != *":$HOME/bin:"* ]]; then
+        echo 'export PATH="$HOME/bin:$PATH"' >> ~/.bashrc
+    fi
+fi
 
 # Clone and build Neovim
 git clone https://github.com/neovim/neovim.git
