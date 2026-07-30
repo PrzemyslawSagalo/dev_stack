@@ -67,7 +67,7 @@ for version in "${PYTHON_VERSIONS[@]}"; do
 done
 
 # Set the global Python version
-pyenv global 3.12.8
+pyenv global 3.12.13
 
 # Verify the installation
 python --version
