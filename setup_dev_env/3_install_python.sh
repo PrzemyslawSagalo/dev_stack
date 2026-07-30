@@ -61,7 +61,7 @@ echo -e 'if command -v pyenv 1>/dev/null 2>&1; then\n  eval "$(pyenv init --path
 source ~/.bashrc
 
 # Install specified Python versions using pyenv
-PYTHON_VERSIONS=("3.10.16" "3.11.11" "3.12.8" "3.13.13")
+PYTHON_VERSIONS=("3.11.15" "3.12.13" "3.13.14")
 for version in "${PYTHON_VERSIONS[@]}"; do
     pyenv install $version --verbose
 done
