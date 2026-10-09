@@ -11,4 +11,4 @@
     path: "{{ lookup('env', 'HOME') }}/.bashrc"
     line: 'export PATH=$PATH:/usr/local/go/bin'
     state: present
-  become: no
+  become: false

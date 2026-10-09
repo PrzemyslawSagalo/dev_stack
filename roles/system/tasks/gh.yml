@@ -13,7 +13,7 @@
   ansible.builtin.apt:
     name: gh
     state: present
-    update_cache: yes
+    update_cache: true
   when: ansible_os_family == 'Debian'
 
 - name: Add GitHub CLI repo (RedHat)

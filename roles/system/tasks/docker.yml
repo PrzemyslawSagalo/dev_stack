@@ -22,11 +22,11 @@
     path: "{{ lookup('env', 'HOME') }}/.docker/cli-plugins"
     state: directory
     mode: '0755'
-  become: no
+  become: false
 
 - name: Download docker-compose plugin
   ansible.builtin.get_url:
     url: "https://github.com/docker/compose/releases/download/v2.36.0/docker-compose-linux-x86_64"
     dest: "{{ lookup('env', 'HOME') }}/.docker/cli-plugins/docker-compose"
     mode: '0755'
-  become: no
+  become: false

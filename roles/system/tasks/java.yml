@@ -3,7 +3,7 @@
   ansible.builtin.apt:
     name: openjdk-21-jdk
     state: present
-    update_cache: yes
+    update_cache: true
   when: ansible_os_family == 'Debian'
 
 - name: Install Amazon Corretto 21 (Amazon Linux)
@@ -17,11 +17,11 @@
     url: "https://get.sdkman.io"
     dest: "/tmp/get_sdkman.sh"
     mode: '0755'
-  become: no
+  become: false
 
 - name: Run SDKMAN install
   ansible.builtin.command:
     cmd: bash /tmp/get_sdkman.sh
   args:
     creates: "{{ lookup('env', 'HOME') }}/.sdkman/bin/sdkman-init.sh"
-  become: no
+  become: false

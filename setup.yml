@@ -4,9 +4,9 @@
 
   roles:
     - role: system
-      become: yes
+      become: true
     - role: dotfiles
-      become: no
+      become: false
       tags: dotfiles
     - role: nvim
-      become: no
+      become: false
