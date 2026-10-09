@@ -1,18 +1,12 @@
 ---
 - name: Setup Development Environment
   hosts: all
-  become: yes
-  tasks:
-    - name: Run system role
-      ansible.builtin.include_role:
-        name: system
 
-    - name: Run dotfiles role (as user)
-      ansible.builtin.include_role:
-        name: dotfiles
+  roles:
+    - role: system
+      become: yes
+    - role: dotfiles
       become: no
-
-    - name: Run nvim role (as user)
-      ansible.builtin.include_role:
-        name: nvim
+      tags: dotfiles
+    - role: nvim
       become: no
