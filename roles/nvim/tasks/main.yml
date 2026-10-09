@@ -1,0 +1,12 @@
+---
+- name: Ensure Neovim config directory exists
+  ansible.builtin.file:
+    path: ~/.config
+    state: directory
+    mode: '0755'
+
+- name: Clone or update Neovim configuration
+  ansible.builtin.git:
+    repo: 'https://github.com/PrzemyslawSagalo/nvim.git'
+    dest: ~/.config/nvim
+    update: yes

@@ -1,0 +1,6 @@
+---
+- name: Ensure ~/.bash_aliases is sourced in ~/.bashrc
+  ansible.builtin.lineinfile:
+    path: ~/.bashrc
+    line: "if [ -f ~/.bash_aliases ]; then . ~/.bash_aliases; fi"
+    state: present

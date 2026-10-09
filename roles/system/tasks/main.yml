@@ -1,0 +1,9 @@
+---
+- name: Ensure basic system packages are installed
+  ansible.builtin.package:
+    name:
+      - curl
+      - wget
+      - unzip
+      - tar
+    state: present

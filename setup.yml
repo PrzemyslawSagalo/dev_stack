@@ -1,0 +1,19 @@
+---
+- name: Setup Development Environment
+  hosts: localhost
+  connection: local
+  become: yes
+  tasks:
+    - name: Run system role
+      ansible.builtin.include_role:
+        name: system
+
+    - name: Run dotfiles role (as user)
+      ansible.builtin.include_role:
+        name: dotfiles
+      become: no
+
+    - name: Run nvim role (as user)
+      ansible.builtin.include_role:
+        name: nvim
+      become: no
