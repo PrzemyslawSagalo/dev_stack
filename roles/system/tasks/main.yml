@@ -10,3 +10,4 @@
 - import_tasks: oc.yml
 - import_tasks: python.yml
 - import_tasks: nvim.yml
+- import_tasks: try.yml

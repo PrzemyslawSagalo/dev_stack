@@ -1,12 +1,7 @@
 ---
-- name: Ensure ~/.bash_aliases is sourced in ~/.bashrc
-  ansible.builtin.lineinfile:
-    path: ~/.bashrc
-    line: "if [ -f ~/.bash_aliases ]; then . ~/.bash_aliases; fi"
-    state: present
-
-- name: Deploy .tmux.conf configuration file
-  ansible.builtin.copy:
-    src: .tmux.conf
-    dest: ~/.tmux.conf
-    mode: '0644'
+- name: Install dotfiles using the user's remote script convention
+  ansible.builtin.shell: |
+    curl -sSL https://raw.githubusercontent.com/PrzemyslawSagalo/dotfiles/main/install.sh | sh
+  args:
+    creates: ~/.dotfiles/init.sh
+    executable: /bin/bash
