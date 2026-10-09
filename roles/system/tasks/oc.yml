@@ -3,7 +3,7 @@
   ansible.builtin.unarchive:
     src: "https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-linux.tar.gz"
     dest: "/tmp"
-    remote_src: yes
+    remote_src: true
 
 - name: Move oc binary to /usr/local/bin
   ansible.builtin.command:
@@ -14,4 +14,4 @@
 - name: Set executable permissions for oc
   ansible.builtin.file:
     path: /usr/local/bin/oc
-    mode: '0755'
+    mode: "0755"

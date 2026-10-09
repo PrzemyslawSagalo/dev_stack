@@ -3,5 +3,5 @@
   ansible.builtin.get_url:
     url: https://raw.githubusercontent.com/binpash/try/main/try
     dest: /usr/local/bin/try
-    mode: '0755'
+    mode: "0755"
   become: true

@@ -17,7 +17,7 @@
         python --version
       register: python_version
       changed_when: false
-      become: no
+      become: false
     - ansible.builtin.assert:
         that:
           - "'3.12' in python_version.stdout"

@@ -24,7 +24,7 @@
   when: ansible_os_family == 'RedHat'
 
 - name: Install GitHub CLI (RedHat)
-  ansible.builtin.yum:
+  ansible.builtin.dnf:
     name: gh
     state: present
   when: ansible_os_family == 'RedHat'

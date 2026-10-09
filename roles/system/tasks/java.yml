@@ -7,7 +7,7 @@
   when: ansible_os_family == 'Debian'
 
 - name: Install Amazon Corretto 21 (Amazon Linux)
-  ansible.builtin.yum:
+  ansible.builtin.dnf:
     name: java-21-amazon-corretto-devel
     state: present
   when: ansible_os_family == 'RedHat'
@@ -16,7 +16,7 @@
   ansible.builtin.get_url:
     url: "https://get.sdkman.io"
     dest: "/tmp/get_sdkman.sh"
-    mode: '0755'
+    mode: "0755"
   become: false
 
 - name: Run SDKMAN install

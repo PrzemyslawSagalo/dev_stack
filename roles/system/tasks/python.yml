@@ -16,7 +16,7 @@
   when: ansible_os_family == 'Debian'
 
 - name: Install pyenv build dependencies (RedHat)
-  ansible.builtin.yum:
+  ansible.builtin.dnf:
     name:
       - gcc
       - make
@@ -41,7 +41,7 @@
   ansible.builtin.get_url:
     url: https://pyenv.run
     dest: /tmp/pyenv_install.sh
-    mode: '0755'
+    mode: "0755"
   become: false
 
 - name: Run pyenv installer

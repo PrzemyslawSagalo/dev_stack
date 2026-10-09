@@ -1,25 +1,13 @@
 ---
-- name: Import init tasks
-  ansible.builtin.import_tasks: init.yml
-- name: Import cpp tasks
-  ansible.builtin.import_tasks: cpp.yml
-- name: Import aws tasks
-  ansible.builtin.import_tasks: aws.yml
-- name: Import docker tasks
-  ansible.builtin.import_tasks: docker.yml
-- name: Import gh tasks
-  ansible.builtin.import_tasks: gh.yml
-- name: Import go tasks
-  ansible.builtin.import_tasks: go.yml
-- name: Import helm tasks
-  ansible.builtin.import_tasks: helm.yml
-- name: Import java tasks
-  ansible.builtin.import_tasks: java.yml
-- name: Import oc tasks
-  ansible.builtin.import_tasks: oc.yml
-- name: Import python tasks
-  ansible.builtin.import_tasks: python.yml
-- name: Import nvim tasks
-  ansible.builtin.import_tasks: nvim.yml
-- name: Import try tasks
-  ansible.builtin.import_tasks: try.yml
+- ansible.builtin.import_tasks: init.yml
+- ansible.builtin.import_tasks: cpp.yml
+- ansible.builtin.import_tasks: aws.yml
+- ansible.builtin.import_tasks: docker.yml
+- ansible.builtin.import_tasks: gh.yml
+- ansible.builtin.import_tasks: go.yml
+- ansible.builtin.import_tasks: helm.yml
+- ansible.builtin.import_tasks: java.yml
+- ansible.builtin.import_tasks: oc.yml
+- ansible.builtin.import_tasks: python.yml
+- ansible.builtin.import_tasks: nvim.yml
+- ansible.builtin.import_tasks: try.yml

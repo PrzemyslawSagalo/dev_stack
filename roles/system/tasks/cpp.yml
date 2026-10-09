@@ -11,7 +11,7 @@
   when: ansible_os_family == 'Debian'
 
 - name: Install C++ development tools (RedHat)
-  ansible.builtin.yum:
+  ansible.builtin.dnf:
     name:
       - gcc
       - gcc-c++
