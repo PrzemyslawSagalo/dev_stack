@@ -8,5 +8,7 @@
 - name: Run Helm install script
   ansible.builtin.command:
     cmd: /tmp/get_helm.sh
+  environment:
+    VERIFY_CHECKSUM: "false"
   args:
     creates: /usr/local/bin/helm
