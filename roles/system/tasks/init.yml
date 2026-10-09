@@ -8,6 +8,7 @@
       - tar
       - git
       - make
+      - tmux
       - bash-completion
       - ca-certificates
     state: present
