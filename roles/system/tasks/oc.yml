@@ -4,6 +4,7 @@
     src: "https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-linux.tar.gz"
     dest: "/tmp"
     remote_src: true
+    creates: /usr/local/bin/oc
 
 - name: Move oc binary to /usr/local/bin
   ansible.builtin.command:

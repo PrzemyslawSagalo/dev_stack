@@ -26,7 +26,8 @@
 
 - name: Install ripgrep (Amazon Linux)
   ansible.builtin.shell: |
-    LATEST_RG_URL=$(curl -s https://api.github.com/repos/BurntSushi/ripgrep/releases/latest | grep browser_download_url | grep x86_64-unknown-linux-musl.tar.gz | cut -d '"' -f 4)
+    set -e
+    LATEST_RG_URL=$(curl -s https://api.github.com/repos/BurntSushi/ripgrep/releases/latest | grep browser_download_url | grep x86_64-unknown-linux-musl.tar.gz | grep -v sha256 | cut -d '"' -f 4)
     LATEST_RG_FILE=$(basename "$LATEST_RG_URL")
     curl -LO "$LATEST_RG_URL"
     tar -xzf "$LATEST_RG_FILE"
