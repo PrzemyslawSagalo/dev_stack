@@ -24,6 +24,12 @@ jobs:
   molecule:
     runs-on: ubuntu-latest
     needs: lint
+    strategy:
+      matrix:
+        distro:
+          - "ubuntu:22.04"
+          - "amazonlinux:2023"
+          - "almalinux:9"
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python
@@ -34,4 +40,6 @@ jobs:
         run: |
           pip install ansible-core molecule molecule-plugins[docker] docker
       - name: Run Molecule tests
+        env:
+          MOLECULE_DISTRO: ${{ matrix.distro }}
         run: molecule test
