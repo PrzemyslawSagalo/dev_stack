@@ -1,35 +1,18 @@
 ---
-- name: Find all files in dotfiles subdirectories
-  ansible.builtin.find:
-    paths: "{{ playbook_dir }}/dotfiles"
-    file_type: file
-    recurse: true
-    hidden: true
-  register: dotfiles_files
-
-- name: Debug dotfiles to be linked
-  ansible.builtin.debug:
-    msg: "Source: {{ item.path }} -> Target: {{ ansible_env.HOME }}/{{ item.path | regex_replace('^.*dotfiles/[^/]+/', '') }}"
-  loop: "{{ dotfiles_files.files }}"
-
-- name: Ensure target directories exist
-  ansible.builtin.file:
-    path: "{{ ansible_env.HOME }}/{{ (item.path | regex_replace('^.*dotfiles/[^/]+/', '')) | dirname }}"
-    state: directory
-    mode: "0755"
-  loop: "{{ dotfiles_files.files }}"
-  when: "(item.path | regex_replace('^.*dotfiles/[^/]+/', '')) | dirname != '' and (item.path | regex_replace('^.*dotfiles/[^/]+/', '')) | dirname != '.'"
-
-- name: Symlink dotfiles to home directory
-  ansible.builtin.file:
-    src: "{{ item.path }}"
-    dest: "{{ ansible_env.HOME }}/{{ item.path | regex_replace('^.*dotfiles/[^/]+/', '') }}"
-    state: link
-    force: true
-  loop: "{{ dotfiles_files.files }}"
+- name: Copy .bash_aliases
+  ansible.builtin.copy:
+    src: .bash_aliases
+    dest: ~/.bash_aliases
+    mode: "0644"
 
 - name: Ensure ~/.bash_aliases is sourced in ~/.bashrc
   ansible.builtin.lineinfile:
     path: ~/.bashrc
     line: "if [ -f ~/.bash_aliases ]; then . ~/.bash_aliases; fi"
     state: present
+
+- name: Copy .tmux.conf
+  ansible.builtin.copy:
+    src: .tmux.conf
+    dest: ~/.tmux.conf
+    mode: "0644"
