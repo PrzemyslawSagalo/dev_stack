@@ -1,0 +1,34 @@
+---
+- name: Install XFCE4 and XRDP (Ubuntu/Debian)
+  ansible.builtin.apt:
+    name:
+      - xfce4
+      - xfce4-goodies
+      - xrdp
+    state: present
+    update_cache: true
+  become: true
+  when: ansible_os_family == 'Debian'
+
+- name: Configure XRDP to use XFCE4
+  ansible.builtin.copy:
+    dest: /etc/xrdp/startwm.sh
+    content: |
+      #!/bin/sh
+      if [ -r /etc/default/locale ]; then
+        . /etc/default/locale
+        export LANG LANGUAGE
+      fi
+      startxfce4
+    mode: '0755'
+  become: true
+  when: ansible_os_family == 'Debian'
+  notify: Restart XRDP
+
+- name: Ensure XRDP service is running and enabled
+  ansible.builtin.service:
+    name: xrdp
+    state: started
+    enabled: true
+  become: true
+  when: ansible_os_family == 'Debian'

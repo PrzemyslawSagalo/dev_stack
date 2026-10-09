@@ -1,0 +1,16 @@
+{
+    "name": "Dev Stack Container",
+    "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+    "features": {
+        "ghcr.io/devcontainers/features/python:1": {}
+    },
+    "postCreateCommand": "bash bootstrap.sh",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "redhat.ansible",
+                "ms-python.python"
+            ]
+        }
+    }
+}
