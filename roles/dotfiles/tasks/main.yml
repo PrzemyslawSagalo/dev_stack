@@ -1,0 +1,18 @@
+---
+- name: Copy .bash_aliases
+  ansible.builtin.copy:
+    src: .bash_aliases
+    dest: ~/.bash_aliases
+    mode: "0644"
+
+- name: Ensure ~/.bash_aliases is sourced in ~/.bashrc
+  ansible.builtin.lineinfile:
+    path: ~/.bashrc
+    line: "if [ -f ~/.bash_aliases ]; then . ~/.bash_aliases; fi"
+    state: present
+
+- name: Copy .tmux.conf
+  ansible.builtin.copy:
+    src: .tmux.conf
+    dest: ~/.tmux.conf
+    mode: "0644"

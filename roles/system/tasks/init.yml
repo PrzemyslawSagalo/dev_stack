@@ -1,0 +1,33 @@
+---
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+  when: ansible_pkg_mgr == "apt"
+
+- name: Install EPEL release (RedHat)
+  ansible.builtin.dnf:
+    name: "https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm"
+    state: present
+    disable_gpg_check: true
+  when: ansible_os_family == 'RedHat' and 'Amazon' not in ansible_distribution
+
+- name: Ensure basic system utilities are installed
+  ansible.builtin.package:
+    name:
+      - wget
+      - zip
+      - unzip
+      - tar
+      - git
+      - make
+      - tmux
+      - bash-completion
+      - ca-certificates
+    state: present
+
+- name: Ensure .bashrc exists (for appending PATHs)
+  ansible.builtin.copy:
+    dest: "{{ ansible_env.HOME }}/.bashrc"
+    content: ""
+    force: false
+  become: false

@@ -1,0 +1,13 @@
+---
+- ansible.builtin.import_tasks: init.yml
+- ansible.builtin.import_tasks: cpp.yml
+- ansible.builtin.import_tasks: aws.yml
+- ansible.builtin.import_tasks: docker.yml
+- ansible.builtin.import_tasks: gh.yml
+- ansible.builtin.import_tasks: go.yml
+- ansible.builtin.import_tasks: helm.yml
+- ansible.builtin.import_tasks: java.yml
+- ansible.builtin.import_tasks: oc.yml
+- ansible.builtin.import_tasks: python.yml
+- ansible.builtin.import_tasks: nvim.yml
+- ansible.builtin.import_tasks: try.yml

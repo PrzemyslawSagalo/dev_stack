@@ -1,0 +1,18 @@
+---
+- name: Download OpenShift client
+  ansible.builtin.unarchive:
+    src: "https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-linux.tar.gz"
+    dest: "/tmp"
+    remote_src: true
+    creates: /usr/local/bin/oc
+
+- name: Move oc binary to /usr/local/bin
+  ansible.builtin.command:
+    cmd: mv /tmp/oc /usr/local/bin/oc
+  args:
+    creates: /usr/local/bin/oc
+
+- name: Set executable permissions for oc
+  ansible.builtin.file:
+    path: /usr/local/bin/oc
+    mode: "0755"

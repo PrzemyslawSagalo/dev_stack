@@ -1,0 +1,32 @@
+---
+- name: Install OpenJDK 21 (Debian)
+  ansible.builtin.apt:
+    name: openjdk-21-jdk
+    state: present
+  when: ansible_os_family == 'Debian'
+
+- name: Install Amazon Corretto 21 (Amazon Linux)
+  ansible.builtin.dnf:
+    name: java-21-amazon-corretto-devel
+    state: present
+  when: ansible_distribution == 'Amazon'
+
+- name: Install OpenJDK 21 (RHEL/UBI)
+  ansible.builtin.dnf:
+    name: java-21-openjdk-devel
+    state: present
+  when: ansible_os_family == 'RedHat' and ansible_distribution != 'Amazon'
+
+- name: Download SDKMAN script
+  ansible.builtin.get_url:
+    url: "https://get.sdkman.io"
+    dest: "/tmp/get_sdkman.sh"
+    mode: "0755"
+  become: false
+
+- name: Run SDKMAN install
+  ansible.builtin.command:
+    cmd: bash /tmp/get_sdkman.sh
+  args:
+    creates: "{{ ansible_env.HOME }}/.sdkman/bin/sdkman-init.sh"
+  become: false

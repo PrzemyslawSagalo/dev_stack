@@ -1,0 +1,38 @@
+---
+- name: Verify
+  hosts: all
+  tasks:
+    - name: Check if Docker is installed
+      ansible.builtin.command: docker --version
+      register: docker_version
+      changed_when: false
+
+    - name: Assert Docker version output
+      ansible.builtin.assert:
+        that:
+          - "'Docker version' in docker_version.stdout"
+
+    - name: Check if python via pyenv works
+      ansible.builtin.command: "{{ ansible_env.HOME }}/.pyenv/bin/pyenv exec python --version"
+      register: python_version
+      changed_when: false
+
+    - name: Assert python version
+      ansible.builtin.assert:
+        that:
+          - "'3.12' in python_version.stdout"
+
+    - name: Check dotfiles are deployed
+      ansible.builtin.stat:
+        path: "{{ ansible_env.HOME }}/{{ item }}"
+      register: dotfiles_stat
+      loop:
+        - .tmux.conf
+        - .bash_aliases
+
+    - name: Assert dotfiles exist
+      ansible.builtin.assert:
+        that: "item.stat.exists"
+      loop: "{{ dotfiles_stat.results }}"
+      loop_control:
+        label: "{{ item.item }}"

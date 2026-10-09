@@ -1,0 +1,12 @@
+---
+- name: Setup Development Environment
+  hosts: all
+
+  roles:
+    - role: system
+      become: true
+    - role: dotfiles
+      become: false
+      tags: dotfiles
+    - role: nvim
+      become: false
