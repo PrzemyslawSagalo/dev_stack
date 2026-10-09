@@ -1,8 +1,0 @@
----
-- name: Setup Desktop Environment on EC2
-  hosts: localhost
-  connection: local
-  gather_facts: true
-
-  roles:
-    - role: desktop
