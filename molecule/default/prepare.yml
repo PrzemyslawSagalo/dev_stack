@@ -1,0 +1,12 @@
+---
+- name: Prepare
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Install sudo (RedHat/UBI/Fedora/Amazon)
+      raw: dnf install -y sudo || yum install -y sudo
+      ignore_errors: true
+
+    - name: Install sudo (Debian/Ubuntu)
+      raw: apt-get update && apt-get install -y sudo
+      ignore_errors: true

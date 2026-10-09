@@ -4,10 +4,16 @@
     update_cache: yes
   when: ansible_pkg_mgr == "apt"
 
+- name: Install EPEL release (RedHat)
+  ansible.builtin.dnf:
+    name: "https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm"
+    state: present
+    disable_gpg_check: true
+  when: ansible_os_family == 'RedHat'
+
 - name: Ensure basic system utilities are installed
   ansible.builtin.package:
     name:
-      - curl
       - wget
       - unzip
       - tar
