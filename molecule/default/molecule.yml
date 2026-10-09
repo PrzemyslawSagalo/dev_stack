@@ -13,5 +13,10 @@ platforms:
     pre_build_image: true
 provisioner:
   name: ansible
+  inventory:
+    host_vars:
+      instance:
+        # Tests run as root inside the container; sudo+PAM is broken on UBI init images.
+        ansible_become_method: su
 verifier:
   name: ansible

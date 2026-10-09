@@ -8,7 +8,7 @@
 
 - name: Add Go to PATH in bashrc
   ansible.builtin.lineinfile:
-    path: "{{ lookup('env', 'HOME') }}/.bashrc"
+    path: "{{ ansible_env.HOME }}/.bashrc"
     line: "export PATH=$PATH:/usr/local/go/bin"
     state: present
   become: false

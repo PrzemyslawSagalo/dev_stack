@@ -48,12 +48,12 @@
   ansible.builtin.command:
     cmd: bash /tmp/pyenv_install.sh
   args:
-    creates: "{{ lookup('env', 'HOME') }}/.pyenv/bin/pyenv"
+    creates: "{{ ansible_env.HOME }}/.pyenv/bin/pyenv"
   become: false
 
 - name: Add pyenv to bashrc
   ansible.builtin.blockinfile:
-    path: "{{ lookup('env', 'HOME') }}/.bashrc"
+    path: "{{ ansible_env.HOME }}/.bashrc"
     marker: "# {mark} ANSIBLE MANAGED BLOCK - PYENV"
     block: |
       export PYENV_ROOT="$HOME/.pyenv"

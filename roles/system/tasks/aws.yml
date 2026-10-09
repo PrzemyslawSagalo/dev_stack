@@ -10,8 +10,10 @@
     src: "/tmp/awscliv2.zip"
     dest: "/tmp"
     remote_src: true
+    creates: /tmp/aws/install
 
 - name: Run AWS CLI install script
   ansible.builtin.command:
     cmd: "/tmp/aws/install --update"
-  changed_when: false
+  args:
+    creates: /usr/local/bin/aws

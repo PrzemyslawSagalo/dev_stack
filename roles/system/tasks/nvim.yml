@@ -41,7 +41,7 @@
   ansible.builtin.shell: |
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
   args:
-    creates: "{{ lookup('env', 'HOME') }}/.nvm/nvm.sh"
+    creates: "{{ ansible_env.HOME }}/.nvm/nvm.sh"
   become: false
 
 - name: Install Node 23 via nvm
@@ -57,7 +57,7 @@
 
 - name: Add nvm to bashrc
   ansible.builtin.lineinfile:
-    path: "{{ lookup('env', 'HOME') }}/.bashrc"
+    path: "{{ ansible_env.HOME }}/.bashrc"
     line: "nvm use 23 > /dev/null"
     state: present
   become: false
@@ -69,13 +69,13 @@
     gzip -df ~/bin/tree-sitter.gz
     chmod +x ~/bin/tree-sitter
   args:
-    creates: "{{ lookup('env', 'HOME') }}/bin/tree-sitter"
+    creates: "{{ ansible_env.HOME }}/bin/tree-sitter"
   become: false
   when: ansible_os_family == 'RedHat'
 
 - name: Add tree-sitter to PATH in bashrc (Amazon Linux)
   ansible.builtin.lineinfile:
-    path: "{{ lookup('env', 'HOME') }}/.bashrc"
+    path: "{{ ansible_env.HOME }}/.bashrc"
     line: 'export PATH="$HOME/bin:$PATH"'
     state: present
   become: false

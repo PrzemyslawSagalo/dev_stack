@@ -29,6 +29,7 @@ jobs:
       matrix:
         distro:
           - "geerlingguy/docker-ubuntu2204-ansible"
+          - "geerlingguy/docker-amazonlinux2023-ansible"
           - "redhat/ubi9-init"
     steps:
       - uses: actions/checkout@v3

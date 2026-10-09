@@ -17,10 +17,10 @@
   when: ansible_os_family == 'Debian'
 
 - name: Add GitHub CLI repo (RedHat)
-  ansible.builtin.command:
-    cmd: dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo
-  args:
-    creates: /etc/yum.repos.d/gh-cli.repo
+  ansible.builtin.get_url:
+    url: https://cli.github.com/packages/rpm/gh-cli.repo
+    dest: /etc/yum.repos.d/gh-cli.repo
+    mode: "0644"
   when: ansible_os_family == 'RedHat'
 
 - name: Install GitHub CLI (RedHat)

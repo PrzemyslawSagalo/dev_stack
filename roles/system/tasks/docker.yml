@@ -1,25 +1,33 @@
 ---
+- name: Install Docker (Amazon Linux)
+  ansible.builtin.dnf:
+    name: docker
+    state: present
+  when: ansible_distribution == 'Amazon'
+
 - name: Download Docker install script
   ansible.builtin.get_url:
     url: https://get.docker.com
     dest: /tmp/get-docker.sh
     mode: "0755"
+  when: ansible_distribution != 'Amazon'
 
 - name: Run Docker install script
   ansible.builtin.command:
     cmd: /tmp/get-docker.sh
   args:
     creates: /usr/bin/docker
+  when: ansible_distribution != 'Amazon'
 
 - name: Ensure user is in docker group
   ansible.builtin.user:
-    name: "{{ lookup('env', 'USER') }}"
+    name: "{{ ansible_user_id }}"
     groups: docker
     append: true
 
 - name: Ensure docker-compose plugin directory exists
   ansible.builtin.file:
-    path: "{{ lookup('env', 'HOME') }}/.docker/cli-plugins"
+    path: "{{ ansible_env.HOME }}/.docker/cli-plugins"
     state: directory
     mode: "0755"
   become: false
@@ -27,6 +35,6 @@
 - name: Download docker-compose plugin
   ansible.builtin.get_url:
     url: "https://github.com/docker/compose/releases/download/v2.36.0/docker-compose-linux-x86_64"
-    dest: "{{ lookup('env', 'HOME') }}/.docker/cli-plugins/docker-compose"
+    dest: "{{ ansible_env.HOME }}/.docker/cli-plugins/docker-compose"
     mode: "0755"
   become: false

@@ -3,10 +3,14 @@
   hosts: all
   gather_facts: false
   tasks:
-    - name: Install sudo (RedHat/UBI/Fedora/Amazon)
-      raw: dnf install -y sudo || yum install -y sudo
-      ignore_errors: true
+    - name: Ensure sudo is present in the test container
+      ansible.builtin.raw: |
+        command -v sudo >/dev/null && exit 0
+        if command -v apt-get >/dev/null; then apt-get update && apt-get install -y sudo
+        elif command -v dnf >/dev/null; then dnf install -y sudo
+        else yum install -y sudo; fi
+      changed_when: false
 
-    - name: Install sudo (Debian/Ubuntu)
-      raw: apt-get update && apt-get install -y sudo
-      ignore_errors: true
+    - name: Recreate man dirs stripped from minimal container images (needed by JDK postinst)
+      ansible.builtin.raw: mkdir -p /usr/share/man/man1
+      changed_when: false
