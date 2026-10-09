@@ -24,3 +24,10 @@
       - bash-completion
       - ca-certificates
     state: present
+
+- name: Ensure .bashrc exists (for appending PATHs)
+  ansible.builtin.copy:
+    dest: "{{ ansible_env.HOME }}/.bashrc"
+    content: ""
+    force: false
+  become: false
