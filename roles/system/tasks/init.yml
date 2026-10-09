@@ -1,0 +1,13 @@
+---
+- name: Ensure basic system utilities are installed
+  ansible.builtin.package:
+    name:
+      - curl
+      - wget
+      - unzip
+      - tar
+      - git
+      - make
+      - bash-completion
+      - ca-certificates
+    state: present

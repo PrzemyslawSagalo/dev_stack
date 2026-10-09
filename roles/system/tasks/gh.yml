@@ -1,0 +1,30 @@
+---
+- name: Install GitHub CLI keyring (Debian)
+  ansible.builtin.shell: |
+    mkdir -p -m 755 /etc/apt/keyrings
+    wget -qO- https://cli.github.com/packages/githubcli-archive-keyring.gpg > /etc/apt/keyrings/githubcli-archive-keyring.gpg
+    chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" > /etc/apt/sources.list.d/github-cli.list
+  args:
+    creates: /etc/apt/sources.list.d/github-cli.list
+  when: ansible_os_family == 'Debian'
+
+- name: Install GitHub CLI (Debian)
+  ansible.builtin.apt:
+    name: gh
+    state: present
+    update_cache: yes
+  when: ansible_os_family == 'Debian'
+
+- name: Add GitHub CLI repo (RedHat)
+  ansible.builtin.command:
+    cmd: dnf config-manager --add-repo https://cli.github.com/packages/rpm/gh-cli.repo
+  args:
+    creates: /etc/yum.repos.d/gh-cli.repo
+  when: ansible_os_family == 'RedHat'
+
+- name: Install GitHub CLI (RedHat)
+  ansible.builtin.yum:
+    name: gh
+    state: present
+  when: ansible_os_family == 'RedHat'

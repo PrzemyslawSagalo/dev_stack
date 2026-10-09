@@ -1,0 +1,91 @@
+---
+- name: Install neovim dependencies (Debian)
+  ansible.builtin.apt:
+    name:
+      - ripgrep
+      - exuberant-ctags
+      - fuse
+      - libfuse2
+      - gettext
+      - gcc
+      - make
+    state: present
+  when: ansible_os_family == 'Debian'
+
+- name: Install neovim dependencies (RedHat)
+  ansible.builtin.yum:
+    name:
+      - ctags
+      - fuse
+      - fuse-libs
+      - gettext
+      - gcc
+      - make
+    state: present
+  when: ansible_os_family == 'RedHat'
+
+- name: Install ripgrep (Amazon Linux)
+  ansible.builtin.shell: |
+    LATEST_RG_URL=$(curl -s https://api.github.com/repos/BurntSushi/ripgrep/releases/latest | grep browser_download_url | grep x86_64-unknown-linux-musl.tar.gz | cut -d '"' -f 4)
+    LATEST_RG_FILE=$(basename "$LATEST_RG_URL")
+    curl -LO "$LATEST_RG_URL"
+    tar -xzf "$LATEST_RG_FILE"
+    RG_DIR=$(basename "$LATEST_RG_FILE" .tar.gz)
+    cp "$RG_DIR"/rg /usr/local/bin/
+    rm -rf "$RG_DIR" "$LATEST_RG_FILE"
+  args:
+    creates: /usr/local/bin/rg
+  when: ansible_os_family == 'RedHat'
+
+- name: Install nvm
+  ansible.builtin.shell: |
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+  args:
+    creates: "{{ lookup('env', 'HOME') }}/.nvm/nvm.sh"
+  become: no
+
+- name: Install Node 23 via nvm
+  ansible.builtin.shell: |
+    export NVM_DIR="$HOME/.nvm"
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+    nvm install 23
+    nvm alias default 23
+  args:
+    executable: /bin/bash
+  changed_when: false
+  become: no
+
+- name: Add nvm to bashrc
+  ansible.builtin.lineinfile:
+    path: "{{ lookup('env', 'HOME') }}/.bashrc"
+    line: "nvm use 23 > /dev/null"
+    state: present
+  become: no
+
+- name: Install tree-sitter CLI (Amazon Linux)
+  ansible.builtin.shell: |
+    mkdir -p ~/bin
+    curl -sL https://github.com/tree-sitter/tree-sitter/releases/download/v0.22.6/tree-sitter-linux-x64.gz -o ~/bin/tree-sitter.gz
+    gzip -df ~/bin/tree-sitter.gz
+    chmod +x ~/bin/tree-sitter
+  args:
+    creates: "{{ lookup('env', 'HOME') }}/bin/tree-sitter"
+  become: no
+  when: ansible_os_family == 'RedHat'
+
+- name: Add tree-sitter to PATH in bashrc (Amazon Linux)
+  ansible.builtin.lineinfile:
+    path: "{{ lookup('env', 'HOME') }}/.bashrc"
+    line: 'export PATH="$HOME/bin:$PATH"'
+    state: present
+  become: no
+  when: ansible_os_family == 'RedHat'
+
+- name: Clone and build Neovim
+  ansible.builtin.shell: |
+    git clone https://github.com/neovim/neovim.git /tmp/neovim
+    cd /tmp/neovim
+    make -j "$(nproc)" CMAKE_BUILD_TYPE=RelWithDebInfo
+    make install
+  args:
+    creates: /usr/local/bin/nvim

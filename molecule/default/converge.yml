@@ -1,0 +1,6 @@
+---
+- name: Converge
+  hosts: all
+  tasks:
+    - name: "Include setup"
+      ansible.builtin.include_tasks: "../../setup.yml"

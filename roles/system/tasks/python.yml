@@ -1,0 +1,77 @@
+---
+- name: Install pyenv build dependencies (Debian)
+  ansible.builtin.apt:
+    name:
+      - build-essential
+      - zlib1g-dev
+      - libncurses5-dev
+      - libgdbm-dev
+      - libnss3-dev
+      - libssl-dev
+      - libreadline-dev
+      - libffi-dev
+      - libsqlite3-dev
+      - libbz2-dev
+    state: present
+  when: ansible_os_family == 'Debian'
+
+- name: Install pyenv build dependencies (RedHat)
+  ansible.builtin.yum:
+    name:
+      - gcc
+      - make
+      - patch
+      - bzip2
+      - sqlite
+      - tk-devel
+      - xz-devel
+      - gdbm-libs
+      - zlib-devel
+      - ncurses-devel
+      - gdbm-devel
+      - nss-devel
+      - openssl-devel
+      - readline-devel
+      - libffi-devel
+      - sqlite-devel
+    state: present
+  when: ansible_os_family == 'RedHat'
+
+- name: Download pyenv installer
+  ansible.builtin.get_url:
+    url: https://pyenv.run
+    dest: /tmp/pyenv_install.sh
+    mode: '0755'
+  become: no
+
+- name: Run pyenv installer
+  ansible.builtin.command:
+    cmd: bash /tmp/pyenv_install.sh
+  args:
+    creates: "{{ lookup('env', 'HOME') }}/.pyenv/bin/pyenv"
+  become: no
+
+- name: Add pyenv to bashrc
+  ansible.builtin.blockinfile:
+    path: "{{ lookup('env', 'HOME') }}/.bashrc"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK - PYENV"
+    block: |
+      export PYENV_ROOT="$HOME/.pyenv"
+      export PATH="$PYENV_ROOT/bin:$PATH"
+      if command -v pyenv 1>/dev/null 2>&1; then
+        eval "$(pyenv init --path)"
+      fi
+  become: no
+
+- name: Install python versions via pyenv
+  ansible.builtin.shell: |
+    export PYENV_ROOT="$HOME/.pyenv"
+    export PATH="$PYENV_ROOT/bin:$PATH"
+    if ! pyenv versions | grep -q '3.12.13'; then
+      pyenv install 3.12.13
+      pyenv global 3.12.13
+    fi
+  args:
+    executable: /bin/bash
+  changed_when: false
+  become: no

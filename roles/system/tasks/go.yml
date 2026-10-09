@@ -1,0 +1,14 @@
+---
+- name: Download and extract Go
+  ansible.builtin.unarchive:
+    src: "https://go.dev/dl/go1.20.6.linux-amd64.tar.gz"
+    dest: "/usr/local"
+    remote_src: yes
+    creates: /usr/local/go/bin/go
+
+- name: Add Go to PATH in bashrc
+  ansible.builtin.lineinfile:
+    path: "{{ lookup('env', 'HOME') }}/.bashrc"
+    line: 'export PATH=$PATH:/usr/local/go/bin'
+    state: present
+  become: no

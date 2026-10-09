@@ -1,7 +1,6 @@
 ---
 - name: Setup Development Environment
-  hosts: localhost
-  connection: local
+  hosts: all
   become: yes
   tasks:
     - name: Run system role

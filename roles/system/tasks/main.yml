@@ -1,9 +1,12 @@
 ---
-- name: Ensure basic system packages are installed
-  ansible.builtin.package:
-    name:
-      - curl
-      - wget
-      - unzip
-      - tar
-    state: present
+- import_tasks: init.yml
+- import_tasks: cpp.yml
+- import_tasks: aws.yml
+- import_tasks: docker.yml
+- import_tasks: gh.yml
+- import_tasks: go.yml
+- import_tasks: helm.yml
+- import_tasks: java.yml
+- import_tasks: oc.yml
+- import_tasks: python.yml
+- import_tasks: nvim.yml
