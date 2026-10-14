@@ -258,6 +258,9 @@
         - "oc version --client"
         - "lazygit --version"
         - "diffview --version"
+        - "try -v"
+        - "htop --version"
+        - "setfattr --version"
 
     - name: Assert CLI tools execute successfully
       ansible.builtin.assert:
