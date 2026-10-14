@@ -1,0 +1,55 @@
+---
+- name: Check if diffview binary is already installed
+  ansible.builtin.stat:
+    path: /usr/local/bin/diffview
+  register: system_diffview_bin
+
+- name: Ensure cargo package is installed (RedHat)
+  ansible.builtin.package:
+    name: cargo
+    state: present
+  when:
+    - not system_diffview_bin.stat.exists
+    - ansible_os_family == 'RedHat'
+
+- name: Install modern rust toolchain via rustup (Debian)
+  when:
+    - not system_diffview_bin.stat.exists
+    - ansible_os_family == 'Debian'
+  block:
+    - name: Ensure curl is installed for rustup (Debian)
+      ansible.builtin.package:
+        name: curl
+        state: present
+
+    - name: Download rustup installer
+      ansible.builtin.get_url:
+        url: https://sh.rustup.rs
+        dest: /tmp/rustup.sh
+        mode: "0755"
+
+    - name: Install minimal rust toolchain via rustup # noqa: command-instead-of-module
+      ansible.builtin.command:
+        cmd: /tmp/rustup.sh -y --profile minimal --default-toolchain stable
+      args:
+        creates: "{{ ansible_env.HOME | default('/root') }}/.cargo/bin/cargo"
+
+    - name: Remove rustup installer script
+      ansible.builtin.file:
+        path: /tmp/rustup.sh
+        state: absent
+
+- name: Install diffview via cargo
+  ansible.builtin.command:
+    cmd: >-
+      {{ (ansible_env.HOME | default('/root') ~ '/.cargo/bin/cargo')
+         if ansible_os_family == 'Debian' else 'cargo' }}
+      install --root /usr/local diffview
+  args:
+    creates: /usr/local/bin/diffview
+  when: not system_diffview_bin.stat.exists
+
+- name: Ensure diffview binary is executable
+  ansible.builtin.file:
+    path: /usr/local/bin/diffview
+    mode: "0755"

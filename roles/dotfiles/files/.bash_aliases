@@ -9,6 +9,7 @@ alias gacw='git commit -am wip'
 alias gdcb='git pull origin $(gcb)' # git download (pull) current branch
 alias gl='git log'
 alias geb='export cb=$(gcb)'
+alias lg='lazygit'
 
 # Tmux
 alias tnwc='tmux new-window -c $(pwd)'
