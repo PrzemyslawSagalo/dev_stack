@@ -1,0 +1,40 @@
+---
+- name: Check if lazygit is already installed
+  ansible.builtin.stat:
+    path: /usr/local/bin/lazygit
+  register: system_lazygit_bin
+
+- name: Download and install lazygit
+  when: not system_lazygit_bin.stat.exists
+  block:
+    - name: Download lazygit tarball
+      ansible.builtin.get_url:
+        url: >-
+          https://github.com/jesseduffield/lazygit/releases/download/v{{
+          lazygit_version | default('0.66.1') }}/lazygit_{{
+          lazygit_version | default('0.66.1') }}_Linux_x86_64.tar.gz
+        dest: /tmp/lazygit.tar.gz
+        mode: "0644"
+      register: system_lazygit_download
+      until: system_lazygit_download is success
+      retries: 3
+      delay: 5
+
+    - name: Extract lazygit binary to /usr/local/bin
+      ansible.builtin.unarchive:
+        src: /tmp/lazygit.tar.gz
+        dest: /usr/local/bin
+        remote_src: true
+        include:
+          - lazygit
+        mode: "0755"
+
+    - name: Remove lazygit temporary tarball
+      ansible.builtin.file:
+        path: /tmp/lazygit.tar.gz
+        state: absent
+
+- name: Ensure lazygit binary is executable
+  ansible.builtin.file:
+    path: /usr/local/bin/lazygit
+    mode: "0755"
