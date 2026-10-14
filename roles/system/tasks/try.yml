@@ -1,7 +1,21 @@
 ---
+- name: Check if try binary exists
+  ansible.builtin.stat:
+    path: /usr/local/bin/try
+  register: system_try_bin
+
 - name: Download try script
   ansible.builtin.get_url:
-    url: https://raw.githubusercontent.com/binpash/try/main/try
+    url: "https://raw.githubusercontent.com/binpash/try/{{ try_version | default('v0.2.1') }}/try"
     dest: /usr/local/bin/try
     mode: "0755"
-  become: true
+  register: system_try_download
+  until: system_try_download is success
+  retries: 3
+  delay: 5
+  when: not system_try_bin.stat.exists
+
+- name: Ensure try script permissions are correct
+  ansible.builtin.file:
+    path: /usr/local/bin/try
+    mode: "0755"

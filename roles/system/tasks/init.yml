@@ -24,6 +24,8 @@
       - jq
       - bash-completion
       - ca-certificates
+      - htop
+      - attr
     state: present
 
 - name: Ensure .bashrc exists (for appending PATHs)
