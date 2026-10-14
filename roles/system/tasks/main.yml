@@ -1,0 +1,36 @@
+---
+- name: Import base initialization tasks
+  ansible.builtin.import_tasks: init.yml
+
+- name: Import C++ toolchain tasks
+  ansible.builtin.import_tasks: cpp.yml
+
+- name: Import AWS CLI tasks
+  ansible.builtin.import_tasks: aws.yml
+
+- name: Import Docker tasks
+  ansible.builtin.import_tasks: docker.yml
+
+- name: Import GitHub CLI tasks
+  ansible.builtin.import_tasks: gh.yml
+
+- name: Import Go toolchain tasks
+  ansible.builtin.import_tasks: go.yml
+
+- name: Import Helm tasks
+  ansible.builtin.import_tasks: helm.yml
+
+- name: Import Java toolchain tasks
+  ansible.builtin.import_tasks: java.yml
+
+- name: Import OpenShift client tasks
+  ansible.builtin.import_tasks: oc.yml
+
+- name: Import Python toolchain tasks
+  ansible.builtin.import_tasks: python.yml
+
+- name: Import Neovim build tasks
+  ansible.builtin.import_tasks: nvim.yml
+
+- name: Import try tool tasks
+  ansible.builtin.import_tasks: try.yml

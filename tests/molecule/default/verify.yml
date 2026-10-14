@@ -1,0 +1,266 @@
+---
+- name: Verify
+  hosts: all
+  tasks:
+    # =========================================================================
+    # Pillar 1: Python Multi-Version & Shims Integrity
+    # =========================================================================
+    - name: Verify global Python version via interactive login shell shims
+      ansible.builtin.shell: |
+        bash -lc "python --version"
+      register: python_version
+      changed_when: false
+
+    - name: Assert Python 3.13 is active default
+      ansible.builtin.assert:
+        that:
+          - "'3.13' in python_version.stdout"
+
+    - name: Verify Python standard library native C-extensions
+      ansible.builtin.shell: |
+        bash -lc "python -c 'import ssl, sqlite3, lzma, ctypes; print(\"STDLIB_OK\")'"
+      register: python_stdlib
+      changed_when: false
+
+    - name: Assert Python C-extensions import successfully
+      ansible.builtin.assert:
+        that:
+          - "'STDLIB_OK' in python_stdlib.stdout"
+
+    - name: Verify multiple Python versions registered in pyenv
+      ansible.builtin.shell: |
+        bash -lc "pyenv versions --bare"
+      register: pyenv_versions
+      changed_when: false
+
+    - name: Assert multiple Python versions are present
+      ansible.builtin.assert:
+        that:
+          - "'3.13.2' in pyenv_versions.stdout"
+          - "'3.12.9' in pyenv_versions.stdout"
+
+    # =========================================================================
+    # Pillar 2: Docker Installation & Daemon Status
+    # =========================================================================
+    - name: Check Docker binary exists
+      ansible.builtin.command: docker --version
+      register: docker_version
+      changed_when: false
+
+    - name: Assert Docker binary is installed
+      ansible.builtin.assert:
+        that:
+          - "'Docker version' in docker_version.stdout"
+
+    - name: Check docker-compose plugin exists
+      ansible.builtin.stat:
+        path: "{{ ansible_env.HOME }}/.docker/cli-plugins/docker-compose"
+      register: docker_compose_stat
+
+    - name: Assert docker-compose plugin is executable
+      ansible.builtin.assert:
+        that:
+          - docker_compose_stat.stat.exists
+          - docker_compose_stat.stat.executable
+
+    - name: Check Docker service status under systemd # noqa: command-instead-of-module
+      ansible.builtin.command: systemctl is-active docker
+      register: docker_service_status
+      changed_when: false
+      when:
+        - ansible_facts['service_mgr'] == 'systemd'
+        - ansible_facts['virtualization_type'] | default('') not in ['docker', 'container', 'podman', 'containerd']
+
+    - name: Assert Docker service is active
+      ansible.builtin.assert:
+        that:
+          - "docker_service_status.stdout == 'active'"
+      when:
+        - ansible_facts['service_mgr'] == 'systemd'
+        - ansible_facts['virtualization_type'] | default('') not in ['docker', 'container', 'podman', 'containerd']
+
+    - name: Check Docker CLI and daemon connectivity
+      ansible.builtin.command: docker info
+      register: docker_info
+      changed_when: false
+      when: ansible_facts['virtualization_type'] | default('') not in ['docker', 'container', 'podman', 'containerd']
+
+    - name: Assert Docker info connects successfully
+      ansible.builtin.assert:
+        that:
+          - "docker_info.rc == 0"
+      when: ansible_facts['virtualization_type'] | default('') not in ['docker', 'container', 'podman', 'containerd']
+
+    # =========================================================================
+    # Pillar 3: Dotfiles Integrity & CLI Toolchain Verification
+    # =========================================================================
+    - name: Check deployed dotfiles status and non-zero size
+      ansible.builtin.stat:
+        path: "{{ ansible_env.HOME }}/{{ item }}"
+      register: dotfiles_stat
+      loop:
+        - .bashrc
+        - .bash_aliases
+        - .tmux.conf
+        - .config/copilot/copilot-instructions.md
+        - .config/copilot/mcp-config.json
+        - .claude/CLAUDE.md
+        - .ssh/config
+
+    - name: Assert dotfiles exist and are non-empty
+      ansible.builtin.assert:
+        that:
+          - "item.stat.exists"
+          - "item.stat.size > 0"
+      loop: "{{ dotfiles_stat.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    - name: Check ~/.claude/delegate.sh permissions
+      ansible.builtin.stat:
+        path: "{{ ansible_env.HOME }}/.claude/delegate.sh"
+      register: delegate_stat
+
+    - name: Assert delegate.sh exists, is executable, and is mode 0755
+      ansible.builtin.assert:
+        that:
+          - "delegate_stat.stat.exists"
+          - "delegate_stat.stat.executable"
+          - "delegate_stat.stat.mode == '0755'"
+
+    - name: Check ~/.claude/skills directory
+      ansible.builtin.stat:
+        path: "{{ ansible_env.HOME }}/.claude/skills"
+      register: claude_skills_dir_stat
+
+    - name: Assert ~/.claude/skills exists and is a directory
+      ansible.builtin.assert:
+        that:
+          - "claude_skills_dir_stat.stat.exists"
+          - "claude_skills_dir_stat.stat.isdir"
+
+    - name: Check Claude compatibility and shared standards symlinks
+      ansible.builtin.stat:
+        path: "{{ ansible_env.HOME }}/{{ item }}"
+        follow: false
+      register: claude_symlinks_stat
+      loop:
+        - .config/claude
+        - .claude/standards
+
+    - name: Assert Claude symlinks are valid symbolic links
+      ansible.builtin.assert:
+        that:
+          - "item.stat.exists"
+          - "item.stat.islnk"
+      loop: "{{ claude_symlinks_stat.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    - name: Verify Claude symlink target directories are accessible
+      ansible.builtin.stat:
+        path: "{{ ansible_env.HOME }}/{{ item }}"
+        follow: true
+      register: claude_symlink_targets_stat
+      loop:
+        - .config/claude
+        - .claude/standards
+
+    - name: Assert Claude symlink targets are valid directories
+      ansible.builtin.assert:
+        that:
+          - "item.stat.exists"
+          - "item.stat.isdir"
+      loop: "{{ claude_symlink_targets_stat.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    - name: Check shared skill symlinks inside ~/.claude/skills
+      ansible.builtin.stat:
+        path: "{{ ansible_env.HOME }}/.claude/skills/{{ item }}"
+        follow: false
+      register: shared_skills_stat
+      loop:
+        - artifact-generator
+        - conventional-commit
+
+    - name: Assert shared skill symlinks are valid symbolic links
+      ansible.builtin.assert:
+        that:
+          - "item.stat.exists"
+          - "item.stat.islnk"
+      loop: "{{ shared_skills_stat.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    - name: Check ~/.ssh/config permissions
+      ansible.builtin.stat:
+        path: "{{ ansible_env.HOME }}/.ssh/config"
+      register: ssh_config_stat
+
+    - name: Assert ~/.ssh/config is mode 0600
+      ansible.builtin.assert:
+        that:
+          - "ssh_config_stat.stat.exists"
+          - "ssh_config_stat.stat.mode == '0600'"
+
+    - name: Read ~/.ssh/config contents
+      ansible.builtin.slurp:
+        src: "{{ ansible_env.HOME }}/.ssh/config"
+      register: ssh_config_content
+
+    - name: Assert ~/.ssh/config contains managed block and host entry
+      ansible.builtin.assert:
+        that:
+          - "'Host github-PrzemyslawSagalo' in (ssh_config_content.content | b64decode)"
+          - "'ANSIBLE MANAGED BLOCK - DOTFILES SSH' in (ssh_config_content.content | b64decode)"
+
+    - name: Read ~/.bash_aliases contents
+      ansible.builtin.slurp:
+        src: "{{ ansible_env.HOME }}/.bash_aliases"
+      register: bash_aliases_content
+
+    - name: Assert alias ddu references dev_stack bootstrap
+      ansible.builtin.assert:
+        that:
+          - "'dev_stack/main/bootstrap.sh' in (bash_aliases_content.content | b64decode)"
+
+    - name: Test git configuration # noqa: command-instead-of-module
+      ansible.builtin.command: git config --global --get init.defaultBranch
+      register: git_branch_config
+      changed_when: false
+
+    - name: Assert git configuration is valid
+      ansible.builtin.assert:
+        that:
+          - "git_branch_config.stdout == 'main'"
+
+    - name: Test subshell sourcing of dotfiles
+      ansible.builtin.command: bash -c "source ~/.bashrc && source ~/.bash_aliases"
+      register: subshell_source
+      changed_when: false
+
+    - name: Assert dotfiles source cleanly with exit code 0
+      ansible.builtin.assert:
+        that:
+          - "subshell_source.rc == 0"
+
+    - name: Functional dry-runs for core CLI tools
+      ansible.builtin.command: "{{ item }}"
+      register: cli_runs
+      changed_when: false
+      loop:
+        - "git --version"
+        - "tmux -V"
+        - "jq --version"
+        - "nvim --version"
+        - "helm version --short"
+        - "oc version --client"
+
+    - name: Assert CLI tools execute successfully
+      ansible.builtin.assert:
+        that:
+          - "item.rc == 0"
+      loop: "{{ cli_runs.results }}"
+      loop_control:
+        label: "{{ item.item }}"
