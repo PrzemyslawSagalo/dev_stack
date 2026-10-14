@@ -1,0 +1,56 @@
+---
+name: Ansible CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - name: Install dependencies
+        run: |
+          pip install pre-commit
+      - name: Run pre-commit
+        run: pre-commit run --all-files
+
+  molecule:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        distro:
+          - "geerlingguy/docker-ubuntu2204-ansible"
+          - "geerlingguy/docker-amazonlinux2023-ansible"
+          - "redhat/ubi9-init"
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - name: Install dependencies
+        run: |
+          pip install ansible-core molecule molecule-plugins[docker] docker
+          # Pre-install required collections with retry logic. When GitHub Actions launches multiple matrix
+          # jobs concurrently, the Ansible Galaxy API frequently drops connections or rate-limits
+          # Azure/GitHub IP ranges, returning transient connection reset errors.
+          for attempt in 1 2 3; do
+            ansible-galaxy collection install community.docker ansible.posix && break || {
+              echo "Galaxy install attempt $attempt failed, retrying in 5s..."
+              sleep 5
+            }
+          done
+      - name: Run Molecule tests
+        working-directory: tests
+        env:
+          MOLECULE_DISTRO: ${{ matrix.distro }}
+        run: molecule test

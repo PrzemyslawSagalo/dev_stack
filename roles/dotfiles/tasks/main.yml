@@ -1,0 +1,128 @@
+---
+- name: Deploy .bash_aliases
+  ansible.builtin.copy:
+    src: .bash_aliases
+    dest: "{{ ansible_env.HOME }}/.bash_aliases"
+    mode: "0644"
+
+- name: Ensure ~/.bash_aliases is sourced in ~/.bashrc
+  ansible.builtin.lineinfile:
+    path: "{{ ansible_env.HOME }}/.bashrc"
+    line: "if [ -f ~/.bash_aliases ]; then . ~/.bash_aliases; fi"
+    state: present
+    create: true
+    mode: "0644"
+
+- name: Deploy .tmux.conf
+  ansible.builtin.copy:
+    src: .tmux.conf
+    dest: "{{ ansible_env.HOME }}/.tmux.conf"
+    mode: "0644"
+
+- name: Ensure ~/.config directory exists
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/.config"
+    state: directory
+    mode: "0755"
+
+- name: Deploy .config/copilot directory
+  ansible.builtin.copy:
+    src: .config/copilot
+    dest: "{{ ansible_env.HOME }}/.config/"
+    mode: "0644"
+    directory_mode: "0755"
+
+- name: Ensure COPILOT_HOME is set in ~/.bashrc
+  ansible.builtin.lineinfile:
+    path: "{{ ansible_env.HOME }}/.bashrc"
+    line: 'export COPILOT_HOME="$HOME/.config/copilot"'
+    state: present
+    create: true
+    mode: "0644"
+
+- name: Ensure ~/.claude directory exists
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/.claude"
+    state: directory
+    mode: "0755"
+
+- name: Deploy Claude Code directory to ~/.claude
+  ansible.builtin.copy:
+    src: .config/claude/
+    dest: "{{ ansible_env.HOME }}/.claude/"
+    mode: preserve
+    directory_mode: "0755"
+
+- name: Ensure ~/.claude/delegate.sh is executable
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/.claude/delegate.sh"
+    mode: "0755"
+
+- name: Check legacy ~/.config/claude directory
+  ansible.builtin.stat:
+    path: "{{ ansible_env.HOME }}/.config/claude"
+  register: dotfiles_legacy_claude_stat
+
+- name: Remove legacy ~/.config/claude directory if not a symlink
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/.config/claude"
+    state: absent
+  when: dotfiles_legacy_claude_stat.stat.exists and not dotfiles_legacy_claude_stat.stat.islnk
+
+- name: Symlink ~/.config/claude to ~/.claude for backward compatibility
+  ansible.builtin.file:
+    src: "{{ ansible_env.HOME }}/.claude"
+    dest: "{{ ansible_env.HOME }}/.config/claude"
+    state: link
+    force: true
+
+- name: Ensure ~/.claude/skills directory exists
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/.claude/skills"
+    state: directory
+    mode: "0755"
+
+- name: Find shared skills in .config/copilot/skills
+  ansible.builtin.find:
+    paths: "{{ ansible_env.HOME }}/.config/copilot/skills"
+    file_type: directory
+  register: dotfiles_copilot_skills
+
+- name: Symlink shared skills into ~/.claude/skills
+  ansible.builtin.file:
+    src: "{{ item.path }}"
+    dest: "{{ ansible_env.HOME }}/.claude/skills/{{ item.path | basename }}"
+    state: link
+    force: true
+  loop: "{{ dotfiles_copilot_skills.files }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+
+- name: Symlink shared standards to ~/.claude/standards
+  ansible.builtin.file:
+    src: "{{ ansible_env.HOME }}/.config/copilot/standards"
+    dest: "{{ ansible_env.HOME }}/.claude/standards"
+    state: link
+    force: true
+
+- name: Ensure ~/.ssh directory exists
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/.ssh"
+    state: directory
+    mode: "0700"
+
+- name: Deploy SSH config block from dotfiles
+  ansible.builtin.blockinfile:
+    path: "{{ ansible_env.HOME }}/.ssh/config"
+    block: "{{ lookup('ansible.builtin.file', 'ssh/config') }}"
+    mode: "0600"
+    create: true
+    marker: "# {mark} ANSIBLE MANAGED BLOCK - DOTFILES SSH"
+
+- name: Configure git default branch # noqa: command-instead-of-module
+  ansible.builtin.command: git config --global init.defaultBranch main
+  changed_when: false
+
+- name: Configure git default editor # noqa: command-instead-of-module
+  ansible.builtin.command: git config --global core.editor nvim
+  changed_when: false

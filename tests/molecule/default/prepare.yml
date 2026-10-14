@@ -1,0 +1,33 @@
+---
+- name: Prepare
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Ensure sudo is present in the test container
+      ansible.builtin.raw: |
+        command -v sudo >/dev/null && exit 0
+        if command -v apt-get >/dev/null; then apt-get update && apt-get install -y sudo
+        elif command -v dnf >/dev/null; then dnf install -y sudo
+        else yum install -y sudo; fi
+      changed_when: false
+
+    - name: Recreate man dirs stripped from minimal container images (needed by JDK postinst)
+      ansible.builtin.raw: mkdir -p /usr/share/man/man1
+      changed_when: false
+
+    # UBI ships only a subset of RHEL repos (no tmux, many -devel packages).
+    # A subscribed RHEL host has these; for CI we emulate it with CentOS Stream 9 repos.
+    - name: Add CentOS Stream 9 repos on UBI (test-only stand-in for full RHEL repos)
+      ansible.builtin.raw: |
+        [ -f /etc/yum.repos.d/ubi.repo ] || exit 0
+        for r in BaseOS AppStream CRB; do
+          cat > /etc/yum.repos.d/cs9-$r.repo <<REPO
+        [cs9-$r]
+        name=CentOS Stream 9 - $r
+        baseurl=https://mirror.stream.centos.org/9-stream/$r/x86_64/os/
+        gpgcheck=0
+        enabled=1
+        priority=99
+        REPO
+        done
+      changed_when: false
