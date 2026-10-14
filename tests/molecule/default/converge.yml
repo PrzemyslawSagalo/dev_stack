@@ -1,0 +1,3 @@
+---
+- name: Converge dev_stack setup playbook
+  import_playbook: ../../../setup.yml

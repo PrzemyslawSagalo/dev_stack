@@ -1,0 +1,21 @@
+---
+- name: Install C++ development tools (Debian)
+  ansible.builtin.apt:
+    name:
+      - build-essential
+      - g++
+      - gcc
+      - clang
+      - cmake
+    state: present
+  when: ansible_os_family == 'Debian'
+
+- name: Install C++ development tools (RedHat)
+  ansible.builtin.dnf:
+    name:
+      - gcc
+      - gcc-c++
+      - clang
+      - cmake
+    state: present
+  when: ansible_os_family == 'RedHat'

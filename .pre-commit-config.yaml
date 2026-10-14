@@ -1,0 +1,6 @@
+repos:
+  - repo: https://github.com/ansible/ansible-lint
+    rev: v26.10.1
+    hooks:
+      - id: ansible-lint
+        language_version: python3

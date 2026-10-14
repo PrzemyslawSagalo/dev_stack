@@ -1,0 +1,44 @@
+---
+- name: Ensure /etc/apt/keyrings exists (Debian)
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: "0755"
+  when: ansible_os_family == 'Debian'
+
+- name: Download GitHub CLI GPG key (Debian)
+  ansible.builtin.get_url:
+    url: https://cli.github.com/packages/githubcli-archive-keyring.gpg
+    dest: /etc/apt/keyrings/githubcli-archive-keyring.gpg
+    mode: "0644"
+  when: ansible_os_family == 'Debian'
+
+- name: Add GitHub CLI apt repository (Debian)
+  ansible.builtin.apt_repository:
+    repo: >-
+      deb [arch={{ ansible_architecture | default('amd64') }}
+      signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg]
+      https://cli.github.com/packages stable main
+    filename: github-cli
+    state: present
+  when: ansible_os_family == 'Debian'
+
+- name: Install GitHub CLI (Debian)
+  ansible.builtin.apt:
+    name: gh
+    state: present
+    update_cache: true
+  when: ansible_os_family == 'Debian'
+
+- name: Add GitHub CLI repo (RedHat)
+  ansible.builtin.get_url:
+    url: https://cli.github.com/packages/rpm/gh-cli.repo
+    dest: /etc/yum.repos.d/gh-cli.repo
+    mode: "0644"
+  when: ansible_os_family == 'RedHat'
+
+- name: Install GitHub CLI (RedHat)
+  ansible.builtin.dnf:
+    name: gh
+    state: present
+  when: ansible_os_family == 'RedHat'
