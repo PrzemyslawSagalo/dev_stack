@@ -126,3 +126,15 @@
 - name: Configure git default editor # noqa: command-instead-of-module
   ansible.builtin.command: git config --global core.editor nvim
   changed_when: false
+
+- name: Ensure ~/.config/lazygit directory exists
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/.config/lazygit"
+    state: directory
+    mode: "0755"
+
+- name: Deploy lazygit configuration
+  ansible.builtin.copy:
+    src: .config/lazygit/config.yml
+    dest: "{{ ansible_env.HOME }}/.config/lazygit/config.yml"
+    mode: "0644"

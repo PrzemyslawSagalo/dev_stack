@@ -32,5 +32,11 @@
 - name: Import Neovim build tasks
   ansible.builtin.import_tasks: nvim.yml
 
+- name: Import Lazygit tasks
+  ansible.builtin.import_tasks: lazygit.yml
+
+- name: Import Diffview tasks
+  ansible.builtin.import_tasks: diffview.yml
+
 - name: Import try tool tasks
   ansible.builtin.import_tasks: try.yml

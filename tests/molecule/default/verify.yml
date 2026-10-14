@@ -256,6 +256,8 @@
         - "nvim --version"
         - "helm version --short"
         - "oc version --client"
+        - "lazygit --version"
+        - "diffview --version"
 
     - name: Assert CLI tools execute successfully
       ansible.builtin.assert:
@@ -264,3 +266,14 @@
       loop: "{{ cli_runs.results }}"
       loop_control:
         label: "{{ item.item }}"
+
+    - name: Check ~/.config/lazygit/config.yml exists
+      ansible.builtin.stat:
+        path: "{{ ansible_env.HOME }}/.config/lazygit/config.yml"
+      register: lazygit_config_stat
+
+    - name: Assert lazygit config exists and is mode 0644
+      ansible.builtin.assert:
+        that:
+          - "lazygit_config_stat.stat.exists"
+          - "lazygit_config_stat.stat.mode == '0644'"
