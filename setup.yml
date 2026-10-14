@@ -1,0 +1,14 @@
+---
+- name: Setup Development Environment
+  hosts: all
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+
+  roles:
+    - role: system
+      become: true
+    - role: dotfiles
+      become: false
+      tags: dotfiles
+    - role: nvim
+      become: false
