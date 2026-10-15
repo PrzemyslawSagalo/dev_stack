@@ -261,6 +261,8 @@
         - "try -v"
         - "htop --version"
         - "setfattr --version"
+        - "go version"
+        - "hugo version"
 
     - name: Assert CLI tools execute successfully
       ansible.builtin.assert:
