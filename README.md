@@ -1,5 +1,7 @@
 # Dev Stack
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 Automated, reproducible, and tested Linux development environment provisioning using Ansible.
 
 Supports modern Linux distributions including **Ubuntu 22.04+**, **Amazon Linux 2023**, and **Red Hat Enterprise Linux / UBI 9**.
@@ -25,7 +27,7 @@ chmod +x bootstrap.sh
 
 ### 2. Operational Shortcuts (Makefile)
 
-The repository provides [Makefile](file:///home/ec2-user/src/dev_stack/Makefile) targets for common tasks:
+The repository provides [Makefile](Makefile) targets for common tasks:
 
 ```bash
 make setup   # Provisions or re-applies the environment via local Ansible
@@ -46,7 +48,7 @@ ansible-playbook -i localhost, -c local setup.yml
 
 ## What Gets Configured
 
-`dev_stack` provisions the workstation declaratively via modular Ansible roles in [setup.yml](file:///home/ec2-user/src/dev_stack/setup.yml):
+`dev_stack` provisions the workstation declaratively via modular Ansible roles in [setup.yml](setup.yml):
 
 * **System Tools & Runtimes (`roles/system`)**:
   * **Python**: `pyenv` with Python 3.13 default, Python 3.12, pre-compiled C-extension build dependencies (`ssl`, `sqlite3`, `lzma`, `ctypes`), and shims across login/interactive shells.
@@ -60,3 +62,9 @@ ansible-playbook -i localhost, -c local setup.yml
   * AI assistant configurations (`.config/copilot`, `.config/claude`).
 * **Editor (`roles/nvim`)**:
   * Modern Neovim IDE configuration.
+
+---
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
