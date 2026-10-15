@@ -1,10 +1,30 @@
 ---
+- name: Check if Go binary exists
+  ansible.builtin.stat:
+    path: /usr/local/go/bin/go
+  register: system_go_bin
+
 - name: Download and extract Go
   ansible.builtin.unarchive:
-    src: "https://go.dev/dl/go1.20.6.linux-amd64.tar.gz"
+    src: "https://go.dev/dl/go{{ go_version | default('1.24.1') }}.linux-amd64.tar.gz"
     dest: "/usr/local"
     remote_src: true
     creates: /usr/local/go/bin/go
+  when: not system_go_bin.stat.exists
+
+- name: Symlink Go binary to /usr/local/bin
+  ansible.builtin.file:
+    src: /usr/local/go/bin/go
+    dest: /usr/local/bin/go
+    state: link
+    force: true
+
+- name: Symlink Gofmt binary to /usr/local/bin
+  ansible.builtin.file:
+    src: /usr/local/go/bin/gofmt
+    dest: /usr/local/bin/gofmt
+    state: link
+    force: true
 
 - name: Add Go to PATH in bashrc
   ansible.builtin.lineinfile:
