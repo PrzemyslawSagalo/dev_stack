@@ -43,4 +43,3 @@
 
 - name: Import Hugo tasks
   ansible.builtin.import_tasks: hugo.yml
-
