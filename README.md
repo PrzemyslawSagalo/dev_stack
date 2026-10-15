@@ -52,7 +52,7 @@ ansible-playbook -i localhost, -c local setup.yml
   * **Python**: `pyenv` with Python 3.13 default, Python 3.12, pre-compiled C-extension build dependencies (`ssl`, `sqlite3`, `lzma`, `ctypes`), and shims across login/interactive shells.
   * **Docker**: Docker CE engine with rootless group access, Docker Compose v2 CLI plugin, and virtualization-aware daemon management.
   * **Languages & Cloud Tools**: OpenJDK / Amazon Corretto 21 with SDKMAN, Node.js via `nvm`, Helm, and OpenShift client (`oc`).
-  * **Core CLI Packages**: `git`, `tmux`, `jq`, `unzip`, `curl`, `wget`.
+  * **Core CLI Packages**: `git`, `tmux`, `jq`, `unzip`, `curl`, `wget`, `htop`, `try`.
 * **Dotfiles & Shell (`roles/dotfiles`)**:
   * Comprehensive `.bash_aliases` suite (Git shortcuts, tmux helpers, Python venv macros, environment loaders).
   * Terminal multiplexer configuration (`.tmux.conf`) with vi-mode navigation.
