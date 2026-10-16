@@ -1,0 +1,76 @@
+name: AI Agent Skills Security Scan
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "roles/dotfiles/files/.config/copilot/skills/**"
+      - ".skillspector-baseline.yaml"
+      - ".github/workflows/skillspector.yml"
+      - "Makefile"
+  pull_request:
+    branches: [main]
+    paths:
+      - "roles/dotfiles/files/.config/copilot/skills/**"
+      - ".skillspector-baseline.yaml"
+      - ".github/workflows/skillspector.yml"
+      - "Makefile"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  skillspector:
+    name: SkillSpector Security Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Install SkillSpector
+        run: |
+          pip install git+https://github.com/NVIDIA/SkillSpector.git@v2.12.0
+
+      - name: Run SkillSpector (SARIF Report)
+        run: |
+          skillspector scan roles/dotfiles/files/.config/copilot/skills --baseline .skillspector-baseline.yaml --no-llm --fail-on-findings --format sarif --output report.sarif
+
+      - name: Run SkillSpector (Markdown Summary)
+        if: always()
+        run: |
+          skillspector scan roles/dotfiles/files/.config/copilot/skills --baseline .skillspector-baseline.yaml --no-llm --fail-on-findings --format markdown --output report.md
+
+      - name: Upload SARIF to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        continue-on-error: true
+        with:
+          sarif_file: report.sarif
+          category: skillspector
+
+      - name: Append Markdown Summary to Step Summary
+        if: always()
+        run: |
+          if [ -f report.md ]; then
+            cat report.md >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload Scan Artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: skillspector-reports
+          path: |
+            report.sarif
+            report.md
