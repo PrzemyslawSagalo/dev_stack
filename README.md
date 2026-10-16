@@ -30,10 +30,11 @@ chmod +x bootstrap.sh
 The repository provides [Makefile](Makefile) targets for common tasks:
 
 ```bash
-make setup   # Provisions or re-applies the environment via local Ansible
-make update  # Pulls latest main branch and re-runs the Ansible playbook
-make test    # Runs Molecule acceptance tests across container platforms
-make lint    # Runs pre-commit and ansible-lint code quality checks
+make setup       # Provisions or re-applies the environment via local Ansible
+make update      # Pulls latest main branch and re-runs the Ansible playbook
+make test        # Runs Molecule acceptance tests across container platforms
+make lint        # Runs pre-commit and ansible-lint code quality checks
+make scan-skills # Runs NVIDIA SkillSpector security scanner against AI agent skills
 ```
 
 ### 3. Direct Ansible Execution
