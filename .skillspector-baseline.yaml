@@ -1,0 +1,18 @@
+# SkillSpector baseline — findings listed here are suppressed on future scans.
+# See NVIDIA SkillSpector documentation for suppression syntax.
+version: 2
+scanner_version: 2.12.0
+rules: []
+fingerprints:
+  - hash: sha256:7ac794264ee25e7c99e4ea405e8b1d8850eb90fdd02bfd26a21e3db67d53a520
+    rule_id: EA2
+    file: conventional-commit/SKILL.md
+    reason: Autonomous git commit execution is the intended function of conventional-commit skill
+  - hash: sha256:9561297cb6e1dda45e566636d158a26fb17a1eaff4d99d43cb26b4a70a1eefd8
+    rule_id: EA2
+    file: conventional-commit/SKILL.md
+    reason: Autonomous git commit execution is the intended function of conventional-commit skill
+  - hash: sha256:49aacf8e9f9cc0ec94c75450460d3d3925564016e1cb14d6031b65399d0a3d37
+    rule_id: RA2
+    file: artifact-generator/SKILL.md
+    reason: Standards generation and maintenance requires session persistence in ./standards
