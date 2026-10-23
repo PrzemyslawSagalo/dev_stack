@@ -40,6 +40,3 @@
 
 - name: Import try tool tasks
   ansible.builtin.import_tasks: try.yml
-
-- name: Import Hugo tasks
-  ansible.builtin.import_tasks: hugo.yml
