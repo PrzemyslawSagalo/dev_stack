@@ -48,11 +48,6 @@ mason_lspconfig.setup({
         "lua_ls",
         "ruff",
     },
-    handlers = {
-        function(server_name)
-            lspconfig[server_name].setup(default_server_config)
-        end,
-    },
 })
 
 for _, server in ipairs({ "marksman", "bashls", "clangd", "lua_ls", "ruff" }) do

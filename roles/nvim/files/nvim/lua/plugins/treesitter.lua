@@ -1,7 +1,7 @@
 return {
   {
     "nvim-treesitter/nvim-treesitter",
-    branch = "master",
+    branch = "main", -- STRICTLY for Nvim v0.12+
     lazy = false,
     build = ":TSUpdate",
     config = function()
@@ -11,7 +11,7 @@ return {
       install.prefer_git = true
       install.compilers = { "gcc" }
 
-      require("nvim-treesitter.configs").setup({
+      require("nvim-treesitter").setup({
         ensure_installed = {
           "bash",
           "c",

@@ -12,6 +12,7 @@ cd "${CONFIG_DIR}"
 
 FAILURES=0
 
+# Note: test_difftastic.lua was removed because Difftastic was replaced by Diffview (lua/plugins/diffview.lua).
 for test_file in "${SCRIPT_DIR}"/test_*.lua; do
     [ -f "$test_file" ] || continue
     rel_file="tests/$(basename "$test_file")"
