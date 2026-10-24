@@ -27,6 +27,7 @@
       - htop
       - attr
       - rsync
+      - which
     state: present
 
 - name: Ensure .bashrc exists (for appending PATHs)

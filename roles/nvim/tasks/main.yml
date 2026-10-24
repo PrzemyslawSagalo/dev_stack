@@ -5,8 +5,8 @@
   failed_when: false
   changed_when: false
 
-- name: Resolve Neovim executable path
-  ansible.builtin.command: which nvim
+- name: Resolve Neovim executable path # noqa: command-instead-of-shell
+  ansible.builtin.shell: command -v nvim
   register: nvim_path_output
   failed_when: false
   changed_when: false
@@ -14,20 +14,22 @@
 
 - name: Set Neovim executable path fact
   ansible.builtin.set_fact:
-    nvim_binary_path: "{{ nvim_path_output.stdout.strip() }}"
-  when:
-    - nvim_version_output.rc == 0
-    - nvim_path_output.rc is defined
-    - nvim_path_output.rc == 0
+    nvim_binary_path: >-
+      {{
+        nvim_path_output.stdout.strip()
+        if (nvim_path_output.rc | default(1) == 0 and nvim_path_output.stdout | default('') != '')
+        else '/usr/local/bin/nvim'
+      }}
+  when: nvim_version_output.rc == 0
 
 - name: Check if ripgrep prerequisite is available
-  ansible.builtin.command: which rg
+  ansible.builtin.command: rg --version
   register: nvim_rg_output
   failed_when: false
   changed_when: false
 
-- name: Check if git prerequisite is available
-  ansible.builtin.command: which git
+- name: Check if git prerequisite is available # noqa: command-instead-of-module
+  ansible.builtin.command: git --version
   register: nvim_git_output
   failed_when: false
   changed_when: false
