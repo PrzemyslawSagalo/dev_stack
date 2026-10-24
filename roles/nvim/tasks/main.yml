@@ -32,3 +32,25 @@
     dest: "{{ ansible_env.HOME }}/.config/nvim/"
     mode: preserve
     directory_mode: "0755"
+
+- name: Find installed Neovim configuration files
+  ansible.builtin.find:
+    paths:
+      - "{{ ansible_env.HOME }}/.config/nvim/lua"
+      - "{{ ansible_env.HOME }}/.config/nvim/tests"
+    file_type: file
+    recurse: true
+  register: nvim_installed_files
+
+- name: Reconcile removed managed Neovim files
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ nvim_installed_files.files }}"
+  loop_control:
+    label: "{{ item.path }}"
+  when: >-
+    (item.path | replace(ansible_env.HOME ~ '/.config/nvim/', ''))
+    not in (lookup('ansible.builtin.filetree', role_path ~ '/files/nvim/')
+    | selectattr('state', 'equalto', 'file')
+    | map(attribute='path') | list)

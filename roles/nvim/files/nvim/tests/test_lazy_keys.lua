@@ -16,7 +16,10 @@ local function test_plugin(file, expected_keys)
         spec = spec[1]
     end
     
-    assert_nil(spec.lazy, file .. " should not have lazy explicitly set (should be lazy loaded by keys)")
+    -- Support either default lazy loading by keys (spec.lazy == nil) or explicit eager loading (spec.lazy == false)
+    if spec.lazy ~= nil and spec.lazy ~= false then
+        error(file .. " should not set lazy = true explicitly (should be lazy loaded by keys or eager)")
+    end
     
     if expected_keys then
         if not spec.keys then

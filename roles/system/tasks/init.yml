@@ -26,6 +26,7 @@
       - ca-certificates
       - htop
       - attr
+      - rsync
     state: present
 
 - name: Ensure .bashrc exists (for appending PATHs)

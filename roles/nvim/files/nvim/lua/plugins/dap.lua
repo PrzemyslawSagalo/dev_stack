@@ -9,7 +9,7 @@ return {
     },
     config = function()
 require("mason-nvim-dap").setup({
-    ensure_installed = { "python", "kotlin" },
+    ensure_installed = { "python", "kotlin", "codelldb" },
     automatic_installation = true,
     handlers = {},
 })
