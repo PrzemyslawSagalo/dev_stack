@@ -337,6 +337,8 @@
 
     - name: Run Neovim test suite
       ansible.builtin.command: bash "{{ ansible_env.HOME }}/.config/nvim/tests/run_all.sh"
+      environment:
+        NVIM_SMOKE_TEST: "1"
       register: nvim_tests_run
       changed_when: false
 

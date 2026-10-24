@@ -19,7 +19,7 @@ update:
 
 sync-nvim:
 	@echo "=> Syncing ~/.config/nvim changes back to monorepo..."
-	rsync -av --delete --exclude='.git' --exclude='lazy-lock.json' --exclude='.managed_manifest.json' --exclude='*.swp' --exclude='*.swo' --exclude='*.swn' --exclude='Session.vim' --exclude='*.session' $(HOME)/.config/nvim/ roles/nvim/files/nvim/
+	rsync -av --exclude='.git' --exclude='lazy-lock.json' --exclude='.managed_manifest.json' --exclude='*.swp' --exclude='*.swo' --exclude='*.swn' --exclude='Session.vim' --exclude='*.session' $(HOME)/.config/nvim/ roles/nvim/files/nvim/
 
 test:
 	cd tests && molecule test

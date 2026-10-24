@@ -1,16 +1,39 @@
 ---
-- name: Check if Neovim executable is installed
-  ansible.builtin.stat:
-    path: /usr/local/bin/nvim
-  register: nvim_binary_stat
+- name: Check if Neovim executable is available
+  ansible.builtin.command: nvim --version
+  register: nvim_version_output
+  failed_when: false
+  changed_when: false
 
-- name: Ensure system Neovim prerequisites are installed
+- name: Check if ripgrep prerequisite is available
+  ansible.builtin.command: which rg
+  register: nvim_rg_output
+  failed_when: false
+  changed_when: false
+
+- name: Ensure system Neovim and prerequisites are installed
   ansible.builtin.include_role:
     name: system
     tasks_from: nvim.yml
     apply:
       become: true
-  when: not nvim_binary_stat.stat.exists
+  when: nvim_version_output.rc != 0 or nvim_rg_output.rc != 0
+
+- name: Re-check Neovim version if installed during this run
+  ansible.builtin.command: nvim --version
+  register: nvim_version_post_install
+  when: nvim_version_output.rc != 0
+  changed_when: false
+
+- name: Validate Neovim version is compatible (v0.10+)
+  ansible.builtin.assert:
+    that:
+      - >-
+        (nvim_version_post_install.stdout
+        if nvim_version_output.rc != 0
+        else nvim_version_output.stdout)
+        is search('NVIM v(0\.(1[0-9]|[2-9][0-9])|[1-9])')
+    fail_msg: "Neovim version must be at least v0.10.0 for this configuration"
 
 - name: Ensure ~/.config directory exists
   ansible.builtin.file:
