@@ -335,14 +335,29 @@
         that:
           - "nvim_headless_run.rc == 0"
 
-    - name: Run Neovim test suite
+    - name: Run Neovim syntax smoke test suite
       ansible.builtin.command: bash "{{ ansible_env.HOME }}/.config/nvim/tests/run_all.sh"
       environment:
         NVIM_SMOKE_TEST: "1"
-      register: nvim_tests_run
+      register: nvim_smoke_tests_run
       changed_when: false
 
-    - name: Assert Neovim test suite passes cleanly
+    - name: Assert Neovim syntax smoke test suite passes cleanly
       ansible.builtin.assert:
         that:
-          - "nvim_tests_run.rc == 0"
+          - "nvim_smoke_tests_run.rc == 0"
+
+    - name: Provision plugins for functional test execution
+      ansible.builtin.command: nvim --headless -c "lua require('lazy').sync({ wait = true, show = false })" -c "qa"
+      register: nvim_plugin_sync
+      changed_when: false
+
+    - name: Run Neovim functional test suite
+      ansible.builtin.command: bash "{{ ansible_env.HOME }}/.config/nvim/tests/run_all.sh"
+      register: nvim_functional_tests_run
+      changed_when: false
+
+    - name: Assert Neovim functional test suite passes cleanly
+      ansible.builtin.assert:
+        that:
+          - "nvim_functional_tests_run.rc == 0"

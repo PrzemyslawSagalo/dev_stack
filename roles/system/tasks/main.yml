@@ -1,6 +1,8 @@
 ---
 - name: Import base initialization tasks
   ansible.builtin.import_tasks: init.yml
+  tags:
+    - nvim
 
 - name: Import C++ toolchain tasks
   ansible.builtin.import_tasks: cpp.yml
@@ -31,6 +33,8 @@
 
 - name: Import Neovim build tasks
   ansible.builtin.import_tasks: nvim.yml
+  tags:
+    - nvim
 
 - name: Import Lazygit tasks
   ansible.builtin.import_tasks: lazygit.yml

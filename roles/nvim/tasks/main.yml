@@ -11,6 +11,22 @@
   failed_when: false
   changed_when: false
 
+- name: Check if git prerequisite is available
+  ansible.builtin.command: which git
+  register: nvim_git_output
+  failed_when: false
+  changed_when: false
+
+- name: Ensure basic system utilities are installed if missing
+  ansible.builtin.include_role:
+    name: system
+    tasks_from: init.yml
+    apply:
+      become: true
+      tags:
+        - nvim
+  when: nvim_git_output.rc != 0
+
 - name: Determine if installed Neovim version satisfies requirement (v0.12+)
   ansible.builtin.set_fact:
     nvim_version_valid: >-
@@ -19,16 +35,53 @@
         (nvim_version_output.stdout is search('NVIM v(0\.(1[2-9]|[2-9][0-9])|[1-9])'))
       }}
 
-- name: Remove outdated Neovim binary if version is below v0.12
-  ansible.builtin.file:
-    path: /usr/local/bin/nvim
-    state: absent
-  become: true
+- name: Upgrade Neovim with rollback protection if installed version is outdated
   when:
     - nvim_version_output.rc == 0
     - not (nvim_version_valid | bool)
+  block:
+    - name: Backup existing Neovim binary before upgrade
+      ansible.builtin.copy:
+        src: /usr/local/bin/nvim
+        dest: /usr/local/bin/nvim.pre-upgrade.bak
+        remote_src: true
+        mode: preserve
+      become: true
 
-- name: Ensure system Neovim and prerequisites are installed
+    - name: Remove outdated Neovim binary to trigger source build
+      ansible.builtin.file:
+        path: /usr/local/bin/nvim
+        state: absent
+      become: true
+
+    - name: Build and install updated Neovim from source
+      ansible.builtin.include_role:
+        name: system
+        tasks_from: nvim.yml
+        apply:
+          become: true
+          tags:
+            - nvim
+
+    - name: Clean up temporary backup after successful upgrade
+      ansible.builtin.file:
+        path: /usr/local/bin/nvim.pre-upgrade.bak
+        state: absent
+      become: true
+  rescue:
+    - name: Restore existing Neovim binary after failed upgrade
+      ansible.builtin.copy:
+        src: /usr/local/bin/nvim.pre-upgrade.bak
+        dest: /usr/local/bin/nvim
+        remote_src: true
+        mode: preserve
+      become: true
+
+    - name: Fail with informative upgrade failure message
+      ansible.builtin.fail:
+        msg: "Neovim upgrade failed. Previous Neovim binary was restored from backup."
+
+- name: Ensure system Neovim and prerequisites are installed when missing
   ansible.builtin.include_role:
     name: system
     tasks_from: nvim.yml
@@ -36,7 +89,7 @@
       become: true
       tags:
         - nvim
-  when: not (nvim_version_valid | bool) or nvim_rg_output.rc != 0
+  when: nvim_version_output.rc != 0 or (nvim_version_valid | bool and nvim_rg_output.rc != 0)
 
 - name: Re-check Neovim version if installed during this run
   ansible.builtin.command: nvim --version
