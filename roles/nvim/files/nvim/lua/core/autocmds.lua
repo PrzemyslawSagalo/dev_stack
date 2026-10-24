@@ -16,19 +16,14 @@ vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter" }, {
 local dap_project_group = vim.api.nvim_create_augroup('DapProjectConfig', { clear = true })
 
 local function load_project_dap_config()
+  -- Skip project configuration if the trust verification API is unavailable
+  if not (vim.secure and type(vim.secure.read) == "function") then
+    return
+  end
+
   local dap_config_path = vim.fn.getcwd() .. '/dap_config.lua'
   if vim.fn.filereadable(dap_config_path) == 1 then
-    local contents
-    if vim.secure and type(vim.secure.read) == "function" then
-      contents = vim.secure.read(dap_config_path)
-    elseif vim.fn.filereadable(dap_config_path) == 1 then
-      local f = io.open(dap_config_path, "r")
-      if f then
-        contents = f:read("*a")
-        f:close()
-      end
-    end
-
+    local contents = vim.secure.read(dap_config_path)
     if contents and contents ~= "" then
       local chunk, err = load(contents, "@" .. dap_config_path)
       if chunk then
