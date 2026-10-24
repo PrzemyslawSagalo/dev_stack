@@ -17,10 +17,7 @@ end
 
 -- Force load lspconfig which triggers lazy to run its config block
 local lspconfig_ok, lspconfig = pcall(require, "lspconfig")
-if not lspconfig_ok then
-    print("SKIP: lspconfig runtime not provisioned")
-    return
-end
+assert_test(lspconfig_ok, "lspconfig plugin could not be required in functional test mode")
 
 -- Now test cmp
 local cmp_ok, cmp = pcall(require, "cmp")
