@@ -172,6 +172,7 @@ report.md
 # Neovim runtime and temporary files
 lazy-lock.json
 roles/nvim/files/nvim/lazy-lock.json
+.managed_manifest.json
 *.swp
 *.swo
 *.swn

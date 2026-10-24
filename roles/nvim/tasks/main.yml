@@ -10,45 +10,76 @@
     path: "{{ ansible_env.HOME }}/.config/nvim/.git"
   register: nvim_legacy_git_stat
 
-- name: Check for pre-existing legacy backup directory
-  ansible.builtin.stat:
-    path: "{{ ansible_env.HOME }}/.config/nvim.external-repo.bak"
-  register: nvim_backup_stat
+- name: Generate unique backup directory for legacy external git repository
+  ansible.builtin.tempfile:
+    state: directory
+    path: "{{ ansible_env.HOME }}/.config"
+    prefix: nvim.external-repo.bak.
+  register: nvim_backup_dir
+  when: nvim_legacy_git_stat.stat.exists
+
+- name: Remove temporary directory placeholder before move
+  ansible.builtin.file:
+    path: "{{ nvim_backup_dir.path }}"
+    state: absent
   when: nvim_legacy_git_stat.stat.exists
 
 - name: Backup legacy external git repository configuration
   ansible.builtin.command: >-
     mv
     "{{ ansible_env.HOME }}/.config/nvim"
-    "{{ ansible_env.HOME }}/.config/nvim.external-repo.bak{{
-      '.' ~ (ansible_date_time.epoch | default('collision'))
-      if nvim_backup_stat.stat.exists else '' }}"
+    "{{ nvim_backup_dir.path }}"
   when: nvim_legacy_git_stat.stat.exists
   changed_when: true
 
+- name: Discover source files in monorepo
+  ansible.builtin.find:
+    paths: "{{ role_path }}/files/nvim"
+    file_type: file
+    recurse: true
+  delegate_to: localhost
+  become: false
+  register: nvim_source_files
+
+- name: Set managed files list
+  ansible.builtin.set_fact:
+    nvim_current_managed: >-
+      {{ nvim_source_files.files | map(attribute='path') |
+         map('replace', role_path ~ '/files/nvim/', '') | list }}
+
+- name: Check for existing managed files manifest
+  ansible.builtin.stat:
+    path: "{{ ansible_env.HOME }}/.config/nvim/.managed_manifest.json"
+  register: nvim_manifest_stat
+
+- name: Read previous managed files manifest
+  ansible.builtin.slurp:
+    src: "{{ ansible_env.HOME }}/.config/nvim/.managed_manifest.json"
+  register: nvim_manifest_content
+  when: nvim_manifest_stat.stat.exists
+
+- name: Set previous managed files list
+  ansible.builtin.set_fact:
+    nvim_previous_managed: >-
+      {{ (nvim_manifest_content.content | b64decode | from_json)
+         if nvim_manifest_stat.stat.exists else [] }}
+
+- name: Reconcile removed managed Neovim files
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/.config/nvim/{{ item }}"
+    state: absent
+  loop: "{{ nvim_previous_managed }}"
+  when: item not in nvim_current_managed
+
 - name: Deploy Neovim configuration from monorepo
   ansible.builtin.copy:
-    src: files/nvim/
+    src: nvim/
     dest: "{{ ansible_env.HOME }}/.config/nvim/"
     mode: preserve
     directory_mode: "0755"
 
-- name: Find installed Neovim configuration files
-  ansible.builtin.find:
-    paths:
-      - "{{ ansible_env.HOME }}/.config/nvim/lua"
-      - "{{ ansible_env.HOME }}/.config/nvim/tests"
-    file_type: file
-    recurse: true
-  register: nvim_installed_files
-
-- name: Reconcile removed managed Neovim files
-  ansible.builtin.file:
-    path: "{{ item.path }}"
-    state: absent
-  loop: "{{ nvim_installed_files.files }}"
-  loop_control:
-    label: "{{ item.path }}"
-  when: >-
-    not ((role_path ~ '/files/nvim/' ~
-    (item.path | replace(ansible_env.HOME ~ '/.config/nvim/', ''))) is file)
+- name: Save managed files manifest
+  ansible.builtin.copy:
+    content: "{{ nvim_current_managed | to_nice_json }}\n"
+    dest: "{{ ansible_env.HOME }}/.config/nvim/.managed_manifest.json"
+    mode: "0644"
