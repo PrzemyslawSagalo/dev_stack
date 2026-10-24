@@ -176,3 +176,21 @@ report.md
 *.swn
 Session.vim
 *.session
+
+# Secrets, private keys, certificates, and sensitive runtime state
+.env*
+*.env
+*.key
+*.pem
+*.cert
+*.crt
+*credential*
+*token*
+*secret*
+id_rsa*
+id_ed25519*
+dap_config.lua
+undo/
+swap/
+backup/
+shada/

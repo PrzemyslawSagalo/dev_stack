@@ -19,7 +19,32 @@ update:
 
 sync-nvim:
 	@echo "=> Syncing ~/.config/nvim changes back to monorepo..."
-	rsync -av --exclude='.git' --exclude='.managed_manifest.json' --exclude='*.swp' --exclude='*.swo' --exclude='*.swn' --exclude='Session.vim' --exclude='*.session' $(HOME)/.config/nvim/ roles/nvim/files/nvim/
+	rsync -av \
+		--exclude='.git*' \
+		--exclude='.managed_manifest.json' \
+		--exclude='*.swp' \
+		--exclude='*.swo' \
+		--exclude='*.swn' \
+		--exclude='Session.vim' \
+		--exclude='*.session' \
+		--exclude='.env*' \
+		--exclude='*.env' \
+		--exclude='*.key' \
+		--exclude='*.pem' \
+		--exclude='*.cert' \
+		--exclude='*.crt' \
+		--exclude='*token*' \
+		--exclude='*secret*' \
+		--exclude='*credential*' \
+		--exclude='id_rsa*' \
+		--exclude='id_ed25519*' \
+		--exclude='dap_config.lua' \
+		--exclude='*.log' \
+		--exclude='undo/' \
+		--exclude='swap/' \
+		--exclude='backup/' \
+		--exclude='shada/' \
+		$(HOME)/.config/nvim/ roles/nvim/files/nvim/
 
 test:
 	cd tests && molecule test

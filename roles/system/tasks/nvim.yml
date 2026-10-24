@@ -81,9 +81,11 @@
 
 - name: Clone and build Neovim # noqa: command-instead-of-module
   ansible.builtin.shell: |
+    rm -rf /tmp/neovim
     git clone https://github.com/neovim/neovim.git /tmp/neovim
     cd /tmp/neovim
     make -j "$(nproc)" CMAKE_BUILD_TYPE=RelWithDebInfo
     make install
+    rm -rf /tmp/neovim
   args:
     creates: /usr/local/bin/nvim

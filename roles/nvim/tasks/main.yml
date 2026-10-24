@@ -101,6 +101,12 @@
       when: nvim_binary_path != '/usr/local/bin/nvim'
       become: true
 
+    - name: Clean up temporary Neovim build checkout after failed upgrade
+      ansible.builtin.file:
+        path: /tmp/neovim
+        state: absent
+      become: true
+
     - name: Restore existing Neovim binary after failed upgrade
       ansible.builtin.copy:
         src: "{{ nvim_binary_path }}.pre-upgrade.bak"
