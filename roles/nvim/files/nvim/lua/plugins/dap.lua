@@ -11,6 +11,7 @@ return {
 require("mason-nvim-dap").setup({
     ensure_installed = { "python", "kotlin" },
     automatic_installation = true,
+    handlers = {},
 })
 
 local keymap = vim.keymap.set

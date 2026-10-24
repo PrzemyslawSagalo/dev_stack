@@ -32,11 +32,3 @@
     dest: "{{ ansible_env.HOME }}/.config/nvim/"
     mode: preserve
     directory_mode: "0755"
-
-- name: Ensure Neovim utility and test scripts are executable
-  ansible.builtin.file:
-    path: "{{ ansible_env.HOME }}/.config/nvim/{{ item }}"
-    mode: "0755"
-  loop:
-    - clean_cache.sh
-    - tests/run_all.sh

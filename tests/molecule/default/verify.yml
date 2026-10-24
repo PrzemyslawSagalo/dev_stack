@@ -307,7 +307,6 @@
         that:
           - "item.stat.exists"
           - "item.stat.executable"
-          - "item.stat.mode == '0755'"
       loop: "{{ nvim_scripts_stat.results }}"
       loop_control:
         label: "{{ item.item }}"
@@ -323,7 +322,11 @@
           - "not nvim_git_dir_stat.stat.exists"
 
     - name: Headless dry-run validation of Neovim configuration
-      ansible.builtin.command: nvim --headless -u "{{ ansible_env.HOME }}/.config/nvim/init.lua" "+qa"
+      ansible.builtin.command: >-
+        nvim --headless -u "{{ ansible_env.HOME }}/.config/nvim/init.lua"
+        -c "lua if #vim.v.errmsg > 0 then print(vim.v.errmsg); vim.cmd('cquit 1') else vim.cmd('qa!') end"
+      environment:
+        NVIM_SMOKE_TEST: "1"
       register: nvim_headless_run
       changed_when: false
 

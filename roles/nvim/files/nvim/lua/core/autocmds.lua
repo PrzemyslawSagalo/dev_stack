@@ -11,15 +11,37 @@ vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter" }, {
 })
 
 ---
--- Autocommand setup for DAP project config
+-- Autocommand setup for DAP project config (secured via vim.secure.read)
 ---
 local dap_project_group = vim.api.nvim_create_augroup('DapProjectConfig', { clear = true })
 
 local function load_project_dap_config()
   local dap_config_path = vim.fn.getcwd() .. '/dap_config.lua'
   if vim.fn.filereadable(dap_config_path) == 1 then
-    vim.cmd('luafile ' .. dap_config_path)
-    vim.notify('Loaded project-specific DAP configuration', vim.log.levels.INFO, { title = 'DAP' })
+    local contents
+    if vim.secure and type(vim.secure.read) == "function" then
+      contents = vim.secure.read(dap_config_path)
+    elseif vim.fn.filereadable(dap_config_path) == 1 then
+      local f = io.open(dap_config_path, "r")
+      if f then
+        contents = f:read("*a")
+        f:close()
+      end
+    end
+
+    if contents and contents ~= "" then
+      local chunk, err = load(contents, "@" .. dap_config_path)
+      if chunk then
+        local ok, run_err = pcall(chunk)
+        if ok then
+          vim.notify('Loaded project-specific DAP configuration', vim.log.levels.INFO, { title = 'DAP' })
+        else
+          vim.notify('Error executing DAP config: ' .. tostring(run_err), vim.log.levels.ERROR, { title = 'DAP' })
+        end
+      else
+        vim.notify('Error parsing DAP config: ' .. tostring(err), vim.log.levels.ERROR, { title = 'DAP' })
+      end
+    end
   end
 end
 
@@ -41,4 +63,3 @@ vim.api.nvim_create_autocmd('BufWritePost', {
     end
   end,
 })
-
