@@ -40,6 +40,14 @@
   failed_when: false
   changed_when: false
 
+- name: Determine if installed Neovim version satisfies requirement (v0.12+)
+  ansible.builtin.set_fact:
+    nvim_version_valid: >-
+      {{
+        nvim_version_output.rc == 0 and
+        (nvim_version_output.stdout is search('NVIM v(0\.(1[2-9]|[2-9][0-9])|[1-9])'))
+      }}
+
 - name: Ensure basic system utilities are installed if missing
   ansible.builtin.include_role:
     name: system
@@ -48,15 +56,7 @@
       become: true
       tags:
         - nvim
-  when: nvim_git_output.rc != 0 or nvim_rsync_output.rc != 0
-
-- name: Determine if installed Neovim version satisfies requirement (v0.12+)
-  ansible.builtin.set_fact:
-    nvim_version_valid: >-
-      {{
-        nvim_version_output.rc == 0 and
-        (nvim_version_output.stdout is search('NVIM v(0\.(1[2-9]|[2-9][0-9])|[1-9])'))
-      }}
+  when: not (nvim_version_valid | bool) or nvim_git_output.rc != 0 or nvim_rsync_output.rc != 0
 
 - name: Upgrade Neovim with rollback protection if installed version is outdated
   when:

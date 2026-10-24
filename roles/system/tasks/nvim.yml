@@ -9,6 +9,8 @@
       - gettext
       - gcc
       - make
+      - cmake
+      - curl
     state: present
   when: ansible_os_family == 'Debian'
 
@@ -21,6 +23,8 @@
       - gettext
       - gcc
       - make
+      - cmake
+      - curl
     state: present
   when: ansible_os_family == 'RedHat'
 
