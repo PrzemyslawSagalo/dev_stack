@@ -10,25 +10,33 @@
     path: "{{ ansible_env.HOME }}/.config/nvim/.git"
   register: nvim_legacy_git_stat
 
-- name: Generate unique backup directory for legacy external git repository
+- name: Check for pre-existing legacy backup directory
+  ansible.builtin.stat:
+    path: "{{ ansible_env.HOME }}/.config/nvim.external-repo.bak"
+  register: nvim_backup_stat
+  when: nvim_legacy_git_stat.stat.exists
+
+- name: Generate unique backup directory on collision
   ansible.builtin.tempfile:
     state: directory
     path: "{{ ansible_env.HOME }}/.config"
-    prefix: nvim.external-repo.bak.
-  register: nvim_backup_dir
-  when: nvim_legacy_git_stat.stat.exists
+    prefix: "nvim.external-repo.bak.{{ ansible_date_time.epoch }}."
+  register: nvim_collision_backup_dir
+  when: nvim_legacy_git_stat.stat.exists and nvim_backup_stat.stat.exists
 
-- name: Remove temporary directory placeholder before move
+- name: Remove collision directory placeholder before move
   ansible.builtin.file:
-    path: "{{ nvim_backup_dir.path }}"
+    path: "{{ nvim_collision_backup_dir.path }}"
     state: absent
-  when: nvim_legacy_git_stat.stat.exists
+  when: nvim_legacy_git_stat.stat.exists and nvim_backup_stat.stat.exists
 
 - name: Backup legacy external git repository configuration
   ansible.builtin.command: >-
     mv
     "{{ ansible_env.HOME }}/.config/nvim"
-    "{{ nvim_backup_dir.path }}"
+    "{{ nvim_collision_backup_dir.path
+        if nvim_backup_stat.stat.exists
+        else (ansible_env.HOME ~ '/.config/nvim.external-repo.bak') }}"
   when: nvim_legacy_git_stat.stat.exists
   changed_when: true
 
