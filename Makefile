@@ -4,7 +4,7 @@ help:
 	@echo "Available commands:"
 	@echo "  make setup     - Installs the environment (requires Ansible)"
 	@echo "  make update    - Pulls latest version from Git and updates environment"
-	@echo "  make sync-nvim - Syncs ~/.config/nvim changes back into monorepo"
+	@echo "  make sync-nvim - Syncs ~/.config/nvim changes into monorepo (use SYNC_DELETE=1 to sync file deletions)"
 	@echo "  make test      - Runs Molecule acceptance tests"
 	@echo "  make lint      - Runs pre-commit and ansible-lint checks"
 
@@ -17,9 +17,16 @@ update:
 	@echo "=> Updating environment..."
 	@$(MAKE) setup
 
+# Sync changes made in ~/.config/nvim back into the monorepo.
+# By default, modified/new files are synchronized without removing deleted files
+# from the repository (to protect against accidental loss from partial local checkouts).
+# To explicitly synchronize file deletions, pass SYNC_DELETE=1 (e.g., make sync-nvim SYNC_DELETE=1).
+SYNC_DELETE ?= 0
+RSYNC_DELETE_FLAG := $(if $(filter 1 true,$(SYNC_DELETE)),--delete,)
+
 sync-nvim:
-	@echo "=> Syncing ~/.config/nvim changes back to monorepo..."
-	rsync -av \
+	@echo "=> Syncing ~/.config/nvim changes back to monorepo (deletions: $(if $(filter 1 true,$(SYNC_DELETE)),enabled,disabled))..."
+	rsync -av $(RSYNC_DELETE_FLAG) \
 		--exclude='.git*' \
 		--exclude='.managed_manifest.json' \
 		--exclude='*.swp' \

@@ -81,6 +81,7 @@
 
 - name: Clone and build Neovim # noqa: command-instead-of-module
   ansible.builtin.shell: |
+    set -eo pipefail
     rm -rf /tmp/neovim
     git clone https://github.com/neovim/neovim.git /tmp/neovim
     cd /tmp/neovim
