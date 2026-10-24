@@ -1,13 +1,42 @@
 ---
-- name: Ensure Neovim config directory exists
+- name: Ensure ~/.config directory exists
   ansible.builtin.file:
-    path: ~/.config
+    path: "{{ ansible_env.HOME }}/.config"
     state: directory
     mode: "0755"
 
-- name: Clone or update Neovim configuration
-  ansible.builtin.git:
-    repo: "https://github.com/PrzemyslawSagalo/nvim.git"
-    dest: ~/.config/nvim
-    version: main
-    update: true
+- name: Check for legacy external git repository in ~/.config/nvim
+  ansible.builtin.stat:
+    path: "{{ ansible_env.HOME }}/.config/nvim/.git"
+  register: nvim_legacy_git_stat
+
+- name: Check for pre-existing legacy backup directory
+  ansible.builtin.stat:
+    path: "{{ ansible_env.HOME }}/.config/nvim.external-repo.bak"
+  register: nvim_backup_stat
+  when: nvim_legacy_git_stat.stat.exists
+
+- name: Backup legacy external git repository configuration
+  ansible.builtin.command: >-
+    mv
+    "{{ ansible_env.HOME }}/.config/nvim"
+    "{{ ansible_env.HOME }}/.config/nvim.external-repo.bak{{
+      '.' ~ (ansible_date_time.epoch | default('collision'))
+      if nvim_backup_stat.stat.exists else '' }}"
+  when: nvim_legacy_git_stat.stat.exists
+  changed_when: true
+
+- name: Deploy Neovim configuration from monorepo
+  ansible.builtin.copy:
+    src: files/nvim/
+    dest: "{{ ansible_env.HOME }}/.config/nvim/"
+    mode: preserve
+    directory_mode: "0755"
+
+- name: Ensure Neovim utility and test scripts are executable
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/.config/nvim/{{ item }}"
+    mode: "0755"
+  loop:
+    - clean_cache.sh
+    - tests/run_all.sh

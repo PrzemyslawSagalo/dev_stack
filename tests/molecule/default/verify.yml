@@ -281,3 +281,53 @@
         that:
           - "lazygit_config_stat.stat.exists"
           - "lazygit_config_stat.stat.mode == '0644'"
+
+    # Neovim Configuration & Integrity Verification
+    - name: Check ~/.config/nvim/init.lua exists and is non-empty
+      ansible.builtin.stat:
+        path: "{{ ansible_env.HOME }}/.config/nvim/init.lua"
+      register: nvim_init_stat
+
+    - name: Assert Neovim init.lua exists and is non-empty
+      ansible.builtin.assert:
+        that:
+          - "nvim_init_stat.stat.exists"
+          - "nvim_init_stat.stat.size > 0"
+
+    - name: Check Neovim scripts executable permissions
+      ansible.builtin.stat:
+        path: "{{ ansible_env.HOME }}/.config/nvim/{{ item }}"
+      register: nvim_scripts_stat
+      loop:
+        - clean_cache.sh
+        - tests/run_all.sh
+
+    - name: Assert Neovim scripts exist and are executable
+      ansible.builtin.assert:
+        that:
+          - "item.stat.exists"
+          - "item.stat.executable"
+          - "item.stat.mode == '0755'"
+      loop: "{{ nvim_scripts_stat.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    - name: Verify Neovim legacy .git directory is absent in target
+      ansible.builtin.stat:
+        path: "{{ ansible_env.HOME }}/.config/nvim/.git"
+      register: nvim_git_dir_stat
+
+    - name: Assert Neovim configuration is not a git repository
+      ansible.builtin.assert:
+        that:
+          - "not nvim_git_dir_stat.stat.exists"
+
+    - name: Headless dry-run validation of Neovim configuration
+      ansible.builtin.command: nvim --headless -u "{{ ansible_env.HOME }}/.config/nvim/init.lua" "+qa"
+      register: nvim_headless_run
+      changed_when: false
+
+    - name: Assert Neovim starts and exits cleanly in headless mode
+      ansible.builtin.assert:
+        that:
+          - "nvim_headless_run.rc == 0"

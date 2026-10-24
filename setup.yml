@@ -12,3 +12,4 @@
       tags: dotfiles
     - role: nvim
       become: false
+      tags: nvim
