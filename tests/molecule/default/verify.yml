@@ -334,3 +334,13 @@
       ansible.builtin.assert:
         that:
           - "nvim_headless_run.rc == 0"
+
+    - name: Run Neovim test suite
+      ansible.builtin.command: bash "{{ ansible_env.HOME }}/.config/nvim/tests/run_all.sh"
+      register: nvim_tests_run
+      changed_when: false
+
+    - name: Assert Neovim test suite passes cleanly
+      ansible.builtin.assert:
+        that:
+          - "nvim_tests_run.rc == 0"

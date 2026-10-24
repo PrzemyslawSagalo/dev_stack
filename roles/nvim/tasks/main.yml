@@ -1,4 +1,17 @@
 ---
+- name: Check if Neovim executable is installed
+  ansible.builtin.stat:
+    path: /usr/local/bin/nvim
+  register: nvim_binary_stat
+
+- name: Ensure system Neovim prerequisites are installed
+  ansible.builtin.include_role:
+    name: system
+    tasks_from: nvim.yml
+    apply:
+      become: true
+  when: not nvim_binary_stat.stat.exists
+
 - name: Ensure ~/.config directory exists
   ansible.builtin.file:
     path: "{{ ansible_env.HOME }}/.config"
@@ -30,7 +43,7 @@
     state: absent
   when: nvim_legacy_git_stat.stat.exists and nvim_backup_stat.stat.exists
 
-- name: Backup legacy external git repository configuration
+- name: Backup legacy external git repository configuration # noqa: command-instead-of-module
   ansible.builtin.command: >-
     mv
     "{{ ansible_env.HOME }}/.config/nvim"
