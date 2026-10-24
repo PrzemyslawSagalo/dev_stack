@@ -50,7 +50,5 @@
   loop_control:
     label: "{{ item.path }}"
   when: >-
-    (item.path | replace(ansible_env.HOME ~ '/.config/nvim/', ''))
-    not in (lookup('ansible.builtin.filetree', role_path ~ '/files/nvim/')
-    | selectattr('state', 'equalto', 'file')
-    | map(attribute='path') | list)
+    not ((role_path ~ '/files/nvim/' ~
+    (item.path | replace(ansible_env.HOME ~ '/.config/nvim/', ''))) is file)
