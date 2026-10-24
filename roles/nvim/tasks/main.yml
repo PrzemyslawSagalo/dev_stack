@@ -34,6 +34,12 @@
   failed_when: false
   changed_when: false
 
+- name: Check if rsync prerequisite is available # noqa: command-instead-of-module
+  ansible.builtin.command: rsync --version
+  register: nvim_rsync_output
+  failed_when: false
+  changed_when: false
+
 - name: Ensure basic system utilities are installed if missing
   ansible.builtin.include_role:
     name: system
@@ -42,7 +48,7 @@
       become: true
       tags:
         - nvim
-  when: nvim_git_output.rc != 0
+  when: nvim_git_output.rc != 0 or nvim_rsync_output.rc != 0
 
 - name: Determine if installed Neovim version satisfies requirement (v0.12+)
   ansible.builtin.set_fact:
