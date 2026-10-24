@@ -5,6 +5,21 @@
   failed_when: false
   changed_when: false
 
+- name: Resolve Neovim executable path
+  ansible.builtin.command: which nvim
+  register: nvim_path_output
+  failed_when: false
+  changed_when: false
+  when: nvim_version_output.rc == 0
+
+- name: Set Neovim executable path fact
+  ansible.builtin.set_fact:
+    nvim_binary_path: "{{ nvim_path_output.stdout.strip() }}"
+  when:
+    - nvim_version_output.rc == 0
+    - nvim_path_output.rc is defined
+    - nvim_path_output.rc == 0
+
 - name: Check if ripgrep prerequisite is available
   ansible.builtin.command: which rg
   register: nvim_rg_output
@@ -39,19 +54,21 @@
   when:
     - nvim_version_output.rc == 0
     - not (nvim_version_valid | bool)
+    - nvim_binary_path is defined
   block:
     - name: Backup existing Neovim binary before upgrade
       ansible.builtin.copy:
-        src: /usr/local/bin/nvim
-        dest: /usr/local/bin/nvim.pre-upgrade.bak
+        src: "{{ nvim_binary_path }}"
+        dest: "{{ nvim_binary_path }}.pre-upgrade.bak"
         remote_src: true
         mode: preserve
       become: true
 
     - name: Remove outdated Neovim binary to trigger source build
       ansible.builtin.file:
-        path: /usr/local/bin/nvim
+        path: "{{ item }}"
         state: absent
+      loop: "{{ [nvim_binary_path, '/usr/local/bin/nvim'] | unique }}"
       become: true
 
     - name: Build and install updated Neovim from source
@@ -65,14 +82,14 @@
 
     - name: Clean up temporary backup after successful upgrade
       ansible.builtin.file:
-        path: /usr/local/bin/nvim.pre-upgrade.bak
+        path: "{{ nvim_binary_path }}.pre-upgrade.bak"
         state: absent
       become: true
   rescue:
     - name: Restore existing Neovim binary after failed upgrade
       ansible.builtin.copy:
-        src: /usr/local/bin/nvim.pre-upgrade.bak
-        dest: /usr/local/bin/nvim
+        src: "{{ nvim_binary_path }}.pre-upgrade.bak"
+        dest: "{{ nvim_binary_path }}"
         remote_src: true
         mode: preserve
       become: true
