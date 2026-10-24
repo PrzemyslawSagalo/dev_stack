@@ -10,7 +10,6 @@
       - gcc
       - make
       - cmake
-      - curl
     state: present
   when: ansible_os_family == 'Debian'
 
@@ -24,7 +23,6 @@
       - gcc
       - make
       - cmake
-      - curl
     state: present
   when: ansible_os_family == 'RedHat'
 
