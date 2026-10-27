@@ -27,7 +27,16 @@ elif command -v dnf >/dev/null 2>&1 || command -v microdnf >/dev/null 2>&1 || co
         PKG_MGR="microdnf"
     fi
     echo "==> Detected RHEL/Amazon Linux family ($PKG_MGR). Installing base dependencies..."
-    $SUDO "$PKG_MGR" install -y git make python3 python3-pip
+    if [ "$PKG_MGR" = "microdnf" ]; then
+        # Install dnf and python3-dnf bindings so downstream Ansible plays (ansible.builtin.dnf) succeed
+        $SUDO "$PKG_MGR" install -y git make python3 python3-pip dnf python3-dnf 2>/dev/null || \
+            $SUDO "$PKG_MGR" install -y git make python3 python3-pip
+        if command -v dnf >/dev/null 2>&1; then
+            PKG_MGR="dnf"
+        fi
+    else
+        $SUDO "$PKG_MGR" install -y git make python3 python3-pip
+    fi
 
     if ! command -v ansible-playbook >/dev/null 2>&1; then
         echo "==> Resolving Ansible installation..."

@@ -113,6 +113,51 @@ EOF
     return 0
 }
 
+test_microdnf_base_packages() {
+    local test_dir
+    test_dir="$(mktemp -d)"
+
+    touch "$test_dir/setup.yml"
+    local mock_bin="$test_dir/mock_bin"
+    mkdir -p "$mock_bin"
+
+    cat << 'EOF' > "$mock_bin/sudo"
+#!/bin/sh
+exec "$@"
+EOF
+    cat << 'EOF' > "$mock_bin/microdnf"
+#!/bin/sh
+echo "MICRODNF_CALLED: $@"
+exit 0
+EOF
+    cat << 'EOF' > "$mock_bin/make"
+#!/bin/sh
+exit 0
+EOF
+    cat << 'EOF' > "$mock_bin/ansible-playbook"
+#!/bin/sh
+exit 0
+EOF
+    chmod +x "$mock_bin"/*
+
+    for cmd in bash dirname basename uname cut sed grep awk date echo cat mkdir rm mktemp which id env; do
+        target=$(command -v "$cmd" 2>/dev/null || true)
+        if [ -n "$target" ] && [ -x "$target" ]; then
+            ln -s "$target" "$mock_bin/$cmd"
+        fi
+    done
+
+    local output
+    output=$(cd "$test_dir" && PATH="$mock_bin" bash "$BOOTSTRAP_SCRIPT")
+    rm -rf "$test_dir"
+
+    if ! echo "$output" | grep -q "MICRODNF_CALLED: install -y git make python3 python3-pip dnf python3-dnf"; then
+        echo "Expected microdnf to install base packages including dnf and python3-dnf, got: $output" >&2
+        return 1
+    fi
+    return 0
+}
+
 test_rpm_pip_fallback() {
     local test_dir
     test_dir="$(mktemp -d)"
@@ -263,6 +308,7 @@ EOF
 
 run_test "Debian/Ubuntu package installation flow" test_apt_path
 run_test "RPM base package installation" test_rpm_base_packages
+run_test "microdnf base package installation with dnf bindings" test_microdnf_base_packages
 run_test "RPM 3-tier fallback to python3 -m pip install" test_rpm_pip_fallback
 run_test "PATH export and enhancement before make setup" test_path_enhancement
 run_test "Skip Ansible installation if already present" test_skip_ansible_when_already_installed

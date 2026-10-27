@@ -192,6 +192,7 @@ EOF
 setup:
 	@echo "==> MOCK_MAKE_SETUP_START"
 	ansible-playbook --version
+	python3 -c "import dnf"
 	@echo "==> MOCK_MAKE_SETUP_SUCCESS"
 EOF
 
@@ -200,7 +201,7 @@ EOF
         -v "$workspace:/workspace:rw" \
         -w "/workspace" \
         registry.access.redhat.com/ubi9/ubi-minimal:latest \
-        bash -c "bash /bootstrap.sh" > "$workspace/output.log" 2>&1 || {
+        sh -c "command -v bash >/dev/null 2>&1 || microdnf install -y bash; bash /bootstrap.sh" > "$workspace/output.log" 2>&1 || {
             cat "$workspace/output.log" >&2
             rm -rf "$workspace"
             return 1
