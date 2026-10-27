@@ -5,21 +5,8 @@ return {
         config = function() require("mason").setup() end
     },
     {
-        'williamboman/mason-lspconfig.nvim',
-        lazy = false,
-        dependencies = { "williamboman/mason.nvim" },
-        config = function()
-            require("mason-lspconfig").setup({
-                ensure_installed = { "marksman", "bashls", "clangd", "lua_ls", "ruff" },
-                automatic_installation = true,
-            })
-        end
-    },
-    {
         'neovim/nvim-lspconfig',
-        event = { "BufReadPre", "BufNewFile" },
         dependencies = {
-            "williamboman/mason-lspconfig.nvim",
             "ray-x/lsp_signature.nvim"
         },
         keys = {
@@ -72,5 +59,19 @@ return {
 
             vim.api.nvim_set_hl(0, "DiagnosticUnnecessary", { fg = "#808080", undercurl = true, default = true })
         end
-    }
+    },
+    {
+        'williamboman/mason-lspconfig.nvim',
+        lazy = false,
+        dependencies = {
+            "williamboman/mason.nvim",
+            "neovim/nvim-lspconfig",
+        },
+        config = function()
+            require("mason-lspconfig").setup({
+                ensure_installed = { "marksman", "bashls", "clangd", "lua_ls", "ruff" },
+                automatic_installation = true,
+            })
+        end
+    },
 }
