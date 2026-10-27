@@ -174,8 +174,51 @@ test_non_root_no_sudo() {
     return $result
 }
 
+test_ubi9_minimal() {
+    local workspace
+    workspace="$(mktemp -d)"
+
+    cat << 'EOF' > "$workspace/setup.yml"
+---
+- name: Smoke test playbook
+  hosts: localhost
+  connection: local
+  tasks:
+    - name: Ping
+      ansible.builtin.ping:
+EOF
+
+    cat << 'EOF' > "$workspace/Makefile"
+setup:
+	@echo "==> MOCK_MAKE_SETUP_START"
+	ansible-playbook --version
+	@echo "==> MOCK_MAKE_SETUP_SUCCESS"
+EOF
+
+    docker run --rm \
+        -v "$BOOTSTRAP_SCRIPT:/bootstrap.sh:ro" \
+        -v "$workspace:/workspace:rw" \
+        -w "/workspace" \
+        registry.access.redhat.com/ubi9/ubi-minimal:latest \
+        bash -c "bash /bootstrap.sh" > "$workspace/output.log" 2>&1 || {
+            cat "$workspace/output.log" >&2
+            rm -rf "$workspace"
+            return 1
+        }
+
+    local result=0
+    if ! grep -q "MOCK_MAKE_SETUP_SUCCESS" "$workspace/output.log"; then
+        echo "Expected MOCK_MAKE_SETUP_SUCCESS on UBI 9 Minimal" >&2
+        cat "$workspace/output.log" >&2
+        result=1
+    fi
+    rm -rf "$workspace"
+    return $result
+}
+
 run_test "Amazon Linux 2023 Container Smoke Test" test_amazonlinux_2023
 run_test "Red Hat UBI 9 Container Smoke Test" test_ubi9
+run_test "Red Hat UBI 9 Minimal (microdnf) Container Smoke Test" test_ubi9_minimal
 run_test "Ubuntu 22.04 Container Smoke Test" test_ubuntu_2204
 run_test "Non-root without sudo Container Test" test_non_root_no_sudo
 

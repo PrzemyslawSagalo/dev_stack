@@ -26,14 +26,18 @@ test_syntax() {
     bash -n "$BOOTSTRAP_SCRIPT"
 }
 
-test_in_repo_detection() {
+test_in_repo_script_dir_detection() {
     local test_dir
     test_dir="$(mktemp -d)"
 
-    touch "$test_dir/setup.yml"
     local mock_bin="$test_dir/mock_bin"
     mkdir -p "$mock_bin"
 
+    # Stub out apt-get so host package manager is never called on Debian/Ubuntu
+    cat << 'EOF' > "$mock_bin/apt-get"
+#!/bin/sh
+exit 0
+EOF
     cat << 'EOF' > "$mock_bin/sudo"
 #!/bin/sh
 exec "$@"
@@ -44,7 +48,7 @@ exit 0
 EOF
     cat << 'EOF' > "$mock_bin/git"
 #!/bin/sh
-echo "GIT_CALLED" >&2
+echo "GIT_CALLED"
 exit 0
 EOF
     cat << 'EOF' > "$mock_bin/make"
@@ -54,12 +58,63 @@ exit 0
 EOF
     chmod +x "$mock_bin"/*
 
+    # When invoking bootstrap.sh located in repo from an external directory, it must target the repo root
     local output
-    output=$(cd "$test_dir" && PATH="$mock_bin:$PATH" bash "$BOOTSTRAP_SCRIPT")
+    output=$(cd "$test_dir" && PATH="$mock_bin:$PATH" bash "$BOOTSTRAP_SCRIPT" 2>&1)
+    rm -rf "$test_dir"
+
+    if ! echo "$output" | grep -q "MAKE_PWD=$REPO_ROOT"; then
+        echo "Expected MAKE_PWD to be $REPO_ROOT, but got: $output" >&2
+        return 1
+    fi
+
+    if echo "$output" | grep -q "GIT_CALLED"; then
+        echo "Git should not be called in in-repo mode" >&2
+        return 1
+    fi
+    return 0
+}
+
+test_in_repo_piped_detection() {
+    local test_dir
+    test_dir="$(mktemp -d)"
+
+    touch "$test_dir/setup.yml"
+    local mock_bin="$test_dir/mock_bin"
+    mkdir -p "$mock_bin"
+
+    # Stub out apt-get so host package manager is never called on Debian/Ubuntu
+    cat << 'EOF' > "$mock_bin/apt-get"
+#!/bin/sh
+exit 0
+EOF
+    cat << 'EOF' > "$mock_bin/sudo"
+#!/bin/sh
+exec "$@"
+EOF
+    cat << 'EOF' > "$mock_bin/dnf"
+#!/bin/sh
+exit 0
+EOF
+    cat << 'EOF' > "$mock_bin/git"
+#!/bin/sh
+echo "GIT_CALLED"
+exit 0
+EOF
+    cat << 'EOF' > "$mock_bin/make"
+#!/bin/sh
+echo "MAKE_PWD=$PWD"
+exit 0
+EOF
+    chmod +x "$mock_bin"/*
+
+    # When piped via stdin (curl | bash), it must detect ./setup.yml in current working directory
+    local output
+    output=$(cd "$test_dir" && PATH="$mock_bin:$PATH" bash < "$BOOTSTRAP_SCRIPT" 2>&1)
     rm -rf "$test_dir"
 
     if ! echo "$output" | grep -q "MAKE_PWD=$test_dir"; then
-        echo "Expected MAKE_PWD to be $test_dir, but got: $output" >&2
+        echo "Expected MAKE_PWD to be $test_dir for piped execution, but got: $output" >&2
         return 1
     fi
 
@@ -79,9 +134,11 @@ test_standalone_cloning() {
     local mock_bin="$test_dir/mock_bin"
     mkdir -p "$mock_bin"
 
-    # Simulate standalone bootstrap.sh downloaded outside repo
-    cp "$BOOTSTRAP_SCRIPT" "$test_dir/bootstrap.sh"
-
+    # Stub out apt-get so host package manager is never called on Debian/Ubuntu
+    cat << 'EOF' > "$mock_bin/apt-get"
+#!/bin/sh
+exit 0
+EOF
     cat << 'EOF' > "$mock_bin/sudo"
 #!/bin/sh
 exec "$@"
@@ -104,8 +161,9 @@ exit 0
 EOF
     chmod +x "$mock_bin"/*
 
+    # Piped execution outside of repo should trigger clone to $HOME/.dev_env
     local output
-    output=$(cd "$test_dir" && HOME="$mock_home" PATH="$mock_bin:$PATH" bash "$test_dir/bootstrap.sh")
+    output=$(cd "$test_dir" && HOME="$mock_home" PATH="$mock_bin:$PATH" bash < "$BOOTSTRAP_SCRIPT" 2>&1)
     local expected_dest="$mock_home/.dev_env"
     rm -rf "$test_dir"
 
@@ -159,10 +217,57 @@ EOF
     return 0
 }
 
+test_microdnf_detection() {
+    local test_dir
+    test_dir="$(mktemp -d)"
+
+    touch "$test_dir/setup.yml"
+    local mock_bin="$test_dir/mock_bin"
+    mkdir -p "$mock_bin"
+
+    cat << 'EOF' > "$mock_bin/sudo"
+#!/bin/sh
+exec "$@"
+EOF
+    cat << 'EOF' > "$mock_bin/microdnf"
+#!/bin/sh
+echo "MICRODNF_CALLED: $@"
+exit 0
+EOF
+    cat << 'EOF' > "$mock_bin/make"
+#!/bin/sh
+exit 0
+EOF
+    cat << 'EOF' > "$mock_bin/ansible-playbook"
+#!/bin/sh
+exit 0
+EOF
+    chmod +x "$mock_bin"/*
+
+    for cmd in bash dirname basename uname cut sed grep awk date echo cat mkdir rm mktemp id env; do
+        target=$(command -v "$cmd" 2>/dev/null || true)
+        if [ -n "$target" ] && [ -x "$target" ]; then
+            ln -s "$target" "$mock_bin/$cmd"
+        fi
+    done
+
+    local output
+    output=$(cd "$test_dir" && PATH="$mock_bin" bash "$BOOTSTRAP_SCRIPT" 2>&1)
+    rm -rf "$test_dir"
+
+    if ! echo "$output" | grep -q "MICRODNF_CALLED: install -y git make python3 python3-pip"; then
+        echo "Expected microdnf to be detected and called, got: $output" >&2
+        return 1
+    fi
+    return 0
+}
+
 run_test "Bash syntax verification" test_syntax
-run_test "In-repo workspace detection when ./setup.yml is present" test_in_repo_detection
-run_test "Standalone workspace cloning when ./setup.yml is missing" test_standalone_cloning
+run_test "In-repo workspace detection via script directory" test_in_repo_script_dir_detection
+run_test "In-repo workspace detection via piped stdin (curl | bash)" test_in_repo_piped_detection
+run_test "Standalone workspace cloning when setup.yml is missing" test_standalone_cloning
 run_test "Privilege escalation error check (non-root without sudo)" test_privilege_escalation_missing_sudo
+run_test "Microdnf package manager detection on minimal UBI" test_microdnf_detection
 
 echo "========================================"
 echo "All $PASS_COUNT / $TEST_COUNT logic tests passed successfully."

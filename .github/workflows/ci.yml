@@ -24,6 +24,10 @@ jobs:
           pip install pre-commit
       - name: Run pre-commit
         run: pre-commit run --all-files
+      - name: Run bootstrap unit tests
+        run: |
+          tests/test_bootstrap_logic.sh
+          tests/test_bootstrap_packages.sh
 
   molecule:
     runs-on: ubuntu-latest
