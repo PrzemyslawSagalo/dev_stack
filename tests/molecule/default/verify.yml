@@ -348,7 +348,7 @@
           - "nvim_smoke_tests_run.rc == 0"
 
     - name: Provision plugins for functional test execution
-      ansible.builtin.command: nvim --headless -c "lua require('lazy').sync({ wait = true, show = false })" -c "qa"
+      ansible.builtin.command: nvim --headless -c "lua require('lazy').restore({ wait = true, show = false })" -c "qa"
       register: nvim_plugin_sync
       changed_when: false
 

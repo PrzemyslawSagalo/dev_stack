@@ -257,6 +257,6 @@
 - name: Pre-provision Neovim plugins via lazy.nvim
   ansible.builtin.command: >-
     nvim --headless
-    -c "lua require('lazy').sync({ wait = true, show = false })"
+    -c "lua require('lazy').restore({ wait = true, show = false })"
     -c "qa"
   changed_when: false
