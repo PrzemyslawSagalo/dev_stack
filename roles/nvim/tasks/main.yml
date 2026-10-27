@@ -1,13 +1,255 @@
 ---
-- name: Ensure Neovim config directory exists
+- name: Check if Neovim executable is available
+  ansible.builtin.command: nvim --version
+  register: nvim_version_output
+  failed_when: false
+  changed_when: false
+
+- name: Resolve Neovim executable path # noqa: command-instead-of-shell
+  ansible.builtin.shell: command -v nvim
+  register: nvim_path_output
+  failed_when: false
+  changed_when: false
+  when: nvim_version_output.rc == 0
+
+- name: Set Neovim executable path fact
+  ansible.builtin.set_fact:
+    nvim_binary_path: >-
+      {{
+        nvim_path_output.stdout.strip()
+        if (nvim_path_output.rc | default(1) == 0 and nvim_path_output.stdout | default('') != '')
+        else '/usr/local/bin/nvim'
+      }}
+  when: nvim_version_output.rc == 0
+
+- name: Check if ripgrep prerequisite is available
+  ansible.builtin.command: rg --version
+  register: nvim_rg_output
+  failed_when: false
+  changed_when: false
+
+- name: Check if git prerequisite is available # noqa: command-instead-of-module
+  ansible.builtin.command: git --version
+  register: nvim_git_output
+  failed_when: false
+  changed_when: false
+
+- name: Check if rsync prerequisite is available # noqa: command-instead-of-module
+  ansible.builtin.command: rsync --version
+  register: nvim_rsync_output
+  failed_when: false
+  changed_when: false
+
+- name: Determine if installed Neovim version satisfies requirement (v0.12+)
+  ansible.builtin.set_fact:
+    nvim_version_valid: >-
+      {{
+        nvim_version_output.rc == 0 and
+        (nvim_version_output.stdout is search('NVIM v(0\.(1[2-9]|[2-9][0-9])|[1-9])'))
+      }}
+
+- name: Ensure basic system utilities are installed if missing
+  ansible.builtin.include_role:
+    name: system
+    tasks_from: init.yml
+    apply:
+      become: true
+      tags:
+        - nvim
+  when: not (nvim_version_valid | bool) or nvim_git_output.rc != 0 or nvim_rsync_output.rc != 0
+
+- name: Upgrade Neovim with rollback protection if installed version is outdated
+  when:
+    - nvim_version_output.rc == 0
+    - not (nvim_version_valid | bool)
+    - nvim_binary_path is defined
+  block:
+    - name: Backup existing Neovim binary before upgrade
+      ansible.builtin.copy:
+        src: "{{ nvim_binary_path }}"
+        dest: "{{ nvim_binary_path }}.pre-upgrade.bak"
+        remote_src: true
+        mode: preserve
+      become: true
+
+    - name: Remove outdated Neovim binary to trigger source build
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop: "{{ [nvim_binary_path, '/usr/local/bin/nvim'] | unique }}"
+      become: true
+
+    - name: Build and install updated Neovim from source
+      ansible.builtin.include_role:
+        name: system
+        tasks_from: nvim.yml
+        apply:
+          become: true
+          tags:
+            - nvim
+
+    - name: Clean up temporary backup after successful upgrade
+      ansible.builtin.file:
+        path: "{{ nvim_binary_path }}.pre-upgrade.bak"
+        state: absent
+      become: true
+  rescue:
+    - name: Remove failed Neovim install from default target if different from original path
+      ansible.builtin.file:
+        path: /usr/local/bin/nvim
+        state: absent
+      when: nvim_binary_path != '/usr/local/bin/nvim'
+      become: true
+
+    - name: Clean up temporary Neovim build checkout after failed upgrade
+      ansible.builtin.file:
+        path: /tmp/neovim
+        state: absent
+      become: true
+
+    - name: Restore existing Neovim binary after failed upgrade
+      ansible.builtin.copy:
+        src: "{{ nvim_binary_path }}.pre-upgrade.bak"
+        dest: "{{ nvim_binary_path }}"
+        remote_src: true
+        mode: preserve
+      become: true
+
+    - name: Clean up temporary backup after restoration
+      ansible.builtin.file:
+        path: "{{ nvim_binary_path }}.pre-upgrade.bak"
+        state: absent
+      become: true
+
+    - name: Fail with informative upgrade failure message
+      ansible.builtin.fail:
+        msg: "Neovim upgrade failed. Previous Neovim binary was restored from backup."
+
+- name: Ensure ripgrep prerequisite is installed if missing
+  ansible.builtin.include_role:
+    name: system
+    tasks_from: ripgrep.yml
+    apply:
+      become: true
+      tags:
+        - nvim
+  when: nvim_rg_output.rc != 0
+
+- name: Ensure system Neovim and build dependencies are installed when missing
+  ansible.builtin.include_role:
+    name: system
+    tasks_from: nvim.yml
+    apply:
+      become: true
+      tags:
+        - nvim
+  when: nvim_version_output.rc != 0
+
+- name: Re-check Neovim version if installed during this run
+  ansible.builtin.command: nvim --version
+  register: nvim_version_post_install
+  when: not (nvim_version_valid | bool)
+  changed_when: false
+
+- name: Validate Neovim version is compatible (v0.12+)
+  ansible.builtin.assert:
+    that:
+      - >-
+        (nvim_version_post_install.stdout
+        if not (nvim_version_valid | bool)
+        else nvim_version_output.stdout)
+        is search('NVIM v(0\.(1[2-9]|[2-9][0-9])|[1-9])')
+    fail_msg: "Neovim version must be at least v0.12.0 for this configuration (nvim-treesitter main requirement)"
+
+- name: Ensure ~/.config directory exists
   ansible.builtin.file:
-    path: ~/.config
+    path: "{{ ansible_env.HOME }}/.config"
     state: directory
     mode: "0755"
 
-- name: Clone or update Neovim configuration
-  ansible.builtin.git:
-    repo: "https://github.com/PrzemyslawSagalo/nvim.git"
-    dest: ~/.config/nvim
-    version: main
-    update: true
+- name: Check for legacy external git repository in ~/.config/nvim
+  ansible.builtin.stat:
+    path: "{{ ansible_env.HOME }}/.config/nvim/.git"
+  register: nvim_legacy_git_stat
+
+- name: Check for pre-existing legacy backup directory
+  ansible.builtin.stat:
+    path: "{{ ansible_env.HOME }}/.config/nvim.external-repo.bak"
+  register: nvim_backup_stat
+  when: nvim_legacy_git_stat.stat.exists
+
+- name: Generate unique backup directory on collision
+  ansible.builtin.tempfile:
+    state: directory
+    path: "{{ ansible_env.HOME }}/.config"
+    prefix: "nvim.external-repo.bak.{{ ansible_date_time.epoch }}."
+  register: nvim_collision_backup_dir
+  when: nvim_legacy_git_stat.stat.exists and nvim_backup_stat.stat.exists
+
+- name: Remove collision directory placeholder before move
+  ansible.builtin.file:
+    path: "{{ nvim_collision_backup_dir.path }}"
+    state: absent
+  when: nvim_legacy_git_stat.stat.exists and nvim_backup_stat.stat.exists
+
+- name: Backup legacy external git repository configuration # noqa: command-instead-of-module
+  ansible.builtin.command: >-
+    mv
+    "{{ ansible_env.HOME }}/.config/nvim"
+    "{{ nvim_collision_backup_dir.path
+        if nvim_backup_stat.stat.exists
+        else (ansible_env.HOME ~ '/.config/nvim.external-repo.bak') }}"
+  when: nvim_legacy_git_stat.stat.exists
+  changed_when: true
+
+- name: Discover source files in monorepo
+  ansible.builtin.find:
+    paths: "{{ role_path }}/files/nvim"
+    file_type: file
+    recurse: true
+  delegate_to: localhost
+  become: false
+  register: nvim_source_files
+
+- name: Set managed files list
+  ansible.builtin.set_fact:
+    nvim_current_managed: >-
+      {{ nvim_source_files.files | map(attribute='path') |
+         map('replace', role_path ~ '/files/nvim/', '') | list }}
+
+- name: Check for existing managed files manifest
+  ansible.builtin.stat:
+    path: "{{ ansible_env.HOME }}/.config/nvim/.managed_manifest.json"
+  register: nvim_manifest_stat
+
+- name: Read previous managed files manifest
+  ansible.builtin.slurp:
+    src: "{{ ansible_env.HOME }}/.config/nvim/.managed_manifest.json"
+  register: nvim_manifest_content
+  when: nvim_manifest_stat.stat.exists
+
+- name: Set previous managed files list
+  ansible.builtin.set_fact:
+    nvim_previous_managed: >-
+      {{ (nvim_manifest_content.content | b64decode | from_json)
+         if nvim_manifest_stat.stat.exists else [] }}
+
+- name: Reconcile removed managed Neovim files
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/.config/nvim/{{ item }}"
+    state: absent
+  loop: "{{ nvim_previous_managed }}"
+  when: item not in nvim_current_managed
+
+- name: Deploy Neovim configuration from monorepo
+  ansible.builtin.copy:
+    src: nvim/
+    dest: "{{ ansible_env.HOME }}/.config/nvim/"
+    mode: preserve
+    directory_mode: "0755"
+
+- name: Save managed files manifest
+  ansible.builtin.copy:
+    content: "{{ nvim_current_managed | to_nice_json }}\n"
+    dest: "{{ ansible_env.HOME }}/.config/nvim/.managed_manifest.json"
+    mode: "0644"

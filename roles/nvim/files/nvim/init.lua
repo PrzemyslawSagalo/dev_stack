@@ -1,0 +1,5 @@
+require("core.globals")
+require("core.vim_options")
+require("core.autocmds")
+require("core.general_keymaps")
+require("core.lazy")

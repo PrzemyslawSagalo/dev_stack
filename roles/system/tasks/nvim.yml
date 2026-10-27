@@ -1,14 +1,17 @@
 ---
+- name: Include ripgrep installation tasks
+  ansible.builtin.include_tasks: ripgrep.yml
+
 - name: Install neovim dependencies (Debian)
   ansible.builtin.apt:
     name:
-      - ripgrep
       - exuberant-ctags
       - fuse
       - libfuse2
       - gettext
       - gcc
       - make
+      - cmake
     state: present
   when: ansible_os_family == 'Debian'
 
@@ -21,22 +24,8 @@
       - gettext
       - gcc
       - make
+      - cmake
     state: present
-  when: ansible_os_family == 'RedHat'
-
-- name: Install ripgrep (Amazon Linux)
-  ansible.builtin.shell: |
-    set -eo pipefail
-    TAG=$(curl -w '%{url_effective}' -I -L -s -S https://github.com/BurntSushi/ripgrep/releases/latest -o /dev/null | awk -F '/' '{print $NF}')
-    LATEST_RG_URL="https://github.com/BurntSushi/ripgrep/releases/download/${TAG}/ripgrep-${TAG}-x86_64-unknown-linux-musl.tar.gz"
-    LATEST_RG_FILE=$(basename "$LATEST_RG_URL")
-    curl -LO "$LATEST_RG_URL"
-    tar -xzf "$LATEST_RG_FILE"
-    RG_DIR=$(basename "$LATEST_RG_FILE" .tar.gz)
-    cp "$RG_DIR"/rg /usr/local/bin/
-    rm -rf "$RG_DIR" "$LATEST_RG_FILE"
-  args:
-    creates: /usr/local/bin/rg
   when: ansible_os_family == 'RedHat'
 
 - name: Download nvm install script
@@ -92,9 +81,13 @@
 
 - name: Clone and build Neovim # noqa: command-instead-of-module
   ansible.builtin.shell: |
+    set -e
+    rm -rf /tmp/neovim
     git clone https://github.com/neovim/neovim.git /tmp/neovim
     cd /tmp/neovim
     make -j "$(nproc)" CMAKE_BUILD_TYPE=RelWithDebInfo
     make install
+    rm -rf /tmp/neovim
   args:
+    executable: /bin/bash
     creates: /usr/local/bin/nvim
