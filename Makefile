@@ -1,12 +1,13 @@
-.PHONY: help setup update test lint sync-nvim
+.PHONY: help setup update test test-bootstrap lint sync-nvim
 
 help:
 	@echo "Available commands:"
-	@echo "  make setup     - Installs the environment (requires Ansible)"
-	@echo "  make update    - Pulls latest version from Git and updates environment"
-	@echo "  make sync-nvim - Syncs ~/.config/nvim changes into monorepo (use SYNC_DELETE=1 to sync file deletions)"
-	@echo "  make test      - Runs Molecule acceptance tests"
-	@echo "  make lint      - Runs pre-commit and ansible-lint checks"
+	@echo "  make setup          - Installs the environment (requires Ansible)"
+	@echo "  make update         - Pulls latest version from Git and updates environment"
+	@echo "  make sync-nvim      - Syncs ~/.config/nvim changes into monorepo (use SYNC_DELETE=1 to sync file deletions)"
+	@echo "  make test           - Runs Molecule acceptance tests"
+	@echo "  make test-bootstrap - Runs bootstrap container smoke tests across AL2023, UBI9, and Ubuntu"
+	@echo "  make lint           - Runs pre-commit and ansible-lint checks"
 
 setup:
 	ansible-playbook -i localhost, -c local setup.yml
@@ -55,6 +56,11 @@ sync-nvim:
 
 test:
 	cd tests && molecule test
+
+test-bootstrap:
+	tests/test_bootstrap_logic.sh
+	tests/test_bootstrap_packages.sh
+	tests/test_bootstrap.sh
 
 lint:
 	pre-commit run --all-files
