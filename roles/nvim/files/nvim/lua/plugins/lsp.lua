@@ -1,13 +1,25 @@
 return {
     {
         "williamboman/mason.nvim",
+        lazy = false,
         config = function() require("mason").setup() end
     },
-    { 'williamboman/mason-lspconfig.nvim' },
+    {
+        'williamboman/mason-lspconfig.nvim',
+        lazy = false,
+        dependencies = { "williamboman/mason.nvim" },
+        config = function()
+            require("mason-lspconfig").setup({
+                ensure_installed = { "marksman", "bashls", "clangd", "lua_ls", "ruff" },
+                automatic_installation = true,
+            })
+        end
+    },
     {
         'neovim/nvim-lspconfig',
         event = { "BufReadPre", "BufNewFile" },
         dependencies = {
+            "williamboman/mason-lspconfig.nvim",
             "ray-x/lsp_signature.nvim"
         },
         keys = {
@@ -15,7 +27,6 @@ return {
             { "<leader>ca", function() vim.lsp.buf.code_action() end, desc = "LSP Code Action" },
         },
         config = function()
-            local mason_lspconfig = require("mason-lspconfig")
             local cmp_nvim_lsp = require("cmp_nvim_lsp")
 
             local lsp_capabilities = cmp_nvim_lsp.default_capabilities()
@@ -31,10 +42,6 @@ return {
             }
 
             local servers = { "marksman", "bashls", "clangd", "lua_ls", "ruff" }
-
-            mason_lspconfig.setup({
-                ensure_installed = servers,
-            })
 
             -- Configure and enable servers using modern Neovim 0.11+ / 0.12+ API
             if vim.lsp and vim.lsp.enable and vim.lsp.config then
