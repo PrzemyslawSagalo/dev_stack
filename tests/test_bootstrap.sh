@@ -33,6 +33,7 @@ test_amazonlinux_2023() {
     local workspace
     workspace="$(mktemp -d)"
 
+    mkdir -p "$workspace/roles/system"
     cat << 'EOF' > "$workspace/setup.yml"
 ---
 - name: Smoke test playbook
@@ -46,6 +47,7 @@ EOF
     cat << 'EOF' > "$workspace/Makefile"
 setup:
 	@echo "==> MOCK_MAKE_SETUP_START"
+	command -v sudo
 	ansible-playbook --version
 	@echo "==> MOCK_MAKE_SETUP_SUCCESS"
 EOF
@@ -75,6 +77,7 @@ test_ubi9() {
     local workspace
     workspace="$(mktemp -d)"
 
+    mkdir -p "$workspace/roles/system"
     cat << 'EOF' > "$workspace/setup.yml"
 ---
 - name: Smoke test playbook
@@ -88,6 +91,7 @@ EOF
     cat << 'EOF' > "$workspace/Makefile"
 setup:
 	@echo "==> MOCK_MAKE_SETUP_START"
+	command -v sudo
 	ansible-playbook --version
 	@echo "==> MOCK_MAKE_SETUP_SUCCESS"
 EOF
@@ -117,6 +121,7 @@ test_ubuntu_2204() {
     local workspace
     workspace="$(mktemp -d)"
 
+    mkdir -p "$workspace/roles/system"
     cat << 'EOF' > "$workspace/setup.yml"
 ---
 - name: Smoke test playbook
@@ -130,6 +135,7 @@ EOF
     cat << 'EOF' > "$workspace/Makefile"
 setup:
 	@echo "==> MOCK_MAKE_SETUP_START"
+	command -v sudo
 	ansible-playbook --version
 	@echo "==> MOCK_MAKE_SETUP_SUCCESS"
 EOF
@@ -178,6 +184,7 @@ test_ubi9_minimal() {
     local workspace
     workspace="$(mktemp -d)"
 
+    mkdir -p "$workspace/roles/system"
     cat << 'EOF' > "$workspace/setup.yml"
 ---
 - name: Smoke test playbook
@@ -191,6 +198,8 @@ EOF
     cat << 'EOF' > "$workspace/Makefile"
 setup:
 	@echo "==> MOCK_MAKE_SETUP_START"
+	command -v sudo
+	command -v dnf
 	ansible-playbook --version
 	python3 -c "import dnf"
 	@echo "==> MOCK_MAKE_SETUP_SUCCESS"

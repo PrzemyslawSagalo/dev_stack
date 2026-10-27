@@ -80,6 +80,8 @@ test_in_repo_piped_detection() {
     test_dir="$(mktemp -d)"
 
     touch "$test_dir/setup.yml"
+    mkdir -p "$test_dir/roles/system"
+    touch "$test_dir/Makefile"
     local mock_bin="$test_dir/mock_bin"
     mkdir -p "$mock_bin"
 
@@ -232,6 +234,11 @@ EOF
     cat << 'EOF' > "$mock_bin/microdnf"
 #!/bin/sh
 echo "MICRODNF_CALLED: $@"
+cat << 'DNFMOCK' > "$(dirname "$0")/dnf"
+#!/bin/sh
+exit 0
+DNFMOCK
+chmod +x "$(dirname "$0")/dnf"
 exit 0
 EOF
     cat << 'EOF' > "$mock_bin/make"
@@ -244,7 +251,7 @@ exit 0
 EOF
     chmod +x "$mock_bin"/*
 
-    for cmd in bash dirname basename uname cut sed grep awk date echo cat mkdir rm mktemp id env; do
+    for cmd in bash dirname basename uname cut sed grep awk date echo cat mkdir rm mktemp id env chmod; do
         target=$(command -v "$cmd" 2>/dev/null || true)
         if [ -n "$target" ] && [ -x "$target" ]; then
             ln -s "$target" "$mock_bin/$cmd"
@@ -255,8 +262,62 @@ EOF
     output=$(cd "$test_dir" && PATH="$mock_bin" bash "$BOOTSTRAP_SCRIPT" 2>&1)
     rm -rf "$test_dir"
 
-    if ! echo "$output" | grep -q "MICRODNF_CALLED: install -y git make python3 python3-pip"; then
-        echo "Expected microdnf to be detected and called, got: $output" >&2
+    if ! echo "$output" | grep -q "MICRODNF_CALLED: install -y git make python3 python3-pip dnf python3-dnf sudo"; then
+        echo "Expected microdnf to install base packages, dnf bindings, and sudo, got: $output" >&2
+        return 1
+    fi
+    return 0
+}
+
+test_unvalidated_workspace_not_hijacked() {
+    local test_dir
+    test_dir="$(mktemp -d)"
+
+    # Create only setup.yml (without roles/system and Makefile)
+    touch "$test_dir/setup.yml"
+
+    local mock_home="$test_dir/fake_home"
+    mkdir -p "$mock_home"
+    local mock_bin="$test_dir/mock_bin"
+    mkdir -p "$mock_bin"
+
+    cat << 'EOF' > "$mock_bin/apt-get"
+#!/bin/sh
+exit 0
+EOF
+    cat << 'EOF' > "$mock_bin/sudo"
+#!/bin/sh
+exec "$@"
+EOF
+    cat << 'EOF' > "$mock_bin/dnf"
+#!/bin/sh
+exit 0
+EOF
+    cat << 'EOF' > "$mock_bin/git"
+#!/bin/sh
+if [ "$1" = "clone" ]; then
+    echo "CLONING_REPO"
+    mkdir -p "$3"
+fi
+exit 0
+EOF
+    cat << 'EOF' > "$mock_bin/make"
+#!/bin/sh
+echo "MAKE_PWD=$PWD"
+exit 0
+EOF
+    chmod +x "$mock_bin"/*
+
+    local output
+    output=$(cd "$test_dir" && HOME="$mock_home" PATH="$mock_bin:$PATH" bash < "$BOOTSTRAP_SCRIPT" 2>&1)
+    rm -rf "$test_dir"
+
+    if ! echo "$output" | grep -q "CLONING_REPO"; then
+        echo "Expected clone to be triggered when setup.yml lacks repo metadata, got: $output" >&2
+        return 1
+    fi
+    if ! echo "$output" | grep -q "MAKE_PWD=$mock_home/.dev_env"; then
+        echo "Expected MAKE_PWD to be $mock_home/.dev_env, got: $output" >&2
         return 1
     fi
     return 0
@@ -265,6 +326,7 @@ EOF
 run_test "Bash syntax verification" test_syntax
 run_test "In-repo workspace detection via script directory" test_in_repo_script_dir_detection
 run_test "In-repo workspace detection via piped stdin (curl | bash)" test_in_repo_piped_detection
+run_test "Unvalidated directory with setup.yml is not hijacked" test_unvalidated_workspace_not_hijacked
 run_test "Standalone workspace cloning when setup.yml is missing" test_standalone_cloning
 run_test "Privilege escalation error check (non-root without sudo)" test_privilege_escalation_missing_sudo
 run_test "Microdnf package manager detection on minimal UBI" test_microdnf_detection

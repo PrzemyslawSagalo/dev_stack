@@ -18,7 +18,7 @@ if command -v apt-get >/dev/null 2>&1; then
     PKG_MGR="apt-get"
     echo "==> Detected Debian/Ubuntu family ($PKG_MGR). Installing Git and Ansible..."
     $SUDO env DEBIAN_FRONTEND=noninteractive apt-get update
-    $SUDO env DEBIAN_FRONTEND=noninteractive apt-get install -y git ansible make
+    $SUDO env DEBIAN_FRONTEND=noninteractive apt-get install -y git ansible make sudo
 elif command -v dnf >/dev/null 2>&1 || command -v microdnf >/dev/null 2>&1 || command -v yum >/dev/null 2>&1; then
     PKG_MGR="yum"
     if command -v dnf >/dev/null 2>&1; then
@@ -28,14 +28,16 @@ elif command -v dnf >/dev/null 2>&1 || command -v microdnf >/dev/null 2>&1 || co
     fi
     echo "==> Detected RHEL/Amazon Linux family ($PKG_MGR). Installing base dependencies..."
     if [ "$PKG_MGR" = "microdnf" ]; then
-        # Install dnf and python3-dnf bindings so downstream Ansible plays (ansible.builtin.dnf) succeed
-        $SUDO "$PKG_MGR" install -y git make python3 python3-pip dnf python3-dnf 2>/dev/null || \
-            $SUDO "$PKG_MGR" install -y git make python3 python3-pip
-        if command -v dnf >/dev/null 2>&1; then
-            PKG_MGR="dnf"
+        # Install dnf, python3-dnf bindings, and sudo so downstream Ansible plays succeed
+        echo "==> Installing base packages and DNF bindings via microdnf..."
+        $SUDO "$PKG_MGR" install -y git make python3 python3-pip dnf python3-dnf sudo
+        if ! command -v dnf >/dev/null 2>&1; then
+            echo "Error: Failed to install 'dnf' via microdnf. Downstream Ansible roles require dnf." >&2
+            exit 1
         fi
+        PKG_MGR="dnf"
     else
-        $SUDO "$PKG_MGR" install -y git make python3 python3-pip
+        $SUDO "$PKG_MGR" install -y git make python3 python3-pip sudo
     fi
 
     if ! command -v ansible-playbook >/dev/null 2>&1; then
@@ -67,11 +69,11 @@ hash -r
 REPO_URL="https://github.com/PrzemyslawSagalo/dev_stack.git"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" >/dev/null 2>&1 && pwd || pwd)"
 
-# Workspace resolution: prioritize script directory when inside repo, then current working directory
-if [ -f "$SCRIPT_DIR/setup.yml" ]; then
+# Workspace resolution: prioritize script directory when inside repo, then validated current working directory
+if [ -f "$SCRIPT_DIR/setup.yml" ] && [ -d "$SCRIPT_DIR/roles/system" ] && [ -f "$SCRIPT_DIR/Makefile" ]; then
     echo "==> Detected in-repo workspace via script directory. Bypassing clone/pull..."
     DEST_DIR="$SCRIPT_DIR"
-elif [ -f "./setup.yml" ]; then
+elif [ -f "./setup.yml" ] && [ -d "./roles/system" ] && [ -f "./Makefile" ]; then
     echo "==> Detected in-repo workspace via current directory. Bypassing clone/pull..."
     DEST_DIR="$PWD"
 else

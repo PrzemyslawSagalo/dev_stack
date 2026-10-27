@@ -27,6 +27,8 @@ test_apt_path() {
     test_dir="$(mktemp -d)"
 
     touch "$test_dir/setup.yml"
+    mkdir -p "$test_dir/roles/system"
+    touch "$test_dir/Makefile"
     local mock_bin="$test_dir/mock_bin"
     mkdir -p "$mock_bin"
 
@@ -45,7 +47,7 @@ exit 0
 EOF
     chmod +x "$mock_bin"/*
 
-    for cmd in bash dirname basename uname cut sed grep awk date echo cat mkdir rm mktemp which id env; do
+    for cmd in bash dirname basename uname cut sed grep awk date echo cat mkdir rm mktemp which id env chmod; do
         target=$(command -v "$cmd" 2>/dev/null || true)
         if [ -n "$target" ] && [ -x "$target" ]; then
             ln -s "$target" "$mock_bin/$cmd"
@@ -61,8 +63,8 @@ EOF
         return 1
     fi
 
-    if ! echo "$output" | grep -q "APT_CALLED: install -y git ansible make"; then
-        echo "Expected apt-get install git ansible make, got: $output" >&2
+    if ! echo "$output" | grep -q "APT_CALLED: install -y git ansible make sudo"; then
+        echo "Expected apt-get install git ansible make sudo, got: $output" >&2
         return 1
     fi
     return 0
@@ -73,6 +75,8 @@ test_rpm_base_packages() {
     test_dir="$(mktemp -d)"
 
     touch "$test_dir/setup.yml"
+    mkdir -p "$test_dir/roles/system"
+    touch "$test_dir/Makefile"
     local mock_bin="$test_dir/mock_bin"
     mkdir -p "$mock_bin"
 
@@ -95,7 +99,7 @@ exit 0
 EOF
     chmod +x "$mock_bin"/*
 
-    for cmd in bash dirname basename uname cut sed grep awk date echo cat mkdir rm mktemp which id env; do
+    for cmd in bash dirname basename uname cut sed grep awk date echo cat mkdir rm mktemp which id env chmod; do
         target=$(command -v "$cmd" 2>/dev/null || true)
         if [ -n "$target" ] && [ -x "$target" ]; then
             ln -s "$target" "$mock_bin/$cmd"
@@ -106,8 +110,8 @@ EOF
     output=$(cd "$test_dir" && PATH="$mock_bin" bash "$BOOTSTRAP_SCRIPT")
     rm -rf "$test_dir"
 
-    if ! echo "$output" | grep -q "DNF_CALLED: install -y git make python3 python3-pip"; then
-        echo "Expected DNF to install base packages, got: $output" >&2
+    if ! echo "$output" | grep -q "DNF_CALLED: install -y git make python3 python3-pip sudo"; then
+        echo "Expected DNF to install base packages with sudo, got: $output" >&2
         return 1
     fi
     return 0
@@ -118,6 +122,8 @@ test_microdnf_base_packages() {
     test_dir="$(mktemp -d)"
 
     touch "$test_dir/setup.yml"
+    mkdir -p "$test_dir/roles/system"
+    touch "$test_dir/Makefile"
     local mock_bin="$test_dir/mock_bin"
     mkdir -p "$mock_bin"
 
@@ -128,6 +134,11 @@ EOF
     cat << 'EOF' > "$mock_bin/microdnf"
 #!/bin/sh
 echo "MICRODNF_CALLED: $@"
+cat << 'DNFMOCK' > "$(dirname "$0")/dnf"
+#!/bin/sh
+exit 0
+DNFMOCK
+chmod +x "$(dirname "$0")/dnf"
 exit 0
 EOF
     cat << 'EOF' > "$mock_bin/make"
@@ -140,7 +151,7 @@ exit 0
 EOF
     chmod +x "$mock_bin"/*
 
-    for cmd in bash dirname basename uname cut sed grep awk date echo cat mkdir rm mktemp which id env; do
+    for cmd in bash dirname basename uname cut sed grep awk date echo cat mkdir rm mktemp which id env chmod; do
         target=$(command -v "$cmd" 2>/dev/null || true)
         if [ -n "$target" ] && [ -x "$target" ]; then
             ln -s "$target" "$mock_bin/$cmd"
@@ -151,8 +162,8 @@ EOF
     output=$(cd "$test_dir" && PATH="$mock_bin" bash "$BOOTSTRAP_SCRIPT")
     rm -rf "$test_dir"
 
-    if ! echo "$output" | grep -q "MICRODNF_CALLED: install -y git make python3 python3-pip dnf python3-dnf"; then
-        echo "Expected microdnf to install base packages including dnf and python3-dnf, got: $output" >&2
+    if ! echo "$output" | grep -q "MICRODNF_CALLED: install -y git make python3 python3-pip dnf python3-dnf sudo"; then
+        echo "Expected microdnf to install base packages including dnf, python3-dnf, and sudo, got: $output" >&2
         return 1
     fi
     return 0
@@ -163,6 +174,8 @@ test_rpm_pip_fallback() {
     test_dir="$(mktemp -d)"
 
     touch "$test_dir/setup.yml"
+    mkdir -p "$test_dir/roles/system"
+    touch "$test_dir/Makefile"
     local mock_bin="$test_dir/mock_bin"
     mkdir -p "$mock_bin"
 
@@ -193,7 +206,7 @@ exit 0
 EOF
     chmod +x "$mock_bin"/*
 
-    for cmd in bash dirname basename uname cut sed grep awk date echo cat mkdir rm mktemp which id env; do
+    for cmd in bash dirname basename uname cut sed grep awk date echo cat mkdir rm mktemp which id env chmod; do
         target=$(command -v "$cmd" 2>/dev/null || true)
         if [ -n "$target" ] && [ -x "$target" ]; then
             ln -s "$target" "$mock_bin/$cmd"
@@ -216,6 +229,8 @@ test_path_enhancement() {
     test_dir="$(mktemp -d)"
 
     touch "$test_dir/setup.yml"
+    mkdir -p "$test_dir/roles/system"
+    touch "$test_dir/Makefile"
     local mock_bin="$test_dir/mock_bin"
     mkdir -p "$mock_bin"
 
@@ -238,7 +253,7 @@ exit 0
 EOF
     chmod +x "$mock_bin"/*
 
-    for cmd in bash dirname basename uname cut sed grep awk date echo cat mkdir rm mktemp which id env; do
+    for cmd in bash dirname basename uname cut sed grep awk date echo cat mkdir rm mktemp which id env chmod; do
         target=$(command -v "$cmd" 2>/dev/null || true)
         if [ -n "$target" ] && [ -x "$target" ]; then
             ln -s "$target" "$mock_bin/$cmd"
@@ -261,6 +276,8 @@ test_skip_ansible_when_already_installed() {
     test_dir="$(mktemp -d)"
 
     touch "$test_dir/setup.yml"
+    mkdir -p "$test_dir/roles/system"
+    touch "$test_dir/Makefile"
     local mock_bin="$test_dir/mock_bin"
     mkdir -p "$mock_bin"
 
@@ -283,7 +300,7 @@ exit 0
 EOF
     chmod +x "$mock_bin"/*
 
-    for cmd in bash dirname basename uname cut sed grep awk date echo cat mkdir rm mktemp which id env; do
+    for cmd in bash dirname basename uname cut sed grep awk date echo cat mkdir rm mktemp which id env chmod; do
         target=$(command -v "$cmd" 2>/dev/null || true)
         if [ -n "$target" ] && [ -x "$target" ]; then
             ln -s "$target" "$mock_bin/$cmd"
