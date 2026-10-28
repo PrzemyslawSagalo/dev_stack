@@ -1,5 +1,18 @@
-#!/bin/bash
-set -euo pipefail
+#!/bin/sh
+set -eu
+
+# Ensure script runs under Bash if available, or install and re-exec under Bash
+if [ -z "${BASH_VERSION:-}" ]; then
+    if command -v bash >/dev/null 2>&1; then
+        if [ -f "$0" ]; then
+            exec bash "$0" "$@"
+        fi
+    fi
+fi
+
+if [ -n "${BASH_VERSION:-}" ]; then
+    set -o pipefail
+fi
 
 echo "==> Starting environment initialization (Bootstrap)..."
 
@@ -16,9 +29,34 @@ fi
 # Detect package manager (apt-get, dnf, microdnf, or yum)
 if command -v apt-get >/dev/null 2>&1; then
     PKG_MGR="apt-get"
-    echo "==> Detected Debian/Ubuntu family ($PKG_MGR). Installing Git and Ansible..."
+    echo "==> Detected Debian/Ubuntu family ($PKG_MGR). Installing base dependencies..."
     $SUDO env DEBIAN_FRONTEND=noninteractive apt-get update
-    $SUDO env DEBIAN_FRONTEND=noninteractive apt-get install -y git ansible make sudo
+    $SUDO env DEBIAN_FRONTEND=noninteractive apt-get install -y git make python3 python3-pip sudo bash
+
+    if ! command -v ansible-playbook >/dev/null 2>&1; then
+        echo "==> Resolving Ansible installation..."
+        INSTALL_LOG=$(mktemp)
+        if $SUDO env DEBIAN_FRONTEND=noninteractive apt-get install -y ansible >"$INSTALL_LOG" 2>&1; then
+            echo "==> Successfully installed ansible meta-package via apt-get."
+            rm -f "$INSTALL_LOG"
+        elif $SUDO env DEBIAN_FRONTEND=noninteractive apt-get install -y ansible-core >"$INSTALL_LOG" 2>&1; then
+            echo "==> Successfully installed ansible-core via apt-get."
+            rm -f "$INSTALL_LOG"
+        else
+            echo "==> APT packages (ansible, ansible-core) unavailable via apt-get."
+            echo "    Details from apt-get attempt:"
+            sed 's/^/    /' "$INSTALL_LOG"
+            rm -f "$INSTALL_LOG"
+            echo "==> Falling back to python3 -m pip install ansible-core..."
+            if [ "$(id -u)" -eq 0 ]; then
+                python3 -m pip install --no-cache-dir ansible-core
+            else
+                python3 -m pip install --user --no-cache-dir ansible-core
+            fi
+        fi
+    else
+        echo "==> ansible-playbook already installed. Skipping installation."
+    fi
 elif command -v dnf >/dev/null 2>&1 || command -v microdnf >/dev/null 2>&1 || command -v yum >/dev/null 2>&1; then
     PKG_MGR="yum"
     if command -v dnf >/dev/null 2>&1; then
@@ -28,26 +66,33 @@ elif command -v dnf >/dev/null 2>&1 || command -v microdnf >/dev/null 2>&1 || co
     fi
     echo "==> Detected RHEL/Amazon Linux family ($PKG_MGR). Installing base dependencies..."
     if [ "$PKG_MGR" = "microdnf" ]; then
-        # Install dnf, python3-dnf bindings, and sudo so downstream Ansible plays succeed
+        # Install dnf, python3-dnf bindings, bash, and sudo so downstream Ansible plays succeed
         echo "==> Installing base packages and DNF bindings via microdnf..."
-        $SUDO "$PKG_MGR" install -y git make python3 python3-pip dnf python3-dnf sudo
+        $SUDO "$PKG_MGR" install -y git make python3 python3-pip dnf python3-dnf sudo bash
         if ! command -v dnf >/dev/null 2>&1; then
             echo "Error: Failed to install 'dnf' via microdnf. Downstream Ansible roles require dnf." >&2
             exit 1
         fi
         PKG_MGR="dnf"
     else
-        $SUDO "$PKG_MGR" install -y git make python3 python3-pip sudo
+        $SUDO "$PKG_MGR" install -y git make python3 python3-pip sudo bash
     fi
 
     if ! command -v ansible-playbook >/dev/null 2>&1; then
         echo "==> Resolving Ansible installation..."
-        if $SUDO "$PKG_MGR" install -y ansible >/dev/null 2>&1; then
+        INSTALL_LOG=$(mktemp)
+        if $SUDO "$PKG_MGR" install -y ansible >"$INSTALL_LOG" 2>&1; then
             echo "==> Successfully installed ansible meta-package via $PKG_MGR."
-        elif $SUDO "$PKG_MGR" install -y ansible-core >/dev/null 2>&1; then
+            rm -f "$INSTALL_LOG"
+        elif $SUDO "$PKG_MGR" install -y ansible-core >"$INSTALL_LOG" 2>&1; then
             echo "==> Successfully installed ansible-core via $PKG_MGR."
+            rm -f "$INSTALL_LOG"
         else
-            echo "==> RPM packages unavailable. Falling back to python3 -m pip install ansible-core..."
+            echo "==> RPM packages (ansible, ansible-core) unavailable via $PKG_MGR."
+            echo "    Details from $PKG_MGR attempt:"
+            sed 's/^/    /' "$INSTALL_LOG"
+            rm -f "$INSTALL_LOG"
+            echo "==> Falling back to python3 -m pip install ansible-core..."
             if [ "$(id -u)" -eq 0 ]; then
                 python3 -m pip install --no-cache-dir ansible-core
             else
@@ -62,9 +107,18 @@ else
     exit 1
 fi
 
+# Re-exec under Bash now that bash and dependencies are guaranteed to be present
+if [ -z "${BASH_VERSION:-}" ]; then
+    if command -v bash >/dev/null 2>&1; then
+        if [ -f "$0" ]; then
+            exec bash "$0" "$@"
+        fi
+    fi
+fi
+
 # Ensure local python binary paths are available on PATH across all distributions
 export PATH="$HOME/.local/bin:/usr/local/bin:$PATH"
-hash -r
+hash -r 2>/dev/null || true
 
 REPO_URL="https://github.com/PrzemyslawSagalo/dev_stack.git"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" >/dev/null 2>&1 && pwd || pwd)"
@@ -78,8 +132,9 @@ elif [ -f "./setup.yml" ] && [ -d "./roles/system" ] && [ -f "./Makefile" ]; the
     DEST_DIR="$PWD"
 else
     DEST_DIR="$HOME/.dev_env"
-    if [ ! -d "$DEST_DIR" ]; then
+    if [ ! -d "$DEST_DIR/.git" ]; then
         echo "==> Cloning repository..."
+        rm -rf "$DEST_DIR"
         git clone "$REPO_URL" "$DEST_DIR"
     else
         echo "==> Repository already exists. Updating..."

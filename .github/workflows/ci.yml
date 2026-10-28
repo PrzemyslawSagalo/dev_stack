@@ -24,8 +24,17 @@ jobs:
           pip install pre-commit
       - name: Run pre-commit
         run: pre-commit run --all-files
-      - name: Run bootstrap test suite
-        run: make test-bootstrap
+      - name: Run bootstrap unit tests
+        run: |
+          tests/test_bootstrap_logic.sh
+          tests/test_bootstrap_packages.sh
+
+  bootstrap-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Run multi-platform container smoke tests
+        run: tests/test_bootstrap.sh
 
   molecule:
     runs-on: ubuntu-latest

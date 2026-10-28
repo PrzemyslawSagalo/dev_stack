@@ -25,6 +25,7 @@ run_test() {
 test_apt_path() {
     local test_dir
     test_dir="$(mktemp -d)"
+    trap 'rm -rf "${test_dir:-}"' RETURN
 
     touch "$test_dir/setup.yml"
     mkdir -p "$test_dir/roles/system"
@@ -45,6 +46,10 @@ EOF
 #!/bin/sh
 exit 0
 EOF
+    cat << 'EOF' > "$mock_bin/ansible-playbook"
+#!/bin/sh
+exit 0
+EOF
     chmod +x "$mock_bin"/*
 
     for cmd in bash dirname basename uname cut sed grep awk date echo cat mkdir rm mktemp which id env chmod; do
@@ -55,16 +60,15 @@ EOF
     done
 
     local output
-    output=$(cd "$test_dir" && PATH="$mock_bin" bash "$BOOTSTRAP_SCRIPT")
-    rm -rf "$test_dir"
+    output=$(cd "$test_dir" && PATH="$mock_bin" bash "$BOOTSTRAP_SCRIPT" 2>&1)
 
     if ! echo "$output" | grep -q "APT_CALLED: update"; then
         echo "Expected apt-get update to be called, got: $output" >&2
         return 1
     fi
 
-    if ! echo "$output" | grep -q "APT_CALLED: install -y git ansible make sudo"; then
-        echo "Expected apt-get install git ansible make sudo, got: $output" >&2
+    if ! echo "$output" | grep -q "APT_CALLED: install -y git make python3 python3-pip sudo bash"; then
+        echo "Expected apt-get install git make python3 python3-pip sudo bash, got: $output" >&2
         return 1
     fi
     return 0
@@ -73,6 +77,7 @@ EOF
 test_rpm_base_packages() {
     local test_dir
     test_dir="$(mktemp -d)"
+    trap 'rm -rf "${test_dir:-}"' RETURN
 
     touch "$test_dir/setup.yml"
     mkdir -p "$test_dir/roles/system"
@@ -107,11 +112,10 @@ EOF
     done
 
     local output
-    output=$(cd "$test_dir" && PATH="$mock_bin" bash "$BOOTSTRAP_SCRIPT")
-    rm -rf "$test_dir"
+    output=$(cd "$test_dir" && PATH="$mock_bin" bash "$BOOTSTRAP_SCRIPT" 2>&1)
 
-    if ! echo "$output" | grep -q "DNF_CALLED: install -y git make python3 python3-pip sudo"; then
-        echo "Expected DNF to install base packages with sudo, got: $output" >&2
+    if ! echo "$output" | grep -q "DNF_CALLED: install -y git make python3 python3-pip sudo bash"; then
+        echo "Expected DNF to install base packages with sudo and bash, got: $output" >&2
         return 1
     fi
     return 0
@@ -120,6 +124,7 @@ EOF
 test_microdnf_base_packages() {
     local test_dir
     test_dir="$(mktemp -d)"
+    trap 'rm -rf "${test_dir:-}"' RETURN
 
     touch "$test_dir/setup.yml"
     mkdir -p "$test_dir/roles/system"
@@ -159,11 +164,10 @@ EOF
     done
 
     local output
-    output=$(cd "$test_dir" && PATH="$mock_bin" bash "$BOOTSTRAP_SCRIPT")
-    rm -rf "$test_dir"
+    output=$(cd "$test_dir" && PATH="$mock_bin" bash "$BOOTSTRAP_SCRIPT" 2>&1)
 
-    if ! echo "$output" | grep -q "MICRODNF_CALLED: install -y git make python3 python3-pip dnf python3-dnf sudo"; then
-        echo "Expected microdnf to install base packages including dnf, python3-dnf, and sudo, got: $output" >&2
+    if ! echo "$output" | grep -q "MICRODNF_CALLED: install -y git make python3 python3-pip dnf python3-dnf sudo bash"; then
+        echo "Expected microdnf to install base packages including dnf, python3-dnf, sudo, and bash, got: $output" >&2
         return 1
     fi
     return 0
@@ -172,6 +176,7 @@ EOF
 test_rpm_pip_fallback() {
     local test_dir
     test_dir="$(mktemp -d)"
+    trap 'rm -rf "${test_dir:-}"' RETURN
 
     touch "$test_dir/setup.yml"
     mkdir -p "$test_dir/roles/system"
@@ -214,8 +219,7 @@ EOF
     done
 
     local output
-    output=$(cd "$test_dir" && PATH="$mock_bin" bash "$BOOTSTRAP_SCRIPT")
-    rm -rf "$test_dir"
+    output=$(cd "$test_dir" && PATH="$mock_bin" bash "$BOOTSTRAP_SCRIPT" 2>&1)
 
     if ! echo "$output" | grep -q "PIP_CALLED: -m pip install"; then
         echo "Expected python3 -m pip fallback, got: $output" >&2
@@ -224,9 +228,65 @@ EOF
     return 0
 }
 
+test_apt_pip_fallback() {
+    local test_dir
+    test_dir="$(mktemp -d)"
+    trap 'rm -rf "${test_dir:-}"' RETURN
+
+    touch "$test_dir/setup.yml"
+    mkdir -p "$test_dir/roles/system"
+    touch "$test_dir/Makefile"
+    local mock_bin="$test_dir/mock_bin"
+    mkdir -p "$mock_bin"
+
+    cat << 'EOF' > "$mock_bin/sudo"
+#!/bin/sh
+exec "$@"
+EOF
+    cat << 'EOF' > "$mock_bin/apt-get"
+#!/bin/sh
+if [ "$1" = "install" ] && echo "$@" | grep -q "ansible"; then
+    # Simulate missing APT packages
+    exit 1
+fi
+echo "APT_CALLED: $@"
+exit 0
+EOF
+    cat << 'EOF' > "$mock_bin/python3"
+#!/bin/sh
+if [ "$1" = "-m" ] && [ "$2" = "pip" ]; then
+    echo "PIP_CALLED: $@"
+    exit 0
+fi
+exec /usr/bin/python3 "$@"
+EOF
+    cat << 'EOF' > "$mock_bin/make"
+#!/bin/sh
+exit 0
+EOF
+    chmod +x "$mock_bin"/*
+
+    for cmd in bash dirname basename uname cut sed grep awk date echo cat mkdir rm mktemp which id env chmod; do
+        target=$(command -v "$cmd" 2>/dev/null || true)
+        if [ -n "$target" ] && [ -x "$target" ]; then
+            ln -s "$target" "$mock_bin/$cmd"
+        fi
+    done
+
+    local output
+    output=$(cd "$test_dir" && PATH="$mock_bin" bash "$BOOTSTRAP_SCRIPT" 2>&1)
+
+    if ! echo "$output" | grep -q "PIP_CALLED: -m pip install"; then
+        echo "Expected python3 -m pip fallback on Debian/Ubuntu, got: $output" >&2
+        return 1
+    fi
+    return 0
+}
+
 test_path_enhancement() {
     local test_dir
     test_dir="$(mktemp -d)"
+    trap 'rm -rf "${test_dir:-}"' RETURN
 
     touch "$test_dir/setup.yml"
     mkdir -p "$test_dir/roles/system"
@@ -261,8 +321,7 @@ EOF
     done
 
     local output
-    output=$(cd "$test_dir" && PATH="$mock_bin" bash "$BOOTSTRAP_SCRIPT")
-    rm -rf "$test_dir"
+    output=$(cd "$test_dir" && PATH="$mock_bin" bash "$BOOTSTRAP_SCRIPT" 2>&1)
 
     if ! echo "$output" | grep -q ".local/bin"; then
         echo "Expected PATH to include .local/bin, got: $output" >&2
@@ -274,6 +333,7 @@ EOF
 test_skip_ansible_when_already_installed() {
     local test_dir
     test_dir="$(mktemp -d)"
+    trap 'rm -rf "${test_dir:-}"' RETURN
 
     touch "$test_dir/setup.yml"
     mkdir -p "$test_dir/roles/system"
@@ -308,8 +368,7 @@ EOF
     done
 
     local output
-    output=$(cd "$test_dir" && PATH="$mock_bin" bash "$BOOTSTRAP_SCRIPT")
-    rm -rf "$test_dir"
+    output=$(cd "$test_dir" && PATH="$mock_bin" bash "$BOOTSTRAP_SCRIPT" 2>&1)
 
     if echo "$output" | grep -q "Resolving Ansible installation"; then
         echo "Should not resolve Ansible when already installed, got: $output" >&2
@@ -324,6 +383,7 @@ EOF
 }
 
 run_test "Debian/Ubuntu package installation flow" test_apt_path
+run_test "Debian/Ubuntu 3-tier fallback to python3 -m pip install" test_apt_pip_fallback
 run_test "RPM base package installation" test_rpm_base_packages
 run_test "microdnf base package installation with dnf bindings" test_microdnf_base_packages
 run_test "RPM 3-tier fallback to python3 -m pip install" test_rpm_pip_fallback

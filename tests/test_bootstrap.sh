@@ -210,7 +210,7 @@ EOF
         -v "$workspace:/workspace:rw" \
         -w "/workspace" \
         registry.access.redhat.com/ubi9/ubi-minimal:latest \
-        sh -c "command -v bash >/dev/null 2>&1 || microdnf install -y bash; bash /bootstrap.sh" > "$workspace/output.log" 2>&1 || {
+        /bin/sh /bootstrap.sh > "$workspace/output.log" 2>&1 || {
             cat "$workspace/output.log" >&2
             rm -rf "$workspace"
             return 1
