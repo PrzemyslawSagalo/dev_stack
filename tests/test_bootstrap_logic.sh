@@ -24,6 +24,7 @@ run_test() {
 
 test_syntax() {
     bash -n "$BOOTSTRAP_SCRIPT"
+    sh -n "$BOOTSTRAP_SCRIPT"
 }
 
 test_in_repo_script_dir_detection() {

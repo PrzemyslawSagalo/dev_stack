@@ -48,10 +48,14 @@ if command -v apt-get >/dev/null 2>&1; then
             sed 's/^/    /' "$INSTALL_LOG"
             rm -f "$INSTALL_LOG"
             echo "==> Falling back to python3 -m pip install ansible-core..."
+            PIP_BREAK=""
+            if python3 -m pip install --help 2>&1 | grep -q -- '--break-system-packages'; then
+                PIP_BREAK="--break-system-packages"
+            fi
             if [ "$(id -u)" -eq 0 ]; then
-                python3 -m pip install --no-cache-dir ansible-core
+                python3 -m pip install $PIP_BREAK --no-cache-dir ansible-core
             else
-                python3 -m pip install --user --no-cache-dir ansible-core
+                python3 -m pip install --user $PIP_BREAK --no-cache-dir ansible-core
             fi
         fi
     else
@@ -93,10 +97,14 @@ elif command -v dnf >/dev/null 2>&1 || command -v microdnf >/dev/null 2>&1 || co
             sed 's/^/    /' "$INSTALL_LOG"
             rm -f "$INSTALL_LOG"
             echo "==> Falling back to python3 -m pip install ansible-core..."
+            PIP_BREAK=""
+            if python3 -m pip install --help 2>&1 | grep -q -- '--break-system-packages'; then
+                PIP_BREAK="--break-system-packages"
+            fi
             if [ "$(id -u)" -eq 0 ]; then
-                python3 -m pip install --no-cache-dir ansible-core
+                python3 -m pip install $PIP_BREAK --no-cache-dir ansible-core
             else
-                python3 -m pip install --user --no-cache-dir ansible-core
+                python3 -m pip install --user $PIP_BREAK --no-cache-dir ansible-core
             fi
         fi
     else
@@ -107,21 +115,12 @@ else
     exit 1
 fi
 
-# Re-exec under Bash now that bash and dependencies are guaranteed to be present
-if [ -z "${BASH_VERSION:-}" ]; then
-    if command -v bash >/dev/null 2>&1; then
-        if [ -f "$0" ]; then
-            exec bash "$0" "$@"
-        fi
-    fi
-fi
-
 # Ensure local python binary paths are available on PATH across all distributions
-export PATH="$HOME/.local/bin:/usr/local/bin:$PATH"
+export PATH="${HOME:-/root}/.local/bin:/usr/local/bin:$PATH"
 hash -r 2>/dev/null || true
 
 REPO_URL="https://github.com/PrzemyslawSagalo/dev_stack.git"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" >/dev/null 2>&1 && pwd || pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$0")" >/dev/null 2>&1 && pwd || pwd)"
 
 # Workspace resolution: prioritize script directory when inside repo, then validated current working directory
 if [ -f "$SCRIPT_DIR/setup.yml" ] && [ -d "$SCRIPT_DIR/roles/system" ] && [ -f "$SCRIPT_DIR/Makefile" ]; then
@@ -131,7 +130,7 @@ elif [ -f "./setup.yml" ] && [ -d "./roles/system" ] && [ -f "./Makefile" ]; the
     echo "==> Detected in-repo workspace via current directory. Bypassing clone/pull..."
     DEST_DIR="$PWD"
 else
-    DEST_DIR="$HOME/.dev_env"
+    DEST_DIR="${HOME:-/root}/.dev_env"
     if [ ! -d "$DEST_DIR/.git" ]; then
         echo "==> Cloning repository..."
         rm -rf "$DEST_DIR"
