@@ -4,27 +4,15 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BOOTSTRAP_SCRIPT="$REPO_ROOT/bootstrap.sh"
 
-TEST_COUNT=0
-PASS_COUNT=0
-
-run_test() {
-    local test_name="$1"
-    shift
-    TEST_COUNT=$((TEST_COUNT + 1))
-    echo "----------------------------------------"
-    echo "Running Test ${TEST_COUNT}: ${test_name}"
-    if "$@"; then
-        echo "PASS: Test ${TEST_COUNT} - ${test_name}"
-        PASS_COUNT=$((PASS_COUNT + 1))
-    else
-        echo "FAIL: Test ${TEST_COUNT} - ${test_name}" >&2
-        return 1
-    fi
-}
+# Source shared test helpers
+# shellcheck source=tests/test_helpers.sh
+source "$REPO_ROOT/tests/test_helpers.sh"
 
 test_syntax() {
     bash -n "$BOOTSTRAP_SCRIPT"
     sh -n "$BOOTSTRAP_SCRIPT"
+    bash -n "$REPO_ROOT/tests/test_helpers.sh"
+    sh -n "$REPO_ROOT/tests/test_helpers.sh"
 }
 
 test_in_repo_script_dir_detection() {
@@ -33,37 +21,15 @@ test_in_repo_script_dir_detection() {
     trap 'rm -rf "${test_dir:-}"' RETURN
 
     local mock_bin="$test_dir/mock_bin"
-    mkdir -p "$mock_bin"
-
-    # Stub out apt-get so host package manager is never called on Debian/Ubuntu
-    cat << 'EOF' > "$mock_bin/apt-get"
-#!/bin/sh
-exit 0
-EOF
-    cat << 'EOF' > "$mock_bin/sudo"
-#!/bin/sh
-exec "$@"
-EOF
-    cat << 'EOF' > "$mock_bin/dnf"
-#!/bin/sh
-exit 0
-EOF
-    cat << 'EOF' > "$mock_bin/git"
-#!/bin/sh
-echo "GIT_CALLED"
-exit 0
-EOF
-    cat << 'EOF' > "$mock_bin/make"
-#!/bin/sh
-echo "MAKE_PWD=$PWD"
-exit 0
-EOF
-    chmod +x "$mock_bin"/*
+    mock_pkg_mgr "$mock_bin" "apt-get"
+    mock_pkg_mgr "$mock_bin" "dnf"
+    mock_sudo "$mock_bin"
+    create_mock "$mock_bin" "git" 'echo "GIT_CALLED"; exit 0'
+    mock_make "$mock_bin" true
 
     # When invoking bootstrap.sh located in repo from an external directory, it must target the repo root
     local output
     output=$(cd "$test_dir" && PATH="$mock_bin:$PATH" bash "$BOOTSTRAP_SCRIPT" 2>&1)
-    rm -rf "$test_dir"
 
     if ! echo "$output" | grep -q "MAKE_PWD=$REPO_ROOT"; then
         echo "Expected MAKE_PWD to be $REPO_ROOT, but got: $output" >&2
@@ -82,41 +48,17 @@ test_in_repo_piped_detection() {
     test_dir="$(mktemp -d)"
     trap 'rm -rf "${test_dir:-}"' RETURN
 
-    touch "$test_dir/setup.yml"
-    mkdir -p "$test_dir/roles/system"
-    touch "$test_dir/Makefile"
+    setup_repo_workspace "$test_dir"
     local mock_bin="$test_dir/mock_bin"
-    mkdir -p "$mock_bin"
-
-    # Stub out apt-get so host package manager is never called on Debian/Ubuntu
-    cat << 'EOF' > "$mock_bin/apt-get"
-#!/bin/sh
-exit 0
-EOF
-    cat << 'EOF' > "$mock_bin/sudo"
-#!/bin/sh
-exec "$@"
-EOF
-    cat << 'EOF' > "$mock_bin/dnf"
-#!/bin/sh
-exit 0
-EOF
-    cat << 'EOF' > "$mock_bin/git"
-#!/bin/sh
-echo "GIT_CALLED"
-exit 0
-EOF
-    cat << 'EOF' > "$mock_bin/make"
-#!/bin/sh
-echo "MAKE_PWD=$PWD"
-exit 0
-EOF
-    chmod +x "$mock_bin"/*
+    mock_pkg_mgr "$mock_bin" "apt-get"
+    mock_pkg_mgr "$mock_bin" "dnf"
+    mock_sudo "$mock_bin"
+    create_mock "$mock_bin" "git" 'echo "GIT_CALLED"; exit 0'
+    mock_make "$mock_bin" true
 
     # When piped via stdin (curl | bash), it must detect ./setup.yml in current working directory
     local output
     output=$(cd "$test_dir" && PATH="$mock_bin:$PATH" bash < "$BOOTSTRAP_SCRIPT" 2>&1)
-    rm -rf "$test_dir"
 
     if ! echo "$output" | grep -q "MAKE_PWD=$test_dir"; then
         echo "Expected MAKE_PWD to be $test_dir for piped execution, but got: $output" >&2
@@ -138,40 +80,17 @@ test_standalone_cloning() {
     local mock_home="$test_dir/fake_home"
     mkdir -p "$mock_home"
     local mock_bin="$test_dir/mock_bin"
-    mkdir -p "$mock_bin"
 
-    # Stub out apt-get so host package manager is never called on Debian/Ubuntu
-    cat << 'EOF' > "$mock_bin/apt-get"
-#!/bin/sh
-exit 0
-EOF
-    cat << 'EOF' > "$mock_bin/sudo"
-#!/bin/sh
-exec "$@"
-EOF
-    cat << 'EOF' > "$mock_bin/dnf"
-#!/bin/sh
-exit 0
-EOF
-    cat << 'EOF' > "$mock_bin/git"
-#!/bin/sh
-if [ "$1" = "clone" ]; then
-    mkdir -p "$3"
-fi
-exit 0
-EOF
-    cat << 'EOF' > "$mock_bin/make"
-#!/bin/sh
-echo "MAKE_PWD=$PWD"
-exit 0
-EOF
-    chmod +x "$mock_bin"/*
+    mock_pkg_mgr "$mock_bin" "apt-get"
+    mock_pkg_mgr "$mock_bin" "dnf"
+    mock_sudo "$mock_bin"
+    create_mock "$mock_bin" "git" 'if [ "$1" = "clone" ]; then mkdir -p "$3"; fi; exit 0'
+    mock_make "$mock_bin" true
 
     # Piped execution outside of repo should trigger clone to $HOME/.dev_env
     local output
     output=$(cd "$test_dir" && HOME="$mock_home" PATH="$mock_bin:$PATH" bash < "$BOOTSTRAP_SCRIPT" 2>&1)
     local expected_dest="$mock_home/.dev_env"
-    rm -rf "$test_dir"
 
     if ! echo "$output" | grep -q "MAKE_PWD=$expected_dest"; then
         echo "Expected MAKE_PWD to be $expected_dest, but got: $output" >&2
@@ -186,31 +105,20 @@ test_privilege_escalation_missing_sudo() {
     trap 'rm -rf "${test_dir:-}"' RETURN
 
     local mock_bin="$test_dir/mock_bin"
-    mkdir -p "$mock_bin"
-
-    cat << 'EOF' > "$mock_bin/id"
-#!/bin/sh
-if [ "$1" = "-u" ]; then
-    echo "1000"
+    local real_id
+    real_id="$(command -v id)"
+    create_mock "$mock_bin" "id" "if [ \"\$1\" = \"-u\" ]; then
+    echo \"1000\"
 else
-    /usr/bin/id "$@"
-fi
-EOF
-
-    for cmd in bash dirname basename uname cut sed grep awk date echo cat mkdir rm mktemp; do
-        target=$(command -v "$cmd" 2>/dev/null || true)
-        if [ -n "$target" ] && [ -x "$target" ]; then
-            ln -s "$target" "$mock_bin/$cmd"
-        fi
-    done
-    chmod +x "$mock_bin/id"
+    $real_id \"\$@\"
+fi"
+    link_coreutils "$mock_bin"
 
     set +e
     local output
     output=$(cd "$test_dir" && PATH="$mock_bin" bash "$BOOTSTRAP_SCRIPT" 2>&1)
     local exit_code=$?
     set -e
-    rm -rf "$test_dir"
 
     if [ "$exit_code" -ne 1 ]; then
         echo "Expected exit code 1, got $exit_code. Output: $output" >&2
@@ -231,42 +139,15 @@ test_microdnf_detection() {
 
     touch "$test_dir/setup.yml"
     local mock_bin="$test_dir/mock_bin"
-    mkdir -p "$mock_bin"
 
-    cat << 'EOF' > "$mock_bin/sudo"
-#!/bin/sh
-exec "$@"
-EOF
-    cat << 'EOF' > "$mock_bin/microdnf"
-#!/bin/sh
-echo "MICRODNF_CALLED: $@"
-cat << 'DNFMOCK' > "$(dirname "$0")/dnf"
-#!/bin/sh
-exit 0
-DNFMOCK
-chmod +x "$(dirname "$0")/dnf"
-exit 0
-EOF
-    cat << 'EOF' > "$mock_bin/make"
-#!/bin/sh
-exit 0
-EOF
-    cat << 'EOF' > "$mock_bin/ansible-playbook"
-#!/bin/sh
-exit 0
-EOF
-    chmod +x "$mock_bin"/*
-
-    for cmd in bash dirname basename uname cut sed grep awk date echo cat mkdir rm mktemp id env chmod; do
-        target=$(command -v "$cmd" 2>/dev/null || true)
-        if [ -n "$target" ] && [ -x "$target" ]; then
-            ln -s "$target" "$mock_bin/$cmd"
-        fi
-    done
+    mock_sudo "$mock_bin"
+    mock_microdnf "$mock_bin"
+    mock_make "$mock_bin" false
+    mock_ansible_playbook "$mock_bin"
+    link_coreutils "$mock_bin"
 
     local output
     output=$(cd "$test_dir" && PATH="$mock_bin" bash "$BOOTSTRAP_SCRIPT" 2>&1)
-    rm -rf "$test_dir"
 
     if ! echo "$output" | grep -q "MICRODNF_CALLED: install -y git make python3 python3-pip dnf python3-dnf sudo"; then
         echo "Expected microdnf to install base packages, dnf bindings, and sudo, got: $output" >&2
@@ -286,34 +167,16 @@ test_unvalidated_workspace_not_hijacked() {
     local mock_home="$test_dir/fake_home"
     mkdir -p "$mock_home"
     local mock_bin="$test_dir/mock_bin"
-    mkdir -p "$mock_bin"
 
-    cat << 'EOF' > "$mock_bin/apt-get"
-#!/bin/sh
-exit 0
-EOF
-    cat << 'EOF' > "$mock_bin/sudo"
-#!/bin/sh
-exec "$@"
-EOF
-    cat << 'EOF' > "$mock_bin/dnf"
-#!/bin/sh
-exit 0
-EOF
-    cat << 'EOF' > "$mock_bin/git"
-#!/bin/sh
-if [ "$1" = "clone" ]; then
+    mock_pkg_mgr "$mock_bin" "apt-get"
+    mock_pkg_mgr "$mock_bin" "dnf"
+    mock_sudo "$mock_bin"
+    create_mock "$mock_bin" "git" 'if [ "$1" = "clone" ]; then
     echo "CLONING_REPO"
     mkdir -p "$3"
 fi
-exit 0
-EOF
-    cat << 'EOF' > "$mock_bin/make"
-#!/bin/sh
-echo "MAKE_PWD=$PWD"
-exit 0
-EOF
-    chmod +x "$mock_bin"/*
+exit 0'
+    mock_make "$mock_bin" true
 
     local output
     output=$(cd "$test_dir" && HOME="$mock_home" PATH="$mock_bin:$PATH" bash < "$BOOTSTRAP_SCRIPT" 2>&1)
@@ -338,34 +201,15 @@ test_corrupted_git_dir_recreated() {
     mkdir -p "$mock_home/.dev_env"  # Directory exists but lacks .git (corrupt/partial clone)
 
     local mock_bin="$test_dir/mock_bin"
-    mkdir -p "$mock_bin"
-
-    cat << 'EOF' > "$mock_bin/apt-get"
-#!/bin/sh
-exit 0
-EOF
-    cat << 'EOF' > "$mock_bin/sudo"
-#!/bin/sh
-exec "$@"
-EOF
-    cat << 'EOF' > "$mock_bin/dnf"
-#!/bin/sh
-exit 0
-EOF
-    cat << 'EOF' > "$mock_bin/git"
-#!/bin/sh
-if [ "$1" = "clone" ]; then
+    mock_pkg_mgr "$mock_bin" "apt-get"
+    mock_pkg_mgr "$mock_bin" "dnf"
+    mock_sudo "$mock_bin"
+    create_mock "$mock_bin" "git" 'if [ "$1" = "clone" ]; then
     echo "CLONE_CALLED"
     mkdir -p "$3/.git"
 fi
-exit 0
-EOF
-    cat << 'EOF' > "$mock_bin/make"
-#!/bin/sh
-echo "MAKE_PWD=$PWD"
-exit 0
-EOF
-    chmod +x "$mock_bin"/*
+exit 0'
+    mock_make "$mock_bin" true
 
     local output
     output=$(cd "$test_dir" && HOME="$mock_home" PATH="$mock_bin:$PATH" bash < "$BOOTSTRAP_SCRIPT" 2>&1)

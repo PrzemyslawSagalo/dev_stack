@@ -4,60 +4,23 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BOOTSTRAP_SCRIPT="$REPO_ROOT/bootstrap.sh"
 
-TEST_COUNT=0
-PASS_COUNT=0
-
-run_test() {
-    local test_name="$1"
-    shift
-    TEST_COUNT=$((TEST_COUNT + 1))
-    echo "----------------------------------------"
-    echo "Running Test ${TEST_COUNT}: ${test_name}"
-    if "$@"; then
-        echo "PASS: Test ${TEST_COUNT} - ${test_name}"
-        PASS_COUNT=$((PASS_COUNT + 1))
-    else
-        echo "FAIL: Test ${TEST_COUNT} - ${test_name}" >&2
-        return 1
-    fi
-}
+# Source shared test helpers
+# shellcheck source=tests/test_helpers.sh
+source "$REPO_ROOT/tests/test_helpers.sh"
 
 test_apt_path() {
     local test_dir
     test_dir="$(mktemp -d)"
     trap 'rm -rf "${test_dir:-}"' RETURN
 
-    touch "$test_dir/setup.yml"
-    mkdir -p "$test_dir/roles/system"
-    touch "$test_dir/Makefile"
+    setup_repo_workspace "$test_dir"
     local mock_bin="$test_dir/mock_bin"
-    mkdir -p "$mock_bin"
 
-    cat << 'EOF' > "$mock_bin/sudo"
-#!/bin/sh
-exec "$@"
-EOF
-    cat << 'EOF' > "$mock_bin/apt-get"
-#!/bin/sh
-echo "APT_CALLED: $@"
-exit 0
-EOF
-    cat << 'EOF' > "$mock_bin/make"
-#!/bin/sh
-exit 0
-EOF
-    cat << 'EOF' > "$mock_bin/ansible-playbook"
-#!/bin/sh
-exit 0
-EOF
-    chmod +x "$mock_bin"/*
-
-    for cmd in bash dirname basename uname cut sed grep awk date echo cat mkdir rm mktemp which id env chmod; do
-        target=$(command -v "$cmd" 2>/dev/null || true)
-        if [ -n "$target" ] && [ -x "$target" ]; then
-            ln -s "$target" "$mock_bin/$cmd"
-        fi
-    done
+    mock_sudo "$mock_bin"
+    mock_pkg_mgr "$mock_bin" "apt-get" log
+    mock_make "$mock_bin" false
+    mock_ansible_playbook "$mock_bin"
+    link_coreutils "$mock_bin"
 
     local output
     output=$(cd "$test_dir" && PATH="$mock_bin" bash "$BOOTSTRAP_SCRIPT" 2>&1)
@@ -79,37 +42,14 @@ test_rpm_base_packages() {
     test_dir="$(mktemp -d)"
     trap 'rm -rf "${test_dir:-}"' RETURN
 
-    touch "$test_dir/setup.yml"
-    mkdir -p "$test_dir/roles/system"
-    touch "$test_dir/Makefile"
+    setup_repo_workspace "$test_dir"
     local mock_bin="$test_dir/mock_bin"
-    mkdir -p "$mock_bin"
 
-    cat << 'EOF' > "$mock_bin/sudo"
-#!/bin/sh
-exec "$@"
-EOF
-    cat << 'EOF' > "$mock_bin/dnf"
-#!/bin/sh
-echo "DNF_CALLED: $@"
-exit 0
-EOF
-    cat << 'EOF' > "$mock_bin/make"
-#!/bin/sh
-exit 0
-EOF
-    cat << 'EOF' > "$mock_bin/ansible-playbook"
-#!/bin/sh
-exit 0
-EOF
-    chmod +x "$mock_bin"/*
-
-    for cmd in bash dirname basename uname cut sed grep awk date echo cat mkdir rm mktemp which id env chmod; do
-        target=$(command -v "$cmd" 2>/dev/null || true)
-        if [ -n "$target" ] && [ -x "$target" ]; then
-            ln -s "$target" "$mock_bin/$cmd"
-        fi
-    done
+    mock_sudo "$mock_bin"
+    mock_pkg_mgr "$mock_bin" "dnf" log
+    mock_make "$mock_bin" false
+    mock_ansible_playbook "$mock_bin"
+    link_coreutils "$mock_bin"
 
     local output
     output=$(cd "$test_dir" && PATH="$mock_bin" bash "$BOOTSTRAP_SCRIPT" 2>&1)
@@ -126,42 +66,14 @@ test_microdnf_base_packages() {
     test_dir="$(mktemp -d)"
     trap 'rm -rf "${test_dir:-}"' RETURN
 
-    touch "$test_dir/setup.yml"
-    mkdir -p "$test_dir/roles/system"
-    touch "$test_dir/Makefile"
+    setup_repo_workspace "$test_dir"
     local mock_bin="$test_dir/mock_bin"
-    mkdir -p "$mock_bin"
 
-    cat << 'EOF' > "$mock_bin/sudo"
-#!/bin/sh
-exec "$@"
-EOF
-    cat << 'EOF' > "$mock_bin/microdnf"
-#!/bin/sh
-echo "MICRODNF_CALLED: $@"
-cat << 'DNFMOCK' > "$(dirname "$0")/dnf"
-#!/bin/sh
-exit 0
-DNFMOCK
-chmod +x "$(dirname "$0")/dnf"
-exit 0
-EOF
-    cat << 'EOF' > "$mock_bin/make"
-#!/bin/sh
-exit 0
-EOF
-    cat << 'EOF' > "$mock_bin/ansible-playbook"
-#!/bin/sh
-exit 0
-EOF
-    chmod +x "$mock_bin"/*
-
-    for cmd in bash dirname basename uname cut sed grep awk date echo cat mkdir rm mktemp which id env chmod; do
-        target=$(command -v "$cmd" 2>/dev/null || true)
-        if [ -n "$target" ] && [ -x "$target" ]; then
-            ln -s "$target" "$mock_bin/$cmd"
-        fi
-    done
+    mock_sudo "$mock_bin"
+    mock_microdnf "$mock_bin"
+    mock_make "$mock_bin" false
+    mock_ansible_playbook "$mock_bin"
+    link_coreutils "$mock_bin"
 
     local output
     output=$(cd "$test_dir" && PATH="$mock_bin" bash "$BOOTSTRAP_SCRIPT" 2>&1)
@@ -178,45 +90,20 @@ test_rpm_pip_fallback() {
     test_dir="$(mktemp -d)"
     trap 'rm -rf "${test_dir:-}"' RETURN
 
-    touch "$test_dir/setup.yml"
-    mkdir -p "$test_dir/roles/system"
-    touch "$test_dir/Makefile"
+    setup_repo_workspace "$test_dir"
     local mock_bin="$test_dir/mock_bin"
-    mkdir -p "$mock_bin"
+    local real_py
+    real_py="$(command -v python3)"
 
-    cat << 'EOF' > "$mock_bin/sudo"
-#!/bin/sh
-exec "$@"
-EOF
-    cat << 'EOF' > "$mock_bin/dnf"
-#!/bin/sh
-if [ "$1" = "install" ] && echo "$@" | grep -q "ansible"; then
-    # Simulate missing RPM packages
-    exit 1
-fi
-echo "DNF_CALLED: $@"
-exit 0
-EOF
-    cat << 'EOF' > "$mock_bin/python3"
-#!/bin/sh
-if [ "$1" = "-m" ] && [ "$2" = "pip" ]; then
-    echo "PIP_CALLED: $@"
+    mock_sudo "$mock_bin"
+    mock_pkg_mgr "$mock_bin" "dnf" fail-ansible
+    create_mock "$mock_bin" "python3" "if [ \"\$1\" = \"-m\" ] && [ \"\$2\" = \"pip\" ]; then
+    echo \"PIP_CALLED: \$@\"
     exit 0
 fi
-exec /usr/bin/python3 "$@"
-EOF
-    cat << 'EOF' > "$mock_bin/make"
-#!/bin/sh
-exit 0
-EOF
-    chmod +x "$mock_bin"/*
-
-    for cmd in bash dirname basename uname cut sed grep awk date echo cat mkdir rm mktemp which id env chmod; do
-        target=$(command -v "$cmd" 2>/dev/null || true)
-        if [ -n "$target" ] && [ -x "$target" ]; then
-            ln -s "$target" "$mock_bin/$cmd"
-        fi
-    done
+exec $real_py \"\$@\""
+    mock_make "$mock_bin" false
+    link_coreutils "$mock_bin"
 
     local output
     output=$(cd "$test_dir" && PATH="$mock_bin" bash "$BOOTSTRAP_SCRIPT" 2>&1)
@@ -233,45 +120,20 @@ test_apt_pip_fallback() {
     test_dir="$(mktemp -d)"
     trap 'rm -rf "${test_dir:-}"' RETURN
 
-    touch "$test_dir/setup.yml"
-    mkdir -p "$test_dir/roles/system"
-    touch "$test_dir/Makefile"
+    setup_repo_workspace "$test_dir"
     local mock_bin="$test_dir/mock_bin"
-    mkdir -p "$mock_bin"
+    local real_py
+    real_py="$(command -v python3)"
 
-    cat << 'EOF' > "$mock_bin/sudo"
-#!/bin/sh
-exec "$@"
-EOF
-    cat << 'EOF' > "$mock_bin/apt-get"
-#!/bin/sh
-if [ "$1" = "install" ] && echo "$@" | grep -q "ansible"; then
-    # Simulate missing APT packages
-    exit 1
-fi
-echo "APT_CALLED: $@"
-exit 0
-EOF
-    cat << 'EOF' > "$mock_bin/python3"
-#!/bin/sh
-if [ "$1" = "-m" ] && [ "$2" = "pip" ]; then
-    echo "PIP_CALLED: $@"
+    mock_sudo "$mock_bin"
+    mock_pkg_mgr "$mock_bin" "apt-get" fail-ansible
+    create_mock "$mock_bin" "python3" "if [ \"\$1\" = \"-m\" ] && [ \"\$2\" = \"pip\" ]; then
+    echo \"PIP_CALLED: \$@\"
     exit 0
 fi
-exec /usr/bin/python3 "$@"
-EOF
-    cat << 'EOF' > "$mock_bin/make"
-#!/bin/sh
-exit 0
-EOF
-    chmod +x "$mock_bin"/*
-
-    for cmd in bash dirname basename uname cut sed grep awk date echo cat mkdir rm mktemp which id env chmod; do
-        target=$(command -v "$cmd" 2>/dev/null || true)
-        if [ -n "$target" ] && [ -x "$target" ]; then
-            ln -s "$target" "$mock_bin/$cmd"
-        fi
-    done
+exec $real_py \"\$@\""
+    mock_make "$mock_bin" false
+    link_coreutils "$mock_bin"
 
     local output
     output=$(cd "$test_dir" && PATH="$mock_bin" bash "$BOOTSTRAP_SCRIPT" 2>&1)
@@ -288,37 +150,15 @@ test_path_enhancement() {
     test_dir="$(mktemp -d)"
     trap 'rm -rf "${test_dir:-}"' RETURN
 
-    touch "$test_dir/setup.yml"
-    mkdir -p "$test_dir/roles/system"
-    touch "$test_dir/Makefile"
+    setup_repo_workspace "$test_dir"
     local mock_bin="$test_dir/mock_bin"
-    mkdir -p "$mock_bin"
 
-    cat << 'EOF' > "$mock_bin/sudo"
-#!/bin/sh
-exec "$@"
-EOF
-    cat << 'EOF' > "$mock_bin/dnf"
-#!/bin/sh
-exit 0
-EOF
-    cat << 'EOF' > "$mock_bin/ansible-playbook"
-#!/bin/sh
-exit 0
-EOF
-    cat << 'EOF' > "$mock_bin/make"
-#!/bin/sh
-echo "CHECK_PATH:$PATH"
-exit 0
-EOF
-    chmod +x "$mock_bin"/*
-
-    for cmd in bash dirname basename uname cut sed grep awk date echo cat mkdir rm mktemp which id env chmod; do
-        target=$(command -v "$cmd" 2>/dev/null || true)
-        if [ -n "$target" ] && [ -x "$target" ]; then
-            ln -s "$target" "$mock_bin/$cmd"
-        fi
-    done
+    mock_sudo "$mock_bin"
+    mock_pkg_mgr "$mock_bin" "dnf" stub
+    mock_ansible_playbook "$mock_bin"
+    create_mock "$mock_bin" "make" 'echo "CHECK_PATH:$PATH"
+exit 0'
+    link_coreutils "$mock_bin"
 
     local output
     output=$(cd "$test_dir" && PATH="$mock_bin" bash "$BOOTSTRAP_SCRIPT" 2>&1)
@@ -335,37 +175,14 @@ test_skip_ansible_when_already_installed() {
     test_dir="$(mktemp -d)"
     trap 'rm -rf "${test_dir:-}"' RETURN
 
-    touch "$test_dir/setup.yml"
-    mkdir -p "$test_dir/roles/system"
-    touch "$test_dir/Makefile"
+    setup_repo_workspace "$test_dir"
     local mock_bin="$test_dir/mock_bin"
-    mkdir -p "$mock_bin"
 
-    cat << 'EOF' > "$mock_bin/sudo"
-#!/bin/sh
-exec "$@"
-EOF
-    cat << 'EOF' > "$mock_bin/dnf"
-#!/bin/sh
-echo "DNF_CALLED: $@"
-exit 0
-EOF
-    cat << 'EOF' > "$mock_bin/make"
-#!/bin/sh
-exit 0
-EOF
-    cat << 'EOF' > "$mock_bin/ansible-playbook"
-#!/bin/sh
-exit 0
-EOF
-    chmod +x "$mock_bin"/*
-
-    for cmd in bash dirname basename uname cut sed grep awk date echo cat mkdir rm mktemp which id env chmod; do
-        target=$(command -v "$cmd" 2>/dev/null || true)
-        if [ -n "$target" ] && [ -x "$target" ]; then
-            ln -s "$target" "$mock_bin/$cmd"
-        fi
-    done
+    mock_sudo "$mock_bin"
+    mock_pkg_mgr "$mock_bin" "dnf" log
+    mock_make "$mock_bin" false
+    mock_ansible_playbook "$mock_bin"
+    link_coreutils "$mock_bin"
 
     local output
     output=$(cd "$test_dir" && PATH="$mock_bin" bash "$BOOTSTRAP_SCRIPT" 2>&1)
