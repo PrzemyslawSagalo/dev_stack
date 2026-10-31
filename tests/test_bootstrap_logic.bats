@@ -81,7 +81,26 @@ exit 0'
     assert_output --partial "MAKE_PWD=$mock_home/.dev_env"
 }
 
-@test "Corrupted or non-git destination directory is cleaned and re-cloned" {
+@test "Refuse to overwrite non-Git destination directory without opt-in cleanup" {
+    local test_dir="$BATS_TEST_TMPDIR/corrupt_git_refuse"
+    mkdir -p "$test_dir"
+
+    local mock_home="$test_dir/fake_home"
+    mkdir -p "$mock_home/.dev_env"  # Directory exists but lacks .git
+
+    local mock_bin="$test_dir/mock_bin"
+    mock_pkg_mgr "$mock_bin" "apt-get"
+    mock_pkg_mgr "$mock_bin" "dnf"
+    mock_sudo "$mock_bin"
+    create_mock "$mock_bin" "git" 'exit 0'
+    mock_make "$mock_bin" true
+
+    run bash -c "cd '$test_dir' && HOME='$mock_home' PATH='$mock_bin:$PATH' bash < '$BOOTSTRAP_SCRIPT'"
+    assert_failure 1
+    assert_output --partial "exists but is not a Git repository"
+}
+
+@test "Corrupted or non-git destination directory is cleaned and re-cloned when BOOTSTRAP_CLEANUP=1" {
     local test_dir="$BATS_TEST_TMPDIR/corrupt_git"
     mkdir -p "$test_dir"
 
@@ -99,7 +118,7 @@ fi
 exit 0'
     mock_make "$mock_bin" true
 
-    run bash -c "cd '$test_dir' && HOME='$mock_home' PATH='$mock_bin:$PATH' bash < '$BOOTSTRAP_SCRIPT'"
+    run bash -c "cd '$test_dir' && HOME='$mock_home' PATH='$mock_bin:$PATH' BOOTSTRAP_CLEANUP=1 bash < '$BOOTSTRAP_SCRIPT'"
     assert_success
     assert_output --partial "CLONE_CALLED"
     assert_output --partial "MAKE_PWD=$mock_home/.dev_env"

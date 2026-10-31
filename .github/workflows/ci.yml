@@ -26,7 +26,7 @@ jobs:
       - name: Run pre-commit
         run: pre-commit run --all-files
       - name: Setup BATS
-        uses: bats-core/bats-action@v3
+        uses: bats-core/bats-action@3.0.0
         with:
           support-install: true
           assert-install: true
@@ -38,7 +38,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Setup BATS
-        uses: bats-core/bats-action@v3
+        uses: bats-core/bats-action@3.0.0
         with:
           support-install: true
           assert-install: true

@@ -131,9 +131,19 @@ elif [ -f "./setup.yml" ] && [ -d "./roles/system" ] && [ -f "./Makefile" ]; the
     DEST_DIR="$PWD"
 else
     DEST_DIR="${HOME:-/root}/.dev_env"
-    if [ ! -d "$DEST_DIR/.git" ]; then
+    if [ -d "$DEST_DIR" ] && [ ! -d "$DEST_DIR/.git" ]; then
+        if [ "${BOOTSTRAP_CLEANUP:-0}" = "1" ] || [ "${FORCE:-0}" = "1" ]; then
+            echo "==> Overwriting existing non-git directory $DEST_DIR (cleanup enabled)..."
+            rm -rf "$DEST_DIR"
+            git clone "$REPO_URL" "$DEST_DIR"
+        else
+            echo "Error: Destination directory '$DEST_DIR' exists but is not a Git repository." >&2
+            echo "Refusing to overwrite existing contents. Please back up or remove '$DEST_DIR' manually," >&2
+            echo "or re-run with BOOTSTRAP_CLEANUP=1 to allow automatic cleanup." >&2
+            exit 1
+        fi
+    elif [ ! -d "$DEST_DIR" ]; then
         echo "==> Cloning repository..."
-        rm -rf "$DEST_DIR"
         git clone "$REPO_URL" "$DEST_DIR"
     else
         echo "==> Repository already exists. Updating..."
