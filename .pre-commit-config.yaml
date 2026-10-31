@@ -4,3 +4,4 @@ repos:
     hooks:
       - id: ansible-lint
         language_version: python3
+        exclude: ^tests/libs/
