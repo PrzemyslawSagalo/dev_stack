@@ -1,12 +1,15 @@
-.PHONY: help setup update test lint sync-nvim
+.PHONY: help setup update test test-bootstrap test-bootstrap-unit test-bootstrap-smoke lint sync-nvim deps-bats
+
+BATS ?= $(shell command -v bats 2>/dev/null || echo "tests/libs/bats-core/bin/bats")
 
 help:
 	@echo "Available commands:"
-	@echo "  make setup     - Installs the environment (requires Ansible)"
-	@echo "  make update    - Pulls latest version from Git and updates environment"
-	@echo "  make sync-nvim - Syncs ~/.config/nvim changes into monorepo (use SYNC_DELETE=1 to sync file deletions)"
-	@echo "  make test      - Runs Molecule acceptance tests"
-	@echo "  make lint      - Runs pre-commit and ansible-lint checks"
+	@echo "  make setup          - Installs the environment (requires Ansible)"
+	@echo "  make update         - Pulls latest version from Git and updates environment"
+	@echo "  make sync-nvim      - Syncs ~/.config/nvim changes into monorepo (use SYNC_DELETE=1 to sync file deletions)"
+	@echo "  make test           - Runs Molecule acceptance tests"
+	@echo "  make test-bootstrap - Runs bootstrap unit tests and container smoke tests"
+	@echo "  make lint           - Runs pre-commit and ansible-lint checks"
 
 setup:
 	ansible-playbook -i localhost, -c local setup.yml
@@ -56,5 +59,34 @@ sync-nvim:
 test:
 	cd tests && molecule test
 
+test-bootstrap-unit:
+	@if [ ! -x "$$(command -v $(BATS) 2>/dev/null)" ] && [ ! -x "$(BATS)" ]; then \
+		$(MAKE) deps-bats; \
+	fi
+	$(BATS) tests/test_bootstrap_logic.bats tests/test_bootstrap_packages.bats
+
+test-bootstrap-smoke:
+	@if [ ! -x "$$(command -v $(BATS) 2>/dev/null)" ] && [ ! -x "$(BATS)" ]; then \
+		$(MAKE) deps-bats; \
+	fi
+	$(BATS) tests/test_bootstrap_containers.bats
+
+test-bootstrap: test-bootstrap-unit test-bootstrap-smoke
+
 lint:
 	pre-commit run --all-files
+
+deps-bats:
+	@mkdir -p tests/libs
+	@if [ ! -d "tests/libs/bats-core" ]; then \
+		echo "=> Cloning bats-core..."; \
+		git clone --depth 1 --branch v1.11.1 https://github.com/bats-core/bats-core.git tests/libs/bats-core; \
+	fi
+	@if [ ! -d "tests/libs/bats-support" ]; then \
+		echo "=> Cloning bats-support..."; \
+		git clone --depth 1 --branch v0.3.0 https://github.com/bats-core/bats-support.git tests/libs/bats-support; \
+	fi
+	@if [ ! -d "tests/libs/bats-assert" ]; then \
+		echo "=> Cloning bats-assert..."; \
+		git clone --depth 1 --branch v2.1.0 https://github.com/bats-core/bats-assert.git tests/libs/bats-assert; \
+	fi
