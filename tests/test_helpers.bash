@@ -34,10 +34,14 @@ load_bats_lib() {
     candidates+=(
         "${REPO_ROOT}/tests/libs/${lib}/load.bash"
         "${REPO_ROOT}/tests/libs/bats-${lib}/load.bash"
+        "/usr/lib/${lib}/load.bash"
+        "/usr/lib/bats-${lib}/load.bash"
         "/usr/lib/bats/${lib}/load.bash"
         "/usr/lib/bats/bats-${lib}/load.bash"
         "/usr/local/lib/${lib}/load.bash"
         "/usr/local/lib/bats-${lib}/load.bash"
+        "/usr/local/lib/bats/${lib}/load.bash"
+        "/usr/local/lib/bats/bats-${lib}/load.bash"
     )
 
     for candidate in "${candidates[@]}"; do
