@@ -1,38 +1,74 @@
-#!/bin/bash
-# tests/test_helpers.sh - Shared test harness and mock primitives
-
-# 1. Include guard
-[ -n "${_DEV_STACK_TEST_HELPERS_SH:-}" ] && return 0
-export _DEV_STACK_TEST_HELPERS_SH=1
+#!/usr/bin/env bash
+# shellcheck shell=bash
+# tests/test_helpers.bash - Shared BATS test harness and mock primitives
 
 # 2. Common paths derivation
-if [ -n "${BASH_VERSION:-}" ]; then
-    eval '_SRC="${BASH_SOURCE[0]}"'
-    REPO_ROOT="${REPO_ROOT:-$(cd "$(dirname "$_SRC")/.." 2>/dev/null && pwd || pwd)}"
+if [ -n "${BASH_SOURCE[0]:-}" ]; then
+    _DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+    REPO_ROOT="${REPO_ROOT:-$(cd "$_DIR/.." >/dev/null 2>&1 && pwd)}"
 else
-    REPO_ROOT="${REPO_ROOT:-$(cd "$(dirname "$0")/.." 2>/dev/null && pwd || pwd)}"
+    REPO_ROOT="${REPO_ROOT:-$(pwd)}"
 fi
+export REPO_ROOT
 BOOTSTRAP_SCRIPT="${BOOTSTRAP_SCRIPT:-$REPO_ROOT/bootstrap.sh}"
+export BOOTSTRAP_SCRIPT
 
-# 3. Test harness state
-TEST_COUNT=${TEST_COUNT:-0}
-PASS_COUNT=${PASS_COUNT:-0}
+# 3. Dynamic BATS Library Resolver (bats-support / bats-assert)
+load_bats_lib() {
+    local lib="$1"
+    # Try native bats_load_library_safe if available
+    if command -v bats_load_library_safe >/dev/null 2>&1; then
+        if bats_load_library_safe "$lib" 2>/dev/null; then
+            return 0
+        fi
+    fi
 
-# 4. run_test <test_name> <cmd...>
-run_test() {
-    local test_name="$1"
-    shift
-    TEST_COUNT=$((TEST_COUNT + 1))
-    echo "========================================"
-    echo "Running Test ${TEST_COUNT}: ${test_name}"
-    echo "========================================"
-    if "$@"; then
-        echo "PASS: Test ${TEST_COUNT} - ${test_name}"
-        PASS_COUNT=$((PASS_COUNT + 1))
-        return 0
-    else
-        echo "FAIL: Test ${TEST_COUNT} - ${test_name}" >&2
+    # Search candidates across BATS_LIB_PATH, repo-local tests/libs, and system paths
+    local candidates=()
+    if [ -n "${BATS_LIB_PATH:-}" ]; then
+        local IFS=':'
+        for p in $BATS_LIB_PATH; do
+            candidates+=("$p/$lib/load.bash" "$p/bats-$lib/load.bash")
+        done
+    fi
+    candidates+=(
+        "${REPO_ROOT}/tests/libs/${lib}/load.bash"
+        "${REPO_ROOT}/tests/libs/bats-${lib}/load.bash"
+        "/usr/lib/bats/${lib}/load.bash"
+        "/usr/lib/bats/bats-${lib}/load.bash"
+        "/usr/local/lib/${lib}/load.bash"
+        "/usr/local/lib/bats-${lib}/load.bash"
+    )
+
+    for candidate in "${candidates[@]}"; do
+        if [ -f "$candidate" ]; then
+            # shellcheck disable=SC1090
+            source "$candidate"
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+# Attempt loading helper libraries if running inside bats
+if command -v bats_internal_load >/dev/null 2>&1 || command -v load >/dev/null 2>&1; then
+    if ! load_bats_lib bats-support || ! load_bats_lib bats-assert; then
+        echo "Error: bats-support or bats-assert not found. Run 'make deps-bats' or install them." >&2
         return 1
+    fi
+fi
+
+# 4. PATH Isolation Lifecycle Hooks
+test_setup() {
+    ORIG_PATH="$PATH"
+    export ORIG_PATH
+}
+
+test_teardown() {
+    if [ -n "${ORIG_PATH:-}" ]; then
+        PATH="$ORIG_PATH"
+        export PATH
     fi
 }
 
@@ -66,7 +102,7 @@ create_mock() {
     chmod +x "$target"
 }
 
-# 6. Semantic mock wrappers
+# 6. Semantic Mock Wrappers
 mock_sudo() {
     local bin_dir="$1"
     create_mock "$bin_dir" "sudo" 'exec "$@"'
@@ -76,6 +112,7 @@ mock_make() {
     local bin_dir="$1"
     local record_pwd="${2:-true}"
     if [ "$record_pwd" = "true" ]; then
+        # shellcheck disable=SC2016
         create_mock "$bin_dir" "make" 'echo "MAKE_PWD=$PWD"
 exit 0'
     else
@@ -144,9 +181,9 @@ exit 0"
 link_coreutils() {
     local bin_dir="$1"
     mkdir -p "$bin_dir"
-    local tools="bash dirname basename uname cut sed grep awk date echo cat mkdir rm mktemp which id env chmod tr"
+    local tools=(bash dirname basename uname cut sed grep awk date echo cat mkdir rm mktemp which id env chmod tr)
     local cmd target
-    for cmd in $tools; do
+    for cmd in "${tools[@]}"; do
         if [ ! -e "$bin_dir/$cmd" ] && [ ! -L "$bin_dir/$cmd" ]; then
             target="$(command -v "$cmd" 2>/dev/null || true)"
             if [ -n "$target" ] && [ -x "$target" ]; then
@@ -156,7 +193,7 @@ link_coreutils() {
     done
 }
 
-# 8. Fixture workspace generators
+# 8. Fixture Workspace Generators
 setup_repo_workspace() {
     local ws="$1"
     mkdir -p "$ws/roles/system" "$ws/mock_bin"
