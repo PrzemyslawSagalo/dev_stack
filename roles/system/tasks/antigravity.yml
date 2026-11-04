@@ -1,0 +1,33 @@
+---
+- name: Check if Antigravity CLI is installed
+  ansible.builtin.stat:
+    path: /usr/local/bin/agy
+  register: system_agy_bin
+
+- name: Install Antigravity CLI
+  when: not system_agy_bin.stat.exists
+  block:
+    - name: Download Antigravity CLI install script
+      ansible.builtin.get_url:
+        url: https://antigravity.google/cli/install.sh
+        dest: /tmp/install_agy.sh
+        mode: "0700"
+      register: system_agy_download
+      until: system_agy_download is success
+      retries: 3
+      delay: 5
+
+    - name: Run Antigravity CLI install script
+      ansible.builtin.command:
+        cmd: /tmp/install_agy.sh --dir /usr/local/bin
+      changed_when: true
+
+    - name: Clean up Antigravity CLI install script
+      ansible.builtin.file:
+        path: /tmp/install_agy.sh
+        state: absent
+
+- name: Ensure Antigravity CLI binary is executable
+  ansible.builtin.file:
+    path: /usr/local/bin/agy
+    mode: "0755"

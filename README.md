@@ -52,7 +52,7 @@ ansible-playbook setup.yml
   * **C++**: GCC, G++, Clang, Make, and CMake build toolchain.
   * **Docker**: Docker CE engine with rootless group access, Docker Compose v2 CLI plugin, and virtualization-aware daemon management.
   * **Languages & Cloud Tools**: OpenJDK / Amazon Corretto 21 with SDKMAN, Node.js via `nvm`, Go toolchain, Helm, OpenShift client (`oc`), AWS CLI v2, and GitHub CLI (`gh`).
-  * **Core CLI Packages**: `git`, `tmux`, `jq`, `ripgrep`, `tree-sitter`, `lazygit`, `unzip`, `curl`, `wget`, `htop`, `try`.
+  * **Core CLI Packages**: `git`, `tmux`, `jq`, `ripgrep`, `tree-sitter`, `lazygit`, `unzip`, `curl`, `wget`, `htop`, `try`, `agy` (Google Antigravity CLI).
 * **Dotfiles & Shell (`roles/dotfiles`)**:
   * Comprehensive `.bash_aliases` suite (Git shortcuts, tmux helpers, Python venv macros, environment loaders).
   * Terminal multiplexer configuration (`.tmux.conf`) with vi-mode navigation.
