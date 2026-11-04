@@ -29,8 +29,11 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install pre-commit
-        run: pip install --no-cache-dir pre-commit
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq lua-check
+          pip install --no-cache-dir pre-commit
 
       - name: Run pre-commit checks
         run: pre-commit run --all-files
