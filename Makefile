@@ -4,7 +4,7 @@ help:
 	@echo "Available commands:"
 	@echo "  make setup                     - Installs the environment (requires Ansible)"
 	@echo "  make update                    - Pulls latest version from Git and updates environment"
-	@echo "  make lint                      - Runs pre-commit and ansible-lint checks"
+	@echo "  make lint                      - Runs pre-commit checks (ansible-lint, shellcheck, shfmt, stylua, luacheck)"
 	@echo "  make test-unit-ubuntu          - Runs unit tests in Ubuntu container"
 	@echo "  make test-unit-amazonlinux     - Runs unit tests in Amazon Linux container"
 	@echo "  make test-unit                 - Runs unit tests for all supported distributions"
