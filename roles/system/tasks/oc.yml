@@ -4,7 +4,7 @@
     src: "https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-linux.tar.gz"
     dest: "/usr/local/bin"
     remote_src: true
-    include:
+    extra_opts:
       - oc
     mode: "0755"
     creates: /usr/local/bin/oc
