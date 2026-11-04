@@ -39,9 +39,29 @@ jobs:
       - name: Run pre-commit checks
         run: pre-commit run --all-files
 
+  test_unit:
+    name: tests/unit (${{ matrix.distro }})
+    needs: lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        distro:
+          - "ubuntu:22.04"
+          - "amazonlinux:2023"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run containerized unit tests
+        run: ./tests/run.sh unit "${{ matrix.distro }}"
+
   test_smoke:
     name: tests/test_smoke (${{ matrix.distro }})
-    needs: lint
+    needs:
+      - lint
+      - test_unit
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
@@ -55,4 +75,4 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run containerized smoke test
-        run: ./tests/test_smoke/run_smoke_test.sh "${{ matrix.distro }}"
+        run: ./tests/run.sh smoke "${{ matrix.distro }}"
