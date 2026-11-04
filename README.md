@@ -33,9 +33,9 @@ The repository provides [Makefile](Makefile) targets for common tasks:
 make setup              # Provisions or re-applies the environment via local Ansible
 make update             # Pulls latest main branch and re-runs the Ansible playbook
 make lint               # Runs pre-commit and ansible-lint code quality checks
-make test-smoke              # Runs multi-platform smoke test in containers (Ubuntu 22.04 & Amazon Linux 2023)
-make test-smoke-ubuntu       # Runs smoke test in Ubuntu 22.04 container
-make test-smoke-amazonlinux  # Runs smoke test in Amazon Linux 2023 container
+make test-unit          # Runs containerized unit tests for bootstrap functions (Ubuntu 22.04 & Amazon Linux 2023)
+make test-smoke         # Runs containerized smoke tests for provisioned tools (Ubuntu 22.04 & Amazon Linux 2023)
+make test               # Runs all test suites (unit + smoke)
 ```
 
 ### 3. Direct Ansible Execution

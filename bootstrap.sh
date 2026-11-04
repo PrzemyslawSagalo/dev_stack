@@ -1,10 +1,12 @@
 #!/bin/sh
 set -eu
 
-if [ -z "${BASH_VERSION:-}" ]; then
-    if command -v bash >/dev/null 2>&1; then
-        if [ -f "$0" ]; then
-            exec bash "$0" "$@"
+if [ "${BOOTSTRAP_SOURCE_ONLY:-0}" != "1" ]; then
+    if [ -z "${BASH_VERSION:-}" ]; then
+        if command -v bash >/dev/null 2>&1; then
+            if [ -f "$0" ]; then
+                exec bash "$0" "$@"
+            fi
         fi
     fi
 fi
@@ -59,7 +61,7 @@ detect_os() {
 
 detect_package_manager() {
     CANDIDATE_FAMILY=""
-    case " $OS_ID $OS_ID_LIKE " in
+    case " ${OS_ID:-} ${OS_ID_LIKE:-} " in
         *"ubuntu"*|*"debian"*|*"pop"*|*"mint"*)
             CANDIDATE_FAMILY="debian"
             ;;
@@ -100,7 +102,7 @@ detect_package_manager() {
             PKG_MGR="yum"
         fi
     else
-        echo "Error: Unknown package manager or unsupported distribution '${OS_ID}' (${OS_NAME})." >&2
+        echo "Error: Unknown package manager or unsupported distribution '${OS_ID:-unknown}' (${OS_NAME:-Linux})." >&2
         echo "       dev_stack officially supports Ubuntu 22.04+ and Amazon Linux 2023." >&2
         echo "       Script supports package managers: apt-get, dnf, or yum." >&2
         exit 1
@@ -195,12 +197,18 @@ handover_to_ansible() {
     make setup
 }
 
-echo "==> Starting environment initialization (Bootstrap)..."
-verify_sudo_access
-detect_os
-detect_package_manager
-install_base_dependencies
-install_ansible
-configure_python_path
-resolve_workspace
-handover_to_ansible
+main() {
+    echo "==> Starting environment initialization (Bootstrap)..."
+    verify_sudo_access
+    detect_os
+    detect_package_manager
+    install_base_dependencies
+    install_ansible
+    configure_python_path
+    resolve_workspace
+    handover_to_ansible
+}
+
+if [ "${BOOTSTRAP_SOURCE_ONLY:-0}" != "1" ]; then
+    main "$@"
+fi
