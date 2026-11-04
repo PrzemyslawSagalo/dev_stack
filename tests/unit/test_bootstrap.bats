@@ -66,7 +66,7 @@ setup() {
         install_ansible
     "
     [ "$status" -eq 0 ]
-    [[ "$output" =~ "ansible-playbook already installed. Skipping installation." ]]
+    [[ "$output" == *"ansible-playbook already installed. Skipping installation."* ]]
 }
 
 @test "configure_python_path prepends local bin directories to PATH" {
@@ -76,7 +76,7 @@ setup() {
         echo \"PATH=\$PATH\"
     "
     [ "$status" -eq 0 ]
-    [[ "$output" =~ "$HOME/.local/bin" ]]
+    [[ "$output" == *"$HOME/.local/bin"* ]]
 }
 
 @test "resolve_workspace detects existing repository workspace" {
@@ -87,7 +87,7 @@ setup() {
         echo \"DEST_DIR=\$DEST_DIR\"
     "
     [ "$status" -eq 0 ]
-    [[ "$output" =~ "DEST_DIR=$REPO_DIR" ]]
+    [[ "$output" == *"DEST_DIR=$REPO_DIR"* ]]
 }
 
 @test "resolve_workspace clones repository when executed outside workspace" {
@@ -101,7 +101,7 @@ setup() {
         echo \"DEST_DIR=\$DEST_DIR\"
     "
     [ "$status" -eq 0 ]
-    [[ "$output" =~ "DEST_DIR=$tmp_user_home/.dev_stack" ]]
+    [[ "$output" == *"DEST_DIR=$tmp_user_home/.dev_stack"* ]]
     [ -d "$tmp_user_home/.dev_stack/.git" ]
     rm -rf "$tmp_user_home"
 }

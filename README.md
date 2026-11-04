@@ -27,15 +27,10 @@ chmod +x bootstrap.sh
 
 ### 2. Operational Shortcuts (Makefile)
 
-The repository provides [Makefile](Makefile) targets for common tasks:
+The repository provides a [Makefile](Makefile) for managing common workflows. Run `make help` to view all available commands:
 
 ```bash
-make setup              # Provisions or re-applies the environment via local Ansible
-make update             # Pulls latest main branch and re-runs the Ansible playbook
-make lint               # Runs pre-commit and ansible-lint code quality checks
-make test-unit          # Runs containerized unit tests for bootstrap functions (Ubuntu 22.04 & Amazon Linux 2023)
-make test-smoke         # Runs containerized smoke tests for provisioned tools (Ubuntu 22.04 & Amazon Linux 2023)
-make test               # Runs all test suites (unit + smoke)
+make help
 ```
 
 ### 3. Direct Ansible Execution

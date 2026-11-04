@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # dotfiles
 alias ddu='curl -fsSL https://raw.githubusercontent.com/PrzemyslawSagalo/dev_stack/main/bootstrap.sh | bash'
 

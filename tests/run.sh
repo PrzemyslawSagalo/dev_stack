@@ -6,13 +6,13 @@ DISTRO="${2:-ubuntu:22.04}"
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
 case "$DISTRO" in
-    ubuntu|ubuntu:22.04)
+    ubuntu | ubuntu:22.04)
         IMAGE="ubuntu:22.04"
         ;;
     ubuntu:24.04)
         IMAGE="ubuntu:24.04"
         ;;
-    amazonlinux|amazonlinux:2023|amzn|amzn2023)
+    amazonlinux | amazonlinux:2023 | amzn | amzn2023)
         IMAGE="amazonlinux:2023"
         ;;
     *)
