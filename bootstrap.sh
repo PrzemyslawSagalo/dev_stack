@@ -12,6 +12,7 @@ if [ "${BOOTSTRAP_SOURCE_ONLY:-0}" != "1" ]; then
 fi
 
 if [ -n "${BASH_VERSION:-}" ]; then
+    # shellcheck disable=SC3040
     set -o pipefail
 fi
 
@@ -35,8 +36,14 @@ detect_os() {
     if [ -f "$OS_RELEASE_FILE" ]; then
         while IFS='=' read -r key val || [ -n "$key" ]; do
             case "$val" in
-                \"*\") val="${val#\"}"; val="${val%\"}" ;;
-                \'*\') val="${val#\'}"; val="${val%\'}" ;;
+                \"*\")
+                    val="${val#\"}"
+                    val="${val%\"}"
+                    ;;
+                \'*\')
+                    val="${val#\'}"
+                    val="${val%\'}"
+                    ;;
             esac
             case "$key" in
                 ID)
@@ -55,14 +62,14 @@ detect_os() {
                     fi
                     ;;
             esac
-        done < "$OS_RELEASE_FILE"
+        done <"$OS_RELEASE_FILE"
     fi
 }
 
 detect_package_manager() {
     CANDIDATE_FAMILY=""
     case " ${OS_ID:-} ${OS_ID_LIKE:-} " in
-        *"ubuntu"*|*"debian"*|*"pop"*|*"mint"*)
+        *"ubuntu"* | *"debian"* | *"pop"* | *"mint"*)
             CANDIDATE_FAMILY="debian"
             ;;
         *"amzn"*)
@@ -169,7 +176,7 @@ configure_python_path() {
 }
 
 resolve_workspace() {
-    SCRIPT_DIR="$(cd "$(dirname "$0")" >/dev/null 2>&1 && pwd || true)"
+    SCRIPT_DIR="$(cd "$(dirname "$0")" >/dev/null 2>&1 && pwd)" || SCRIPT_DIR=""
     if [ -n "$SCRIPT_DIR" ] && [ -f "$SCRIPT_DIR/setup.yml" ] && [ -d "$SCRIPT_DIR/roles/system" ]; then
         echo "==> Detected in-repo workspace via script directory ($SCRIPT_DIR). Bypassing clone..."
         DEST_DIR="$SCRIPT_DIR"
