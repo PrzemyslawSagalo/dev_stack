@@ -10,7 +10,7 @@ help:
 	@echo "  make test-smoke                - Runs smoke tests for all supported distributions"
 
 setup:
-	ansible-playbook setup.yml
+	ansible-playbook -i localhost, -c local setup.yml
 
 update:
 	@echo "=> Pulling latest infrastructure from Git..."
