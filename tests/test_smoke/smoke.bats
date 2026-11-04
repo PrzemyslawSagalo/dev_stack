@@ -51,10 +51,31 @@ setup() {
     [[ "$output" =~ "Docker version" ]]
 }
 
+@test "Google Antigravity CLI is installed and runnable" {
+    run agy --version
+    [ "$status" -eq 0 ]
+    [ -n "$output" ]
+}
+
 @test "Neovim configuration exists and is non-empty" {
     [ -s "$HOME/.config/nvim/init.lua" ]
 }
 
 @test "Bash aliases file exists and is non-empty" {
     [ -s "$HOME/.bash_aliases" ]
+}
+
+@test "Antigravity configuration symlinks to Copilot components exist" {
+    [ -L "$HOME/.config/copilot/.mcp.json" ]
+    [ -f "$HOME/.config/copilot/.mcp.json" ]
+    [ -L "$HOME/.gemini/config/skills" ]
+    [ -d "$HOME/.gemini/config/skills" ]
+    [ -L "$HOME/.gemini/config/standards" ]
+    [ -d "$HOME/.gemini/config/standards" ]
+    [ -L "$HOME/.gemini/config/agents" ]
+    [ -d "$HOME/.gemini/config/agents" ]
+    [ -L "$HOME/.gemini/config/commands" ]
+    [ -d "$HOME/.gemini/config/commands" ]
+    [ -L "$HOME/.gemini/config/mcp_config.json" ]
+    [ -f "$HOME/.gemini/config/mcp_config.json" ]
 }
