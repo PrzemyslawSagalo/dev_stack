@@ -5,17 +5,18 @@
     state: present
   when: ansible_os_family == 'Debian'
 
-- name: Install ripgrep (RedHat)
-  ansible.builtin.shell: |
-    set -eo pipefail
-    TAG=$(curl -w '%{url_effective}' -I -L -s -S https://github.com/BurntSushi/ripgrep/releases/latest -o /dev/null | awk -F '/' '{print $NF}')
-    LATEST_RG_URL="https://github.com/BurntSushi/ripgrep/releases/download/${TAG}/ripgrep-${TAG}-x86_64-unknown-linux-musl.tar.gz"
-    LATEST_RG_FILE=$(basename "$LATEST_RG_URL")
-    curl -LO "$LATEST_RG_URL"
-    tar -xzf "$LATEST_RG_FILE"
-    RG_DIR=$(basename "$LATEST_RG_FILE" .tar.gz)
-    cp "$RG_DIR"/rg /usr/local/bin/
-    rm -rf "$RG_DIR" "$LATEST_RG_FILE"
-  args:
+- name: Install ripgrep (Amazon Linux)
+  ansible.builtin.unarchive:
+    src: >-
+      https://github.com/BurntSushi/ripgrep/releases/download/{{
+      ripgrep_version | default('14.1.1') }}/ripgrep-{{
+      ripgrep_version | default('14.1.1') }}-x86_64-unknown-linux-musl.tar.gz
+    dest: /usr/local/bin
+    remote_src: true
+    extra_opts:
+      - --strip-components=1
+      - --wildcards
+      - "*/rg"
+    mode: "0755"
     creates: /usr/local/bin/rg
-  when: ansible_os_family == 'RedHat'
+  when: ansible_distribution == 'Amazon'

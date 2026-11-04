@@ -15,7 +15,7 @@
     state: present
   when: ansible_os_family == 'Debian'
 
-- name: Install neovim dependencies (RedHat)
+- name: Install neovim dependencies (Amazon Linux)
   ansible.builtin.dnf:
     name:
       - ctags
@@ -26,21 +26,33 @@
       - make
       - cmake
     state: present
-  when: ansible_os_family == 'RedHat'
+  when: ansible_distribution == 'Amazon'
 
-- name: Download nvm install script
-  ansible.builtin.get_url:
-    url: https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh
-    dest: /tmp/nvm-install.sh
-    mode: "0755"
+- name: Check if nvm is installed
+  ansible.builtin.stat:
+    path: "{{ ansible_env.HOME }}/.nvm/nvm.sh"
+  register: system_nvm_file
   become: false
 
-- name: Run nvm install script
-  ansible.builtin.command:
-    cmd: bash /tmp/nvm-install.sh
-  args:
-    creates: "{{ ansible_env.HOME }}/.nvm/nvm.sh"
+- name: Install nvm
+  when: not system_nvm_file.stat.exists
   become: false
+  block:
+    - name: Download nvm install script
+      ansible.builtin.get_url:
+        url: https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh
+        dest: /tmp/nvm-install.sh
+        mode: "0755"
+
+    - name: Run nvm install script
+      ansible.builtin.command:
+        cmd: bash /tmp/nvm-install.sh
+      changed_when: true
+
+    - name: Clean up nvm install script
+      ansible.builtin.file:
+        path: /tmp/nvm-install.sh
+        state: absent
 
 - name: Install Node 23 via nvm
   ansible.builtin.shell: |
@@ -60,34 +72,73 @@
     state: present
   become: false
 
+- name: Check if tree-sitter CLI binary is installed
+  ansible.builtin.stat:
+    path: /usr/local/bin/tree-sitter
+  register: system_tree_sitter_bin
+
 - name: Install tree-sitter CLI (Amazon Linux)
-  ansible.builtin.shell: |
-    mkdir -p ~/bin
-    curl -sL https://github.com/tree-sitter/tree-sitter/releases/download/v0.22.6/tree-sitter-linux-x64.gz -o ~/bin/tree-sitter.gz
-    gzip -df ~/bin/tree-sitter.gz
-    chmod +x ~/bin/tree-sitter
-  args:
-    creates: "{{ ansible_env.HOME }}/bin/tree-sitter"
-  become: false
-  when: ansible_os_family == 'RedHat'
+  when:
+    - ansible_distribution == 'Amazon'
+    - not system_tree_sitter_bin.stat.exists
+  block:
+    - name: Download tree-sitter CLI archive
+      ansible.builtin.get_url:
+        url: https://github.com/tree-sitter/tree-sitter/releases/download/v0.22.6/tree-sitter-linux-x64.gz
+        dest: /tmp/tree-sitter.gz
+        mode: "0644"
 
-- name: Add tree-sitter to PATH in bashrc (Amazon Linux)
-  ansible.builtin.lineinfile:
-    path: "{{ ansible_env.HOME }}/.bashrc"
-    line: 'export PATH="$HOME/bin:$PATH"'
-    state: present
-  become: false
-  when: ansible_os_family == 'RedHat'
+    - name: Decompress tree-sitter CLI binary
+      ansible.builtin.command:
+        cmd: gzip -df /tmp/tree-sitter.gz
+      changed_when: true
 
-- name: Clone and build Neovim # noqa: command-instead-of-module
-  ansible.builtin.shell: |
-    set -e
-    rm -rf /tmp/neovim
-    git clone https://github.com/neovim/neovim.git /tmp/neovim
-    cd /tmp/neovim
-    make -j "$(nproc)" CMAKE_BUILD_TYPE=RelWithDebInfo
-    make install
-    rm -rf /tmp/neovim
-  args:
-    executable: /bin/bash
-    creates: /usr/local/bin/nvim
+    - name: Install tree-sitter CLI to /usr/local/bin
+      ansible.builtin.copy:
+        src: /tmp/tree-sitter
+        dest: /usr/local/bin/tree-sitter
+        mode: "0755"
+        remote_src: true
+
+    - name: Clean up tree-sitter temporary binary
+      ansible.builtin.file:
+        path: /tmp/tree-sitter
+        state: absent
+
+- name: Check if Neovim binary is installed
+  ansible.builtin.stat:
+    path: /usr/local/bin/nvim
+  register: system_nvim_bin
+
+- name: Build and install Neovim from source
+  when: not system_nvim_bin.stat.exists
+  block:
+    - name: Clone Neovim repository
+      ansible.builtin.git:
+        repo: https://github.com/neovim/neovim.git
+        dest: /tmp/neovim
+        version: "{{ neovim_version | default('v0.10.4') }}"
+        depth: 1
+
+    - name: Compile Neovim
+      ansible.builtin.command:
+        cmd: make -j "{{ ansible_processor_vcpus | default(2) }}" CMAKE_BUILD_TYPE=RelWithDebInfo
+        chdir: /tmp/neovim
+      changed_when: true
+
+    - name: Install Neovim binary
+      ansible.builtin.command:
+        cmd: make install
+        chdir: /tmp/neovim
+      changed_when: true
+
+    - name: Clean up Neovim build directory
+      ansible.builtin.file:
+        path: /tmp/neovim
+        state: absent
+
+- name: Download Luacheck binary
+  ansible.builtin.get_url:
+    url: https://github.com/lunarmodules/luacheck/releases/download/v1.0.0/luacheck
+    dest: /usr/local/bin/luacheck
+    mode: "0755"

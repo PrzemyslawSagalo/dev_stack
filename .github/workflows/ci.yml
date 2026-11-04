@@ -1,78 +1,54 @@
 ---
-name: Ansible CI
+name: CI
 
 on:
-  pull_request:
-    branches: [main]
   push:
-    branches: [main]
+    branches:
+      - main
+      - "refactor/**"
+      - "feat/**"
+      - "fix/**"
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: read
 
 jobs:
   lint:
+    name: Lint & Syntax Check
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
-      - name: Install dependencies
-        run: |
-          pip install pre-commit
-      - name: Run pre-commit
+          python-version: "3.12"
+
+      - name: Install pre-commit
+        run: pip install --no-cache-dir pre-commit
+
+      - name: Run pre-commit checks
         run: pre-commit run --all-files
-      - name: Setup BATS
-        uses: bats-core/bats-action@3.0.0
-        with:
-          support-install: true
-          assert-install: true
-      - name: Run bootstrap unit tests
-        run: make test-bootstrap-unit
 
-  bootstrap-smoke:
+  test_smoke:
+    name: tests/test_smoke (${{ matrix.distro }})
+    needs: lint
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setup BATS
-        uses: bats-core/bats-action@3.0.0
-        with:
-          support-install: true
-          assert-install: true
-      - name: Run multi-platform container smoke tests
-        run: make test-bootstrap-smoke
-
-  molecule:
-    runs-on: ubuntu-latest
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
         distro:
-          - "geerlingguy/docker-ubuntu2204-ansible"
-          - "geerlingguy/docker-amazonlinux2023-ansible"
-          - "redhat/ubi9-init"
+          - "ubuntu:22.04"
+          - "amazonlinux:2023"
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
-      - name: Install dependencies
-        run: |
-          pip install ansible-core molecule molecule-plugins[docker] docker
-          # Pre-install required collections with retry logic. When GitHub Actions launches multiple matrix
-          # jobs concurrently, the Ansible Galaxy API frequently drops connections or rate-limits
-          # Azure/GitHub IP ranges, returning transient connection reset errors.
-          for attempt in 1 2 3; do
-            ansible-galaxy collection install community.docker ansible.posix && break || {
-              echo "Galaxy install attempt $attempt failed, retrying in 5s..."
-              sleep 5
-            }
-          done
-      - name: Run Molecule tests
-        working-directory: tests
-        env:
-          MOLECULE_DISTRO: ${{ matrix.distro }}
-        run: molecule test
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run containerized smoke test
+        run: ./tests/test_smoke/run_smoke_test.sh "${{ matrix.distro }}"

@@ -1,13 +1,13 @@
 return {
-    {
-        "folke/snacks.nvim",
-        opts = {
-            indent = {
-                enable = true,
-            },
-            picker = {
-                enabled = true,
-            },
-        }
-    }
+	{
+		"folke/snacks.nvim",
+		opts = {
+			indent = {
+				enable = true,
+			},
+			picker = {
+				enabled = true,
+			},
+		},
+	},
 }
