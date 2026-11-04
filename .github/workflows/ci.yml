@@ -5,12 +5,13 @@ on:
   push:
     branches:
       - main
-      - "refactor/**"
-      - "feat/**"
-      - "fix/**"
   pull_request:
     branches:
       - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
