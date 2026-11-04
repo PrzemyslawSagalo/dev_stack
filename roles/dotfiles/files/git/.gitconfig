@@ -1,0 +1,9 @@
+[user]
+	name = Przemyslaw Sagalo
+	email = przemek@sagalo.pro
+[core]
+	editor = nvim
+[init]
+	defaultBranch = main
+[include]
+	path = ~/.gitconfig.local

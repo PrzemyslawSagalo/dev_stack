@@ -25,7 +25,7 @@
         src: /tmp/lazygit.tar.gz
         dest: /usr/local/bin
         remote_src: true
-        include:
+        extra_opts:
           - lazygit
         mode: "0755"
 

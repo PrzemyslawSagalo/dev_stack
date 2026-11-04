@@ -1,6 +1,7 @@
 ---
 - name: Setup Development Environment
-  hosts: all
+  hosts: localhost
+  connection: local
   vars:
     ansible_python_interpreter: /usr/bin/python3
 

@@ -19,4 +19,3 @@ vim.opt.wrap = false
 -- Hyper-fast autoread configuration
 vim.opt.autoread = true
 vim.opt.updatetime = 200
-
