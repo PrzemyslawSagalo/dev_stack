@@ -16,7 +16,7 @@
     state: present
   when: ansible_os_family == 'Debian'
 
-- name: Install pyenv build dependencies (RedHat)
+- name: Install pyenv build dependencies (Amazon Linux)
   ansible.builtin.dnf:
     name:
       - gcc
@@ -36,63 +36,37 @@
       - libffi-devel
       - sqlite-devel
     state: present
-  when: ansible_os_family == 'RedHat'
+  when: ansible_distribution == 'Amazon'
 
-- name: Download pyenv installer
-  ansible.builtin.get_url:
-    url: https://pyenv.run
-    dest: /tmp/pyenv_install.sh
-    mode: "0755"
+- name: Check if pyenv is installed
+  ansible.builtin.stat:
+    path: "{{ ansible_env.HOME }}/.pyenv/bin/pyenv"
+  register: system_pyenv_bin
   become: false
 
-- name: Run pyenv installer
-  ansible.builtin.command:
-    cmd: bash /tmp/pyenv_install.sh
-  args:
-    creates: "{{ ansible_env.HOME }}/.pyenv/bin/pyenv"
+- name: Install pyenv
+  when: not system_pyenv_bin.stat.exists
   become: false
+  block:
+    - name: Download pyenv installer
+      ansible.builtin.get_url:
+        url: https://pyenv.run
+        dest: /tmp/pyenv_install.sh
+        mode: "0755"
 
-- name: Add pyenv to profile.d
-  ansible.builtin.copy:
-    dest: /etc/profile.d/pyenv.sh
-    content: |
-      export PYENV_ROOT="${HOME}/.pyenv"
-      if [ -d "$PYENV_ROOT/bin" ]; then
-        export PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PATH"
-        eval "$("$PYENV_ROOT/bin/pyenv" init - 2>/dev/null)"
-      fi
-    mode: "0644"
+    - name: Run pyenv installer
+      ansible.builtin.command:
+        cmd: bash /tmp/pyenv_install.sh
+      changed_when: true
+
+    - name: Clean up pyenv installer script
+      ansible.builtin.file:
+        path: /tmp/pyenv_install.sh
+        state: absent
 
 - name: Add pyenv to bashrc
   ansible.builtin.blockinfile:
     path: "{{ ansible_env.HOME }}/.bashrc"
-    marker: "# {mark} ANSIBLE MANAGED BLOCK - PYENV"
-    block: |
-      export PYENV_ROOT="$HOME/.pyenv"
-      [[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PATH"
-      eval "$(pyenv init -)"
-  become: false
-
-- name: Add pyenv to bash_profile
-  ansible.builtin.blockinfile:
-    path: "{{ ansible_env.HOME }}/.bash_profile"
-    create: true
-    mode: "0644"
-    marker: "# {mark} ANSIBLE MANAGED BLOCK - PYENV"
-    block: |
-      if [ -f ~/.bashrc ]; then
-        . ~/.bashrc
-      fi
-      export PYENV_ROOT="$HOME/.pyenv"
-      [[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PATH"
-      eval "$(pyenv init -)"
-  become: false
-
-- name: Add pyenv to profile
-  ansible.builtin.blockinfile:
-    path: "{{ ansible_env.HOME }}/.profile"
-    create: true
-    mode: "0644"
     marker: "# {mark} ANSIBLE MANAGED BLOCK - PYENV"
     block: |
       export PYENV_ROOT="$HOME/.pyenv"
@@ -106,7 +80,7 @@
     export PYENV_ROOT="$HOME/.pyenv"
     export PATH="$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH"
     eval "$(pyenv init -)"
-    for ver in 3.13.2 3.12.9; do
+    for ver in 3.13.2 3.12.9 3.11.11; do
       if ! pyenv versions --bare | grep -qx "$ver"; then
         pyenv install "$ver"
       fi

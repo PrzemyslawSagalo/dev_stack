@@ -1,7 +1,7 @@
 local keymap = vim.keymap.set
 
-local opts = {noremap = true, silent = true}
-local term_opts = {silent = true}
+local opts = { noremap = true, silent = true }
+local term_opts = { silent = true }
 
 -- Remap space as leader key
 keymap("", "<Space>", "<Nop>", opts)
@@ -37,7 +37,6 @@ keymap("n", "<S-l>", ":bnext<CR>", opts)
 keymap("n", "<S-h>", ":bprevious<CR>", opts)
 keymap("n", "<leader>q", ":bd | bprev<CR>", opts)
 
-
 -- Insert --
 -- Press jk fast to enter
 keymap("i", "kj", "<ESC>", opts)
@@ -67,4 +66,3 @@ keymap("t", "<C-k>", "<C-\\><C-N><C-w>k", term_opts)
 keymap("t", "<C-l>", "<C-\\><C-N><C-w>l", term_opts)
 keymap("t", "<Esc>", "<C-\\><C-N>", term_opts)
 keymap("t", "kj", "<C-\\><C-N>", term_opts)
-

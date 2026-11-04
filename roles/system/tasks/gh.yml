@@ -30,15 +30,15 @@
     update_cache: true
   when: ansible_os_family == 'Debian'
 
-- name: Add GitHub CLI repo (RedHat)
+- name: Add GitHub CLI repo (Amazon Linux)
   ansible.builtin.get_url:
     url: https://cli.github.com/packages/rpm/gh-cli.repo
     dest: /etc/yum.repos.d/gh-cli.repo
     mode: "0644"
-  when: ansible_os_family == 'RedHat'
+  when: ansible_distribution == 'Amazon'
 
-- name: Install GitHub CLI (RedHat)
+- name: Install GitHub CLI (Amazon Linux)
   ansible.builtin.dnf:
     name: gh
     state: present
-  when: ansible_os_family == 'RedHat'
+  when: ansible_distribution == 'Amazon'

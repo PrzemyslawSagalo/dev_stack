@@ -11,30 +11,36 @@
     state: present
   when: ansible_distribution == 'Amazon'
 
-- name: Install OpenJDK 21 (RHEL/UBI)
-  ansible.builtin.dnf:
-    name: java-21-openjdk-devel
-    state: present
-  when: ansible_os_family == 'RedHat' and ansible_distribution != 'Amazon'
-
-- name: Download SDKMAN script
-  ansible.builtin.get_url:
-    url: "https://get.sdkman.io"
-    dest: "/tmp/get_sdkman.sh"
-    mode: "0755"
-  register: system_sdkman_download
-  until: system_sdkman_download is success
-  retries: 3
-  delay: 5
+- name: Check if SDKMAN is installed
+  ansible.builtin.stat:
+    path: "{{ ansible_env.HOME }}/.sdkman/bin/sdkman-init.sh"
+  register: system_sdkman_file
   become: false
 
-- name: Run SDKMAN install
-  ansible.builtin.command:
-    cmd: bash /tmp/get_sdkman.sh
-  args:
-    creates: "{{ ansible_env.HOME }}/.sdkman/bin/sdkman-init.sh"
-  register: system_sdkman_install
-  until: system_sdkman_install is success
-  retries: 3
-  delay: 5
+- name: Install SDKMAN
+  when: not system_sdkman_file.stat.exists
   become: false
+  block:
+    - name: Download SDKMAN script
+      ansible.builtin.get_url:
+        url: "https://get.sdkman.io"
+        dest: "/tmp/get_sdkman.sh"
+        mode: "0755"
+      register: system_sdkman_download
+      until: system_sdkman_download is success
+      retries: 3
+      delay: 5
+
+    - name: Run SDKMAN install
+      ansible.builtin.command:
+        cmd: bash /tmp/get_sdkman.sh
+      changed_when: true
+      register: system_sdkman_install
+      until: system_sdkman_install is success
+      retries: 3
+      delay: 5
+
+    - name: Clean up SDKMAN install script
+      ansible.builtin.file:
+        path: /tmp/get_sdkman.sh
+        state: absent

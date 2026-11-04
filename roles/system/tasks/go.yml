@@ -25,10 +25,3 @@
     dest: /usr/local/bin/gofmt
     state: link
     force: true
-
-- name: Add Go to PATH in bashrc
-  ansible.builtin.lineinfile:
-    path: "{{ ansible_env.HOME }}/.bashrc"
-    line: "export PATH=$PATH:/usr/local/go/bin"
-    state: present
-  become: false

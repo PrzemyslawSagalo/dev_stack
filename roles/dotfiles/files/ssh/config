@@ -1,5 +1,3 @@
-# Usage example:
-# git clone git@github-PrzemyslawSagalo:PrzemyslawSagalo/dotfiles.git
 Host github-PrzemyslawSagalo
    HostName github.com
    User git

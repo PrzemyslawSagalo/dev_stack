@@ -4,7 +4,7 @@
 
 Automated, reproducible, and tested Linux development environment provisioning using Ansible.
 
-Supports modern Linux distributions including **Ubuntu 22.04+**, **Amazon Linux 2023**, and **Red Hat Enterprise Linux / UBI 9**.
+Supports modern Linux distributions including **Ubuntu 22.04+** and **Amazon Linux 2023**.
 
 ---
 
@@ -30,10 +30,12 @@ chmod +x bootstrap.sh
 The repository provides [Makefile](Makefile) targets for common tasks:
 
 ```bash
-make setup   # Provisions or re-applies the environment via local Ansible
-make update  # Pulls latest main branch and re-runs the Ansible playbook
-make test    # Runs Molecule acceptance tests across container platforms
-make lint    # Runs pre-commit and ansible-lint code quality checks
+make setup              # Provisions or re-applies the environment via local Ansible
+make update             # Pulls latest main branch and re-runs the Ansible playbook
+make lint               # Runs pre-commit and ansible-lint code quality checks
+make test-smoke              # Runs multi-platform smoke test in containers (Ubuntu 22.04 & Amazon Linux 2023)
+make test-smoke-ubuntu       # Runs smoke test in Ubuntu 22.04 container
+make test-smoke-amazonlinux  # Runs smoke test in Amazon Linux 2023 container
 ```
 
 ### 3. Direct Ansible Execution
@@ -41,7 +43,7 @@ make lint    # Runs pre-commit and ansible-lint code quality checks
 To run or re-apply the playbook directly:
 
 ```bash
-ansible-playbook -i localhost, -c local setup.yml
+ansible-playbook setup.yml
 ```
 
 ---
@@ -51,15 +53,17 @@ ansible-playbook -i localhost, -c local setup.yml
 `dev_stack` provisions the workstation declaratively via modular Ansible roles in [setup.yml](setup.yml):
 
 * **System Tools & Runtimes (`roles/system`)**:
-  * **Python**: `pyenv` with Python 3.13 default, Python 3.12, pre-compiled C-extension build dependencies (`ssl`, `sqlite3`, `lzma`, `ctypes`), and shims across login/interactive shells.
+  * **Python**: `pyenv` with Python 3.13 default, Python 3.12, Python 3.11, pre-compiled C-extension build dependencies (`ssl`, `sqlite3`, `lzma`, `ctypes`), and shims across login/interactive shells.
+  * **C++**: GCC, G++, Clang, Make, and CMake build toolchain.
   * **Docker**: Docker CE engine with rootless group access, Docker Compose v2 CLI plugin, and virtualization-aware daemon management.
-  * **Languages & Cloud Tools**: OpenJDK / Amazon Corretto 21 with SDKMAN, Node.js via `nvm`, Helm, and OpenShift client (`oc`).
-  * **Core CLI Packages**: `git`, `tmux`, `jq`, `unzip`, `curl`, `wget`, `htop`, `try`.
+  * **Languages & Cloud Tools**: OpenJDK / Amazon Corretto 21 with SDKMAN, Node.js via `nvm`, Go toolchain, Helm, OpenShift client (`oc`), AWS CLI v2, and GitHub CLI (`gh`).
+  * **Core CLI Packages**: `git`, `tmux`, `jq`, `ripgrep`, `tree-sitter`, `lazygit`, `unzip`, `curl`, `wget`, `htop`, `try`.
 * **Dotfiles & Shell (`roles/dotfiles`)**:
   * Comprehensive `.bash_aliases` suite (Git shortcuts, tmux helpers, Python venv macros, environment loaders).
   * Terminal multiplexer configuration (`.tmux.conf`) with vi-mode navigation.
   * SSH client configuration (`~/.ssh/config`).
-  * AI assistant configurations (`.config/copilot`, `.config/claude`).
+  * Git global configuration (`~/.gitconfig`).
+  * AI assistant configuration (`.config/copilot`).
 * **Editor (`roles/nvim`)**:
   * Modern Neovim IDE configuration.
 
