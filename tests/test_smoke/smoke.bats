@@ -57,6 +57,12 @@ setup() {
     [ -n "$output" ]
 }
 
+@test "GitHub Copilot CLI is installed and runnable" {
+    run copilot --version
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ "GitHub Copilot CLI" ]]
+}
+
 @test "Neovim configuration exists and is non-empty" {
     [ -s "$HOME/.config/nvim/init.lua" ]
 }
@@ -78,4 +84,22 @@ setup() {
     [ -d "$HOME/.gemini/config/commands" ]
     [ -L "$HOME/.gemini/config/mcp_config.json" ]
     [ -f "$HOME/.gemini/config/mcp_config.json" ]
+}
+
+@test "MAISTER_PLUGIN_ROOT is exported in bashrc" {
+    run grep "export MAISTER_PLUGIN_ROOT=" "$HOME/.bashrc"
+    [ "$status" -eq 0 ]
+}
+
+@test "Copilot has Maister plugin installed" {
+    run copilot plugin list
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ "maister-copilot" ]]
+}
+
+@test "Antigravity CLI has Maister plugin installed" {
+    run agy plugin list
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ "maister" ]]
+    [[ "$output" =~ "enabled" ]]
 }

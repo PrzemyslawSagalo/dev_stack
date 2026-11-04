@@ -82,6 +82,9 @@
     state: link
     force: true
 
+- name: Configure Maister plugin for Copilot and Antigravity
+  ansible.builtin.import_tasks: maister.yml
+
 - name: Ensure ~/.ssh directory exists
   ansible.builtin.file:
     path: "{{ ansible_env.HOME }}/.ssh"

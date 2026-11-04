@@ -1,0 +1,61 @@
+---
+- name: Check registered Copilot marketplaces
+  ansible.builtin.command:
+    cmd: copilot plugin marketplace list
+  register: dotfiles_copilot_marketplaces
+  changed_when: false
+  failed_when: false
+  environment:
+    COPILOT_HOME: "{{ ansible_env.HOME }}/.config/copilot"
+
+- name: Add Maister marketplace to Copilot
+  ansible.builtin.command:
+    cmd: copilot plugin marketplace add SkillPanel/maister
+  when:
+    - dotfiles_copilot_marketplaces.rc == 0
+    - "'maister-plugins' not in dotfiles_copilot_marketplaces.stdout"
+  changed_when: true
+  environment:
+    COPILOT_HOME: "{{ ansible_env.HOME }}/.config/copilot"
+
+- name: Check installed Copilot plugins
+  ansible.builtin.command:
+    cmd: copilot plugin list
+  register: dotfiles_copilot_plugins
+  changed_when: false
+  failed_when: false
+  environment:
+    COPILOT_HOME: "{{ ansible_env.HOME }}/.config/copilot"
+
+- name: Install maister-copilot plugin in Copilot
+  ansible.builtin.command:
+    cmd: copilot plugin install maister-copilot@maister-plugins
+  when:
+    - dotfiles_copilot_plugins.rc == 0
+    - "'maister-copilot' not in dotfiles_copilot_plugins.stdout"
+  changed_when: true
+  environment:
+    COPILOT_HOME: "{{ ansible_env.HOME }}/.config/copilot"
+
+- name: Check installed Antigravity plugins
+  ansible.builtin.command:
+    cmd: agy plugin list
+  register: dotfiles_agy_plugins
+  changed_when: false
+  failed_when: false
+
+- name: Install Maister plugin in Antigravity
+  ansible.builtin.command:
+    cmd: agy plugin install https://github.com/SkillPanel/maister
+  when:
+    - dotfiles_agy_plugins.rc == 0
+    - "'maister' not in dotfiles_agy_plugins.stdout"
+  changed_when: true
+
+- name: Ensure MAISTER_PLUGIN_ROOT is set in ~/.bashrc
+  ansible.builtin.lineinfile:
+    path: "{{ ansible_env.HOME }}/.bashrc"
+    line: 'export MAISTER_PLUGIN_ROOT="$HOME/.config/copilot/installed-plugins/maister-plugins/maister-copilot"'
+    state: present
+    create: true
+    mode: "0644"
