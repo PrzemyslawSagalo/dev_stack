@@ -34,6 +34,13 @@
     create: true
     mode: "0644"
 
+- name: Symlink ~/.copilot to ~/.config/copilot
+  ansible.builtin.file:
+    src: "{{ ansible_env.HOME }}/.config/copilot"
+    dest: "{{ ansible_env.HOME }}/.copilot"
+    state: link
+    force: true
+
 - name: Symlink .mcp.json to mcp-config.json in Copilot directory
   ansible.builtin.file:
     src: "{{ ansible_env.HOME }}/.config/copilot/mcp-config.json"

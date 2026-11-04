@@ -1,6 +1,8 @@
 #!/usr/bin/env bats
 
 setup() {
+    export COPILOT_HOME="${COPILOT_HOME:-$HOME/.config/copilot}"
+
     if [ -f "$HOME/.bashrc" ]; then
         # shellcheck disable=SC1090,SC1091
         source "$HOME/.bashrc" 2>/dev/null || true
