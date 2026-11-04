@@ -80,9 +80,10 @@
     export PYENV_ROOT="$HOME/.pyenv"
     export PATH="$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH"
     eval "$(pyenv init -)"
+    installed_versions="$(pyenv versions --bare || true)"
     for ver in 3.13.2 3.12.9 3.11.11; do
-      if ! pyenv versions --bare | grep -qx "$ver"; then
-        pyenv install "$ver"
+      if [ ! -d "$PYENV_ROOT/versions/$ver" ] && ! echo "$installed_versions" | grep -qx "$ver"; then
+        pyenv install -s "$ver"
       fi
     done
     pyenv global 3.13.2
