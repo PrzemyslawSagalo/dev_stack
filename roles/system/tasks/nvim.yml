@@ -77,10 +77,8 @@
     path: /usr/local/bin/tree-sitter
   register: system_tree_sitter_bin
 
-- name: Install tree-sitter CLI (Amazon Linux)
-  when:
-    - ansible_distribution == 'Amazon'
-    - not system_tree_sitter_bin.stat.exists
+- name: Install tree-sitter CLI
+  when: not system_tree_sitter_bin.stat.exists
   block:
     - name: Download tree-sitter CLI archive
       ansible.builtin.get_url:
