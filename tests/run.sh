@@ -2,15 +2,15 @@
 set -euo pipefail
 
 SUITE="${1:-unit}"
-DISTRO="${2:-ubuntu:22.04}"
+DISTRO="${2:-ubuntu:24.04}"
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
 case "$DISTRO" in
-    ubuntu | ubuntu:22.04)
-        IMAGE="ubuntu:22.04"
-        ;;
-    ubuntu:24.04)
+    ubuntu | ubuntu:24.04)
         IMAGE="ubuntu:24.04"
+        ;;
+    ubuntu:22.04)
+        IMAGE="ubuntu:22.04"
         ;;
     amazonlinux | amazonlinux:2023 | amzn | amzn2023)
         IMAGE="amazonlinux:2023"
