@@ -77,10 +77,20 @@ setup() {
     [ -s "$HOME/.config/nvim/init.lua" ]
 }
 
-@test "Neovim configuration has no orphaned files or directories" {
-    [ ! -e "$HOME/.config/nvim/.managed_manifest.json" ]
-    [ ! -e "$HOME/.config/nvim/lua/plugins/diffview.lua" ]
-    [ ! -d "$HOME/.config/nvim/tests" ]
+@test "Neovim configuration purges orphaned files and directories" {
+    local repo_root
+    repo_root="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
+    mkdir -p "$HOME/.config/nvim/orphan_dir"
+    touch "$HOME/.config/nvim/lua/plugins/orphan_plugin.lua"
+    touch "$HOME/.config/nvim/orphan_dir/stale.lua"
+
+    run ansible-playbook -i localhost, -c local "$repo_root/setup.yml" --tags nvim
+    [ "$status" -eq 0 ]
+    [ ! -e "$HOME/.config/nvim/lua/plugins/orphan_plugin.lua" ]
+    [ ! -d "$HOME/.config/nvim/orphan_dir" ]
+
+    run diff -rq "$repo_root/roles/nvim/files/nvim" "$HOME/.config/nvim"
+    [ "$status" -eq 0 ]
 }
 
 @test "Bash aliases file exists and is non-empty" {

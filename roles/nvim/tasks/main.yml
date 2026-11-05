@@ -65,8 +65,3 @@
     dest: "{{ ansible_env.HOME }}/.config/nvim/"
     mode: preserve
     directory_mode: "0755"
-
-- name: Ensure clean_cache.sh is executable
-  ansible.builtin.file:
-    path: "{{ ansible_env.HOME }}/.config/nvim/clean_cache.sh"
-    mode: "0755"
