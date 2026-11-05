@@ -47,6 +47,8 @@
     - name: Run nvm install script
       ansible.builtin.command:
         cmd: bash /tmp/nvm-install.sh
+      environment:
+        PROFILE: /dev/null
       changed_when: true
 
     - name: Clean up nvm install script
@@ -65,11 +67,22 @@
   changed_when: false
   become: false
 
-- name: Add nvm to bashrc
+- name: Add nvm to user profile
+  ansible.builtin.blockinfile:
+    path: "{{ ansible_env.HOME }}/.profile"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK - NVM"
+    block: |
+      export NVM_DIR="$HOME/.nvm"
+      [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+    create: true
+    mode: "0644"
+  become: false
+
+- name: Remove legacy nvm use from bashrc
   ansible.builtin.lineinfile:
     path: "{{ ansible_env.HOME }}/.bashrc"
     line: "nvm use 23 > /dev/null"
-    state: present
+    state: absent
   become: false
 
 - name: Check if tree-sitter CLI binary is installed

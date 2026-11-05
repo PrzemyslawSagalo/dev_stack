@@ -1,18 +1,10 @@
 #!/usr/bin/env bats
 
 setup() {
-    if [ -f "$HOME/.bashrc" ]; then
+    if [ -f "$HOME/.profile" ]; then
         # shellcheck disable=SC1090,SC1091
-        source "$HOME/.bashrc" 2>/dev/null || true
+        source "$HOME/.profile" 2>/dev/null || true
     fi
-
-    if [ -d "$HOME/.pyenv" ]; then
-        export PYENV_ROOT="$HOME/.pyenv"
-        export PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PATH"
-        eval "$(pyenv init - 2>/dev/null)" || true
-    fi
-
-    export PATH="/usr/local/bin:/usr/local/go/bin:$PATH"
 }
 
 @test "Neovim is installed and runnable" {
@@ -39,6 +31,18 @@ setup() {
     [[ "$output" == *"Python 3."* ]]
 }
 
+@test "Pyenv is installed and runnable" {
+    run pyenv --version
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ "pyenv" ]]
+}
+
+@test "Node.js is available via nvm" {
+    run node --version
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"v23."* ]]
+}
+
 @test "Git is installed and runnable" {
     run git --version
     [ "$status" -eq 0 ]
@@ -57,6 +61,12 @@ setup() {
     [ -n "$output" ]
 }
 
+@test "GitHub Copilot CLI is installed and runnable" {
+    run copilot --version
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ "GitHub Copilot CLI" ]]
+}
+
 @test "Neovim configuration exists and is non-empty" {
     [ -s "$HOME/.config/nvim/init.lua" ]
 }
@@ -66,8 +76,7 @@ setup() {
 }
 
 @test "Antigravity configuration symlinks to Copilot components exist" {
-    [ -L "$HOME/.config/copilot/.mcp.json" ]
-    [ -f "$HOME/.config/copilot/.mcp.json" ]
+    [ -f "$HOME/.copilot/.mcp.json" ]
     [ -L "$HOME/.gemini/config/skills" ]
     [ -d "$HOME/.gemini/config/skills" ]
     [ -L "$HOME/.gemini/config/standards" ]
@@ -78,4 +87,27 @@ setup() {
     [ -d "$HOME/.gemini/config/commands" ]
     [ -L "$HOME/.gemini/config/mcp_config.json" ]
     [ -f "$HOME/.gemini/config/mcp_config.json" ]
+}
+
+@test "PYENV_ROOT is exported in user profile" {
+    run grep "export PYENV_ROOT=" "$HOME/.profile"
+    [ "$status" -eq 0 ]
+}
+
+@test "NVM_DIR is exported in user profile" {
+    run grep "export NVM_DIR=" "$HOME/.profile"
+    [ "$status" -eq 0 ]
+}
+
+@test "Copilot has Maister plugin installed" {
+    run copilot plugin list
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ "maister-copilot" ]]
+}
+
+@test "Antigravity CLI has Maister plugin installed" {
+    run agy plugin list
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ "maister" ]]
+    [[ "$output" =~ "enabled" ]]
 }

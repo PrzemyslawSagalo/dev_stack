@@ -1,0 +1,49 @@
+---
+- name: Check if GitHub Copilot CLI is installed
+  ansible.builtin.stat:
+    path: /usr/local/bin/copilot
+  register: system_copilot_bin
+
+- name: Install GitHub Copilot CLI
+  when: not system_copilot_bin.stat.exists
+  block:
+    - name: Determine Copilot CLI platform architecture
+      ansible.builtin.set_fact:
+        system_copilot_arch: "{{ 'linux-arm64' if ansible_architecture in ['aarch64', 'arm64'] else 'linux-x64' }}"
+
+    - name: Download Copilot CLI archive
+      ansible.builtin.get_url:
+        url: "https://registry.npmjs.org/@github/copilot-{{ system_copilot_arch }}/-/copilot-{{ system_copilot_arch }}-1.0.105.tgz"
+        dest: /tmp/copilot.tgz
+        mode: "0644"
+      register: system_copilot_download
+      until: system_copilot_download is success
+      retries: 3
+      delay: 5
+
+    - name: Extract Copilot CLI binary to /usr/local/bin
+      ansible.builtin.unarchive:
+        src: /tmp/copilot.tgz
+        dest: /usr/local/bin
+        extra_opts:
+          - --strip-components=1
+          - package/copilot
+        mode: "0755"
+        remote_src: true
+
+    - name: Clean up Copilot CLI archive
+      ansible.builtin.file:
+        path: /tmp/copilot.tgz
+        state: absent
+
+- name: Ensure GitHub Copilot CLI binary is executable
+  ansible.builtin.file:
+    path: /usr/local/bin/copilot
+    mode: "0755"
+
+- name: Remove legacy COPILOT_HOME from user profile
+  ansible.builtin.lineinfile:
+    path: "{{ ansible_env.HOME }}/.profile"
+    regexp: '^export COPILOT_HOME='
+    state: absent
+  become: false

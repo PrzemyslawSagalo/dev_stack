@@ -21,7 +21,7 @@ This skill ensures agents operate predictably, follow strict constraints, and ge
 
 ### Phase 2: Standards Generation
 Draft concise, actionable rules designed for machine consumption. Ensure the generated standards include:
-*   **`~/.config/copilot/standards/`**: Global project standards covering baseline rules (e.g., infrastructure isolation, secret management).
+*   **`~/.copilot/standards/`**: Global project standards covering baseline rules (e.g., infrastructure isolation, secret management).
 *   **`./standards/`**: Local project standards. When generating or enforcing rules, ensure local project standards override global ones.
 *   **`execution-protocols.md`**: Hard limits on autonomous actions, enforcing focus on high-impact tasks over empty motion.
 *   **`communication-style.md`**: Strict formatting rules (no fluff, direct answers, clear hierarchies).
@@ -29,8 +29,8 @@ Draft concise, actionable rules designed for machine consumption. Ensure the gen
 
 ### Phase 3: Validation & Saving
 * Cross-reference newly generated standards with existing files to prevent rule conflicts.
-* **Delegation & Initialization:** ALL file write operations MUST be executed by the `artifact-generator` skill itself. If the `./standards/` or `~/.config/copilot/standards/` directories do not exist, the `artifact-generator` MUST create them before saving any files. Generate and save the documentation files directly.
-* Generate `./standards/index.yml` (local) or `~/.config/copilot/standards/index.yml` (global) to provide a structured overview of all standards and their relationships.
+* **Delegation & Initialization:** ALL file write operations MUST be executed by the `artifact-generator` skill itself. If the `./standards/` or `~/.copilot/standards/` directories do not exist, the `artifact-generator` MUST create them before saving any files. Generate and save the documentation files directly.
+* Generate `./standards/index.yml` (local) or `~/.copilot/standards/index.yml` (global) to provide a structured overview of all standards and their relationships.
 
 ## Constraints & Rules
 * **No Fluff:** Standards must be brief, binary, and impossible for an agent to misinterpret.

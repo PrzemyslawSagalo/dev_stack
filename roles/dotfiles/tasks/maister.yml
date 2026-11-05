@@ -1,0 +1,72 @@
+---
+- name: Configure Copilot plugins
+  block:
+    - name: Check registered Copilot marketplaces
+      ansible.builtin.command:
+        cmd: copilot plugin marketplace list
+      register: dotfiles_copilot_marketplaces
+      changed_when: false
+      failed_when: false
+
+    - name: Add Maister marketplace to Copilot
+      ansible.builtin.command:
+        cmd: copilot plugin marketplace add SkillPanel/maister
+      when:
+        - dotfiles_copilot_marketplaces.rc == 0
+        - "'maister-plugins' not in dotfiles_copilot_marketplaces.stdout"
+      changed_when: true
+
+    - name: Update Maister marketplace in Copilot
+      ansible.builtin.command:
+        cmd: copilot plugin marketplace update maister-plugins
+      when:
+        - dotfiles_copilot_marketplaces.rc == 0
+        - "'maister-plugins' in dotfiles_copilot_marketplaces.stdout"
+      changed_when: false
+
+    - name: Check installed Copilot plugins
+      ansible.builtin.command:
+        cmd: copilot plugin list
+      register: dotfiles_copilot_plugins
+      changed_when: false
+      failed_when: false
+
+    - name: Install maister-copilot plugin in Copilot
+      ansible.builtin.command:
+        cmd: copilot plugin install maister-copilot@maister-plugins
+      when:
+        - dotfiles_copilot_plugins.rc == 0
+        - "'maister-copilot' not in dotfiles_copilot_plugins.stdout"
+      changed_when: true
+
+    - name: Update maister-copilot plugin in Copilot
+      ansible.builtin.command:
+        cmd: copilot plugin update maister-copilot
+      register: dotfiles_copilot_plugin_update
+      when:
+        - dotfiles_copilot_plugins.rc == 0
+        - "'maister-copilot' in dotfiles_copilot_plugins.stdout"
+      changed_when: "'already at latest' not in dotfiles_copilot_plugin_update.stdout"
+
+- name: Check installed Antigravity plugins
+  ansible.builtin.command:
+    cmd: agy plugin list
+  register: dotfiles_agy_plugins
+  changed_when: false
+  failed_when: false
+
+- name: Install Maister plugin in Antigravity
+  ansible.builtin.command:
+    cmd: agy plugin install https://github.com/SkillPanel/maister
+  when:
+    - dotfiles_agy_plugins.rc == 0
+    - "'maister' not in dotfiles_agy_plugins.stdout"
+  changed_when: true
+
+- name: Update Maister plugin in Antigravity
+  ansible.builtin.command:
+    cmd: agy plugin install https://github.com/SkillPanel/maister
+  when:
+    - dotfiles_agy_plugins.rc == 0
+    - "'maister' in dotfiles_agy_plugins.stdout"
+  changed_when: true

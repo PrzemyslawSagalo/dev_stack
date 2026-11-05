@@ -22,10 +22,36 @@
       - rsync
     state: present
 
-- name: Ensure .bashrc exists (for appending PATHs)
+- name: Ensure .profile exists (for user environment)
+  ansible.builtin.copy:
+    dest: "{{ ansible_env.HOME }}/.profile"
+    content: ""
+    force: false
+    mode: "0644"
+  become: false
+
+- name: Ensure .bashrc exists
   ansible.builtin.copy:
     dest: "{{ ansible_env.HOME }}/.bashrc"
     content: ""
     force: false
     mode: "0644"
+  become: false
+
+- name: Check if ~/.bash_profile exists
+  ansible.builtin.stat:
+    path: "{{ ansible_env.HOME }}/.bash_profile"
+  register: system_bash_profile_stat
+  become: false
+
+# Debian/Ubuntu reads ~/.profile while RHEL/Amazon Linux reads ~/.bash_profile.
+# Bash executes only the first file found, so we source ~/.profile here to keep all environment exports centralized.
+- name: Ensure ~/.bash_profile sources ~/.profile
+  ansible.builtin.lineinfile:
+    path: "{{ ansible_env.HOME }}/.bash_profile"
+    line: "if [ -f ~/.profile ]; then . ~/.profile; fi"
+    insertbefore: BOF
+    state: present
+    mode: "0644"
+  when: system_bash_profile_stat.stat.exists
   become: false
