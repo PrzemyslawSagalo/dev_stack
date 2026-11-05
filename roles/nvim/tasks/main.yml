@@ -31,6 +31,21 @@
   when: >
     (item.path | relpath(ansible_env.HOME ~ '/.config/nvim'))
     not in (nvim_src_entries.files | map(attribute='path') | map('relpath', role_path ~ '/files/nvim') | list)
+    or item.isdir != (
+      nvim_src_entries.files
+      | selectattr('path', 'equalto', role_path ~ '/files/nvim/' ~ (item.path | relpath(ansible_env.HOME ~ '/.config/nvim')))
+      | map(attribute='isdir') | first | default(false)
+    )
+    or item.isreg != (
+      nvim_src_entries.files
+      | selectattr('path', 'equalto', role_path ~ '/files/nvim/' ~ (item.path | relpath(ansible_env.HOME ~ '/.config/nvim')))
+      | map(attribute='isreg') | first | default(false)
+    )
+    or item.islnk != (
+      nvim_src_entries.files
+      | selectattr('path', 'equalto', role_path ~ '/files/nvim/' ~ (item.path | relpath(ansible_env.HOME ~ '/.config/nvim')))
+      | map(attribute='islnk') | first | default(false)
+    )
 
 - name: Deploy Neovim configuration
   ansible.builtin.copy:

@@ -81,15 +81,22 @@ setup() {
     local repo_root
     repo_root="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
     mkdir -p "$HOME/.config/nvim/orphan_dir"
-    touch "$HOME/.config/nvim/lua/plugins/orphan_plugin.lua"
+    touch "$HOME/.config/nvim/lua/core/orphan_plugin.lua"
     touch "$HOME/.config/nvim/orphan_dir/stale.lua"
-    ln -sf /tmp/nonexistent_orphan_target "$HOME/.config/nvim/lua/plugins/orphan_link.lua"
+    ln -sf /tmp/nonexistent_orphan_target "$HOME/.config/nvim/lua/utils/orphan_link.lua"
+    rm -rf "$HOME/.config/nvim/lua/plugins"
+    ln -s /tmp/nonexistent_orphan_target "$HOME/.config/nvim/lua/plugins"
+    rm -rf "$HOME/.config/nvim/init.lua"
+    mkdir "$HOME/.config/nvim/init.lua"
 
     run ansible-playbook -i localhost, -c local "$repo_root/setup.yml" --tags nvim
     [ "$status" -eq 0 ]
-    [ ! -e "$HOME/.config/nvim/lua/plugins/orphan_plugin.lua" ]
-    [ ! -L "$HOME/.config/nvim/lua/plugins/orphan_link.lua" ]
+    [ ! -e "$HOME/.config/nvim/lua/core/orphan_plugin.lua" ]
+    [ ! -L "$HOME/.config/nvim/lua/utils/orphan_link.lua" ]
     [ ! -d "$HOME/.config/nvim/orphan_dir" ]
+    [ -d "$HOME/.config/nvim/lua/plugins" ]
+    [ ! -L "$HOME/.config/nvim/lua/plugins" ]
+    [ -f "$HOME/.config/nvim/init.lua" ]
 
     run diff -rq "$repo_root/roles/nvim/files/nvim" "$HOME/.config/nvim"
     [ "$status" -eq 0 ]
