@@ -75,6 +75,12 @@ setup() {
     [ -s "$HOME/.bash_aliases" ]
 }
 
+@test "Tmux configuration exists and has focus-events enabled" {
+    [ -s "$HOME/.tmux.conf" ]
+    run grep "set -g focus-events on" "$HOME/.tmux.conf"
+    [ "$status" -eq 0 ]
+}
+
 @test "Antigravity configuration symlinks to Copilot components exist" {
     [ -f "$HOME/.copilot/.mcp.json" ]
     [ -L "$HOME/.gemini/config/skills" ]

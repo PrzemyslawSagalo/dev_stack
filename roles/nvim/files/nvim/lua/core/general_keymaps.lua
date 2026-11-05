@@ -66,3 +66,10 @@ keymap("t", "<C-k>", "<C-\\><C-N><C-w>k", term_opts)
 keymap("t", "<C-l>", "<C-\\><C-N><C-w>l", term_opts)
 keymap("t", "<Esc>", "<C-\\><C-N>", term_opts)
 keymap("t", "kj", "<C-\\><C-N>", term_opts)
+
+-- Commands --
+vim.api.nvim_create_user_command("DiffOrig", function()
+	vim.cmd("vert new | set bt=nofile | r ++edit # | 0d_ | diffthis | wincmd p | diffthis")
+end, { desc = "Diff current buffer against original file on disk" })
+
+keymap("n", "<leader>do", ":DiffOrig<CR>", opts)
