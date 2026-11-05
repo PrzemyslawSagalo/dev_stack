@@ -19,7 +19,7 @@ permissions:
 jobs:
   lint:
     name: Lint & Syntax Check
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - name: Checkout repository
@@ -42,7 +42,7 @@ jobs:
   test_unit:
     name: tests/unit (${{ matrix.distro }})
     needs: lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     strategy:
       fail-fast: false
@@ -62,7 +62,7 @@ jobs:
     needs:
       - lint
       - test_unit
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     strategy:
       fail-fast: false
