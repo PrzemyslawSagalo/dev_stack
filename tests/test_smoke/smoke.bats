@@ -77,6 +77,12 @@ setup() {
     [ -s "$HOME/.config/nvim/init.lua" ]
 }
 
+@test "Neovim configuration has no orphaned files or directories" {
+    [ ! -e "$HOME/.config/nvim/.managed_manifest.json" ]
+    [ ! -e "$HOME/.config/nvim/lua/plugins/diffview.lua" ]
+    [ ! -d "$HOME/.config/nvim/tests" ]
+}
+
 @test "Bash aliases file exists and is non-empty" {
     [ -s "$HOME/.bash_aliases" ]
 }
