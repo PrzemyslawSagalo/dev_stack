@@ -76,8 +76,7 @@ setup() {
 }
 
 @test "Antigravity configuration symlinks to Copilot components exist" {
-    [ -L "$HOME/.config/copilot/.mcp.json" ]
-    [ -f "$HOME/.config/copilot/.mcp.json" ]
+    [ -f "$HOME/.copilot/.mcp.json" ]
     [ -L "$HOME/.gemini/config/skills" ]
     [ -d "$HOME/.gemini/config/skills" ]
     [ -L "$HOME/.gemini/config/standards" ]
@@ -88,11 +87,6 @@ setup() {
     [ -d "$HOME/.gemini/config/commands" ]
     [ -L "$HOME/.gemini/config/mcp_config.json" ]
     [ -f "$HOME/.gemini/config/mcp_config.json" ]
-}
-
-@test "COPILOT_HOME is exported in user profile" {
-    run grep "export COPILOT_HOME=" "$HOME/.profile"
-    [ "$status" -eq 0 ]
 }
 
 @test "PYENV_ROOT is exported in user profile" {

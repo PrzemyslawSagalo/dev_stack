@@ -1,7 +1,5 @@
 ---
 - name: Configure Copilot plugins
-  environment:
-    COPILOT_HOME: "{{ ansible_env.HOME }}/.config/copilot"
   block:
     - name: Check registered Copilot marketplaces
       ansible.builtin.command:

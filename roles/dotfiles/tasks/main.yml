@@ -19,26 +19,22 @@
     dest: "{{ ansible_env.HOME }}/.tmux.conf"
     mode: "0644"
 
-- name: Deploy .config/copilot directory
+- name: Deploy .copilot directory
   ansible.builtin.copy:
-    src: .config/copilot
-    dest: "{{ ansible_env.HOME }}/.config/"
+    src: copilot/
+    dest: "{{ ansible_env.HOME }}/.copilot/"
     mode: "0644"
     directory_mode: "0755"
 
-- name: Symlink ~/.copilot to ~/.config/copilot
+- name: Remove legacy .config/copilot directory if present
   ansible.builtin.file:
-    src: "{{ ansible_env.HOME }}/.config/copilot"
-    dest: "{{ ansible_env.HOME }}/.copilot"
-    state: link
-    force: true
+    path: "{{ ansible_env.HOME }}/.config/copilot"
+    state: absent
 
-- name: Symlink .mcp.json to mcp-config.json in Copilot directory
+- name: Remove legacy mcp-config.json if present
   ansible.builtin.file:
-    src: "{{ ansible_env.HOME }}/.config/copilot/mcp-config.json"
-    dest: "{{ ansible_env.HOME }}/.config/copilot/.mcp.json"
-    state: link
-    force: true
+    path: "{{ ansible_env.HOME }}/.copilot/mcp-config.json"
+    state: absent
 
 - name: Ensure ~/.gemini/config directory exists
   ansible.builtin.file:
@@ -48,35 +44,35 @@
 
 - name: Symlink Copilot skills to Antigravity config
   ansible.builtin.file:
-    src: "{{ ansible_env.HOME }}/.config/copilot/skills"
+    src: "{{ ansible_env.HOME }}/.copilot/skills"
     dest: "{{ ansible_env.HOME }}/.gemini/config/skills"
     state: link
     force: true
 
 - name: Symlink Copilot standards to Antigravity config
   ansible.builtin.file:
-    src: "{{ ansible_env.HOME }}/.config/copilot/standards"
+    src: "{{ ansible_env.HOME }}/.copilot/standards"
     dest: "{{ ansible_env.HOME }}/.gemini/config/standards"
     state: link
     force: true
 
 - name: Symlink Copilot agents to Antigravity config
   ansible.builtin.file:
-    src: "{{ ansible_env.HOME }}/.config/copilot/agents"
+    src: "{{ ansible_env.HOME }}/.copilot/agents"
     dest: "{{ ansible_env.HOME }}/.gemini/config/agents"
     state: link
     force: true
 
 - name: Symlink Copilot commands to Antigravity config
   ansible.builtin.file:
-    src: "{{ ansible_env.HOME }}/.config/copilot/commands"
+    src: "{{ ansible_env.HOME }}/.copilot/commands"
     dest: "{{ ansible_env.HOME }}/.gemini/config/commands"
     state: link
     force: true
 
 - name: Symlink Copilot MCP configuration to Antigravity config
   ansible.builtin.file:
-    src: "{{ ansible_env.HOME }}/.config/copilot/mcp-config.json"
+    src: "{{ ansible_env.HOME }}/.copilot/.mcp.json"
     dest: "{{ ansible_env.HOME }}/.gemini/config/mcp_config.json"
     state: link
     force: true

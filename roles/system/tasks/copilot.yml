@@ -41,11 +41,9 @@
     path: /usr/local/bin/copilot
     mode: "0755"
 
-- name: Ensure COPILOT_HOME is set in ~/.profile
+- name: Remove legacy COPILOT_HOME from user profile
   ansible.builtin.lineinfile:
     path: "{{ ansible_env.HOME }}/.profile"
-    line: 'export COPILOT_HOME="$HOME/.config/copilot"'
-    state: present
-    create: true
-    mode: "0644"
+    regexp: '^export COPILOT_HOME='
+    state: absent
   become: false
