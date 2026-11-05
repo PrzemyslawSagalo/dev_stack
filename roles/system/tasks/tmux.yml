@@ -58,6 +58,7 @@
         make install
       args:
         chdir: /tmp/tmux-3.8
+        executable: /bin/bash
       changed_when: true
 
     - name: Clean up tmux build directory and archive
