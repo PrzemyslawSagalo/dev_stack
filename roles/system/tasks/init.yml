@@ -13,7 +13,6 @@
       - tar
       - git
       - make
-      - tmux
       - jq
       - bash-completion
       - ca-certificates

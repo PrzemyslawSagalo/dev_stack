@@ -67,6 +67,12 @@ setup() {
     [[ "$output" =~ "GitHub Copilot CLI" ]]
 }
 
+@test "Tmux is installed and runnable (v3.8)" {
+    run tmux -V
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"tmux 3.8"* ]]
+}
+
 @test "Neovim configuration exists and is non-empty" {
     [ -s "$HOME/.config/nvim/init.lua" ]
 }
