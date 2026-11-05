@@ -1,12 +1,39 @@
 local autoread_group = vim.api.nvim_create_augroup("HyperFastAutoread", { clear = true })
 
-vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter" }, {
+vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter", "CursorHold", "CursorHoldI", "WinEnter", "CmdlineEnter" }, {
 	group = autoread_group,
-	desc = "Synchronize file state with disk on focus and movement",
+	desc = "Synchronize file state with disk",
 	callback = function()
-		if vim.api.nvim_get_mode().mode ~= "c" then
+		if vim.fn.getcmdwintype() == "" and vim.api.nvim_get_mode().mode ~= "c" then
 			vim.cmd("checktime")
 		end
+	end,
+})
+
+vim.api.nvim_create_autocmd("FileChangedShell", {
+	group = autoread_group,
+	pattern = "*",
+	desc = "Automatically reload files changed on disk if buffer is unmodified",
+	callback = function(args)
+		local bufnr = args.buf
+		if vim.api.nvim_buf_is_valid(bufnr) and not vim.api.nvim_get_option_value("modified", { buf = bufnr }) then
+			vim.v.fcs_choice = "reload"
+		else
+			vim.v.fcs_choice = "ask"
+		end
+	end,
+})
+
+vim.api.nvim_create_autocmd("FileChangedShellPost", {
+	group = autoread_group,
+	pattern = "*",
+	desc = "Notify when a buffer is reloaded from disk",
+	callback = function()
+		vim.notify(
+			"File changed on disk and reloaded: " .. vim.fn.expand("<afile>"),
+			vim.log.levels.INFO,
+			{ title = "Autoread" }
+		)
 	end,
 })
 

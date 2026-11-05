@@ -2,6 +2,9 @@
 - name: Import base initialization tasks
   ansible.builtin.import_tasks: init.yml
 
+- name: Import Tmux tasks
+  ansible.builtin.import_tasks: tmux.yml
+
 - name: Import C++ toolchain tasks
   ansible.builtin.import_tasks: cpp.yml
 

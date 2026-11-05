@@ -67,12 +67,24 @@ setup() {
     [[ "$output" =~ "GitHub Copilot CLI" ]]
 }
 
+@test "Tmux is installed and runnable (v3.8)" {
+    run tmux -V
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"tmux 3.8"* ]]
+}
+
 @test "Neovim configuration exists and is non-empty" {
     [ -s "$HOME/.config/nvim/init.lua" ]
 }
 
 @test "Bash aliases file exists and is non-empty" {
     [ -s "$HOME/.bash_aliases" ]
+}
+
+@test "Tmux configuration exists and has focus-events enabled" {
+    [ -s "$HOME/.tmux.conf" ]
+    run grep "set -g focus-events on" "$HOME/.tmux.conf"
+    [ "$status" -eq 0 ]
 }
 
 @test "Antigravity configuration symlinks to Copilot components exist" {
