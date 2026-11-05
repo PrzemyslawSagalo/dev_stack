@@ -71,5 +71,3 @@ keymap("t", "kj", "<C-\\><C-N>", term_opts)
 vim.api.nvim_create_user_command("DiffOrig", function()
 	vim.cmd("vert new | set bt=nofile | r ++edit # | 0d_ | diffthis | wincmd p | diffthis")
 end, { desc = "Diff current buffer against original file on disk" })
-
-keymap("n", "<leader>do", ":DiffOrig<CR>", opts)
