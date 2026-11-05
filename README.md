@@ -58,7 +58,7 @@ ansible-playbook setup.yml
   * Terminal multiplexer configuration (`.tmux.conf`) with vi-mode navigation.
   * SSH client configuration (`~/.ssh/config`).
   * Git global configuration (`~/.gitconfig`).
-  * AI assistant configuration (`.config/copilot`).
+  * AI assistant configuration (`.copilot`).
 * **Editor (`roles/nvim`)**:
   * Modern Neovim IDE configuration.
 

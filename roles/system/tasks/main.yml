@@ -38,5 +38,8 @@
 - name: Import try tool tasks
   ansible.builtin.import_tasks: try.yml
 
+- name: Import GitHub Copilot CLI tasks
+  ansible.builtin.import_tasks: copilot.yml
+
 - name: Import Antigravity CLI tasks
   ansible.builtin.import_tasks: antigravity.yml

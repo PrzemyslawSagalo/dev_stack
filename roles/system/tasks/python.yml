@@ -64,14 +64,25 @@
         path: /tmp/pyenv_install.sh
         state: absent
 
-- name: Add pyenv to bashrc
+- name: Add pyenv to user profile
   ansible.builtin.blockinfile:
-    path: "{{ ansible_env.HOME }}/.bashrc"
+    path: "{{ ansible_env.HOME }}/.profile"
     marker: "# {mark} ANSIBLE MANAGED BLOCK - PYENV"
     block: |
       export PYENV_ROOT="$HOME/.pyenv"
-      [[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PATH"
-      eval "$(pyenv init -)"
+      if [ -d "$PYENV_ROOT/bin" ]; then
+        export PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PATH"
+        eval "$(pyenv init -)"
+      fi
+    create: true
+    mode: "0644"
+  become: false
+
+- name: Remove pyenv block from bashrc
+  ansible.builtin.blockinfile:
+    path: "{{ ansible_env.HOME }}/.bashrc"
+    marker: "# {mark} ANSIBLE MANAGED BLOCK - PYENV"
+    state: absent
   become: false
 
 - name: Install python versions via pyenv
