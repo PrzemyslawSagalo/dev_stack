@@ -83,10 +83,12 @@ setup() {
     mkdir -p "$HOME/.config/nvim/orphan_dir"
     touch "$HOME/.config/nvim/lua/plugins/orphan_plugin.lua"
     touch "$HOME/.config/nvim/orphan_dir/stale.lua"
+    ln -sf /tmp/nonexistent_orphan_target "$HOME/.config/nvim/lua/plugins/orphan_link.lua"
 
     run ansible-playbook -i localhost, -c local "$repo_root/setup.yml" --tags nvim
     [ "$status" -eq 0 ]
     [ ! -e "$HOME/.config/nvim/lua/plugins/orphan_plugin.lua" ]
+    [ ! -L "$HOME/.config/nvim/lua/plugins/orphan_link.lua" ]
     [ ! -d "$HOME/.config/nvim/orphan_dir" ]
 
     run diff -rq "$repo_root/roles/nvim/files/nvim" "$HOME/.config/nvim"
