@@ -9,9 +9,6 @@ case "$DISTRO" in
     ubuntu | ubuntu:24.04)
         IMAGE="ubuntu:24.04"
         ;;
-    ubuntu:22.04)
-        IMAGE="ubuntu:22.04"
-        ;;
     amazonlinux | amazonlinux:2023 | amzn | amzn2023)
         IMAGE="amazonlinux:2023"
         ;;
