@@ -19,14 +19,14 @@ permissions:
 jobs:
   lint:
     name: Lint & Syntax Check
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 
@@ -42,17 +42,17 @@ jobs:
   test_unit:
     name: tests/unit (${{ matrix.distro }})
     needs: lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
         distro:
-          - "ubuntu:22.04"
+          - "ubuntu:24.04"
           - "amazonlinux:2023"
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Run containerized unit tests
         run: ./tests/run.sh unit "${{ matrix.distro }}"
@@ -62,17 +62,17 @@ jobs:
     needs:
       - lint
       - test_unit
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
         distro:
-          - "ubuntu:22.04"
+          - "ubuntu:24.04"
           - "amazonlinux:2023"
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Run containerized smoke test
         run: ./tests/run.sh smoke "${{ matrix.distro }}"
