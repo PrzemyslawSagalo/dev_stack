@@ -1,4 +1,52 @@
 ---
+- name: Ensure Neovim configuration directory exists
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/.config/nvim"
+    state: directory
+    mode: "0755"
+
+- name: Find source entries in Neovim configuration role
+  ansible.builtin.find:
+    paths: "{{ role_path }}/files/nvim"
+    recurse: true
+    hidden: true
+    file_type: any
+  register: nvim_src_entries
+
+- name: Find target entries in Neovim configuration directory
+  ansible.builtin.find:
+    paths: "{{ ansible_env.HOME }}/.config/nvim"
+    recurse: true
+    hidden: true
+    file_type: any
+  register: nvim_dest_entries
+
+- name: Remove orphaned entries in Neovim configuration directory
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ nvim_dest_entries.files | sort(attribute='path', reverse=true) }}"
+  loop_control:
+    label: "{{ item.path }}"
+  when: >
+    (item.path | relpath(ansible_env.HOME ~ '/.config/nvim'))
+    not in (nvim_src_entries.files | map(attribute='path') | map('relpath', role_path ~ '/files/nvim') | list)
+    or item.isdir != (
+      nvim_src_entries.files
+      | selectattr('path', 'equalto', role_path ~ '/files/nvim/' ~ (item.path | relpath(ansible_env.HOME ~ '/.config/nvim')))
+      | map(attribute='isdir') | first | default(false)
+    )
+    or item.isreg != (
+      nvim_src_entries.files
+      | selectattr('path', 'equalto', role_path ~ '/files/nvim/' ~ (item.path | relpath(ansible_env.HOME ~ '/.config/nvim')))
+      | map(attribute='isreg') | first | default(false)
+    )
+    or item.islnk != (
+      nvim_src_entries.files
+      | selectattr('path', 'equalto', role_path ~ '/files/nvim/' ~ (item.path | relpath(ansible_env.HOME ~ '/.config/nvim')))
+      | map(attribute='islnk') | first | default(false)
+    )
+
 - name: Deploy Neovim configuration
   ansible.builtin.copy:
     src: nvim/
