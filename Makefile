@@ -26,7 +26,7 @@ lint:
 	pre-commit run --all-files
 
 test-unit-ubuntu:
-	./tests/run.sh unit ubuntu:22.04
+	./tests/run.sh unit ubuntu:24.04
 
 test-unit-amazonlinux:
 	./tests/run.sh unit amazonlinux:2023
@@ -34,7 +34,7 @@ test-unit-amazonlinux:
 test-unit: test-unit-ubuntu test-unit-amazonlinux
 
 test-smoke-ubuntu:
-	./tests/run.sh smoke ubuntu:22.04
+	./tests/run.sh smoke ubuntu:24.04
 
 test-smoke-amazonlinux:
 	./tests/run.sh smoke amazonlinux:2023
