@@ -7,10 +7,10 @@ setup() {
     fi
 }
 
-@test "Neovim is installed and runnable" {
+@test "Neovim is installed and runnable (v0.12.6)" {
     run nvim --version
     [ "$status" -eq 0 ]
-    [[ "$output" =~ "NVIM v" ]]
+    [[ "$output" == *"NVIM v0.12.6"* ]]
 }
 
 @test "Ripgrep is installed and runnable" {
