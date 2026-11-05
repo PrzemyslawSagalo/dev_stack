@@ -23,10 +23,10 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 
@@ -52,7 +52,7 @@ jobs:
           - "amazonlinux:2023"
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Run containerized unit tests
         run: ./tests/run.sh unit "${{ matrix.distro }}"
@@ -72,7 +72,7 @@ jobs:
           - "amazonlinux:2023"
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Run containerized smoke test
         run: ./tests/run.sh smoke "${{ matrix.distro }}"
