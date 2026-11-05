@@ -1,20 +1,10 @@
 #!/usr/bin/env bats
 
 setup() {
-    export COPILOT_HOME="${COPILOT_HOME:-$HOME/.config/copilot}"
-
-    if [ -f "$HOME/.bashrc" ]; then
+    if [ -f "$HOME/.profile" ]; then
         # shellcheck disable=SC1090,SC1091
-        source "$HOME/.bashrc" 2>/dev/null || true
+        source "$HOME/.profile" 2>/dev/null || true
     fi
-
-    if [ -d "$HOME/.pyenv" ]; then
-        export PYENV_ROOT="$HOME/.pyenv"
-        export PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PATH"
-        eval "$(pyenv init - 2>/dev/null)" || true
-    fi
-
-    export PATH="/usr/local/bin:/usr/local/go/bin:$PATH"
 }
 
 @test "Neovim is installed and runnable" {
@@ -39,6 +29,18 @@ setup() {
     run python3 --version
     [ "$status" -eq 0 ]
     [[ "$output" == *"Python 3."* ]]
+}
+
+@test "Pyenv is installed and runnable" {
+    run pyenv --version
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ "pyenv" ]]
+}
+
+@test "Node.js is available via nvm" {
+    run node --version
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"v23."* ]]
 }
 
 @test "Git is installed and runnable" {
@@ -88,8 +90,18 @@ setup() {
     [ -f "$HOME/.gemini/config/mcp_config.json" ]
 }
 
-@test "MAISTER_PLUGIN_ROOT is exported in bashrc" {
-    run grep "export MAISTER_PLUGIN_ROOT=" "$HOME/.bashrc"
+@test "COPILOT_HOME is exported in user profile" {
+    run grep "export COPILOT_HOME=" "$HOME/.profile"
+    [ "$status" -eq 0 ]
+}
+
+@test "PYENV_ROOT is exported in user profile" {
+    run grep "export PYENV_ROOT=" "$HOME/.profile"
+    [ "$status" -eq 0 ]
+}
+
+@test "NVM_DIR is exported in user profile" {
+    run grep "export NVM_DIR=" "$HOME/.profile"
     [ "$status" -eq 0 ]
 }
 

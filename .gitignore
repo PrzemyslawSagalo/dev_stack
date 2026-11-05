@@ -4,8 +4,10 @@ __pycache__/
 *$py.class
 .ansible/
 # Maister framework files and directories
+.maister
 .maister/
 .maister*
+*maister*
 
 # C extensions
 *.so
