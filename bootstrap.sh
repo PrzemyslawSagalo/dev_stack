@@ -175,17 +175,26 @@ configure_python_path() {
     hash -r 2>/dev/null || true
 }
 
+configure_safe_directory() {
+    target_dir="$1"
+    if ! git config --global --get-all safe.directory 2>/dev/null | grep -Fxq "$target_dir"; then
+        git config --global --add safe.directory "$target_dir" 2>/dev/null || true
+    fi
+}
+
 resolve_workspace() {
     SCRIPT_DIR="$(cd "$(dirname "$0")" >/dev/null 2>&1 && pwd)" || SCRIPT_DIR=""
     if [ -n "$SCRIPT_DIR" ] && [ -f "$SCRIPT_DIR/setup.yml" ] && [ -d "$SCRIPT_DIR/roles/system" ]; then
         echo "==> Detected in-repo workspace via script directory ($SCRIPT_DIR). Bypassing clone..."
         DEST_DIR="$SCRIPT_DIR"
+        configure_safe_directory "$DEST_DIR"
         return 0
     fi
 
     if [ -f "./setup.yml" ] && [ -d "./roles/system" ]; then
         echo "==> Detected in-repo workspace via current working directory. Bypassing clone..."
         DEST_DIR="$(pwd)"
+        configure_safe_directory "$DEST_DIR"
         return 0
     fi
 
@@ -194,7 +203,7 @@ resolve_workspace() {
 
     echo "==> Cloning fresh repository into $DEST_DIR..."
     rm -rf "$DEST_DIR"
-    git config --global --add safe.directory '*' 2>/dev/null || true
+    configure_safe_directory "$DEST_DIR"
     git clone "$REPO_URL" "$DEST_DIR"
 }
 
