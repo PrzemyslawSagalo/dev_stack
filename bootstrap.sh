@@ -177,7 +177,8 @@ configure_python_path() {
 
 configure_safe_directory() {
     target_dir="$1"
-    if ! git config --global --get-all safe.directory 2>/dev/null | grep -Fxq "$target_dir"; then
+    git config --global --unset-all safe.directory '^\*$' 2>/dev/null || true
+    if ! git config --global --get-all safe.directory 2>/dev/null | grep -Fx "$target_dir" >/dev/null 2>&1; then
         git config --global --add safe.directory "$target_dir" 2>/dev/null || true
     fi
 }

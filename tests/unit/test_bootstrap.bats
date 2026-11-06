@@ -120,6 +120,8 @@ setup() {
     run bash -c "
         cd '$REPO_DIR'
         HOME='$tmp_user_home'
+        git config --global --add safe.directory '*'
+        git config --global --add safe.directory '/custom/repo'
         BOOTSTRAP_SOURCE_ONLY=1 . '$BOOTSTRAP_SCRIPT'
         resolve_workspace
         resolve_workspace
@@ -127,6 +129,7 @@ setup() {
     [ "$status" -eq 0 ]
     run git config --file "$tmp_user_home/.gitconfig" --get-all safe.directory
     [ "$status" -eq 0 ]
-    [ "$output" = "$REPO_DIR" ]
+    [[ "$output" != *"*"* ]]
+    [ "$output" = $'/custom/repo\n'"$REPO_DIR" ]
     rm -rf "$tmp_user_home"
 }
