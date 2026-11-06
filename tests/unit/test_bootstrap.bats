@@ -80,14 +80,18 @@ setup() {
 }
 
 @test "resolve_workspace detects existing repository workspace" {
+    local tmp_user_home
+    tmp_user_home="$(mktemp -d)"
     run bash -c "
         cd '$REPO_DIR'
+        HOME='$tmp_user_home'
         BOOTSTRAP_SOURCE_ONLY=1 . '$BOOTSTRAP_SCRIPT'
         resolve_workspace
         echo \"DEST_DIR=\$DEST_DIR\"
     "
     [ "$status" -eq 0 ]
     [[ "$output" == *"DEST_DIR=$REPO_DIR"* ]]
+    rm -rf "$tmp_user_home"
 }
 
 @test "resolve_workspace clones repository when executed outside workspace" {
@@ -103,5 +107,29 @@ setup() {
     [ "$status" -eq 0 ]
     [[ "$output" == *"DEST_DIR=$tmp_user_home/.dev_stack"* ]]
     [ -d "$tmp_user_home/.dev_stack/.git" ]
+    run git config --file "$tmp_user_home/.gitconfig" --get-all safe.directory
+    [ "$status" -eq 0 ]
+    [ "$output" = "$tmp_user_home/.dev_stack" ]
+    [[ "$output" != *"*"* ]]
+    rm -rf "$tmp_user_home"
+}
+
+@test "resolve_workspace configures safe.directory scoped to DEST_DIR idempotently" {
+    local tmp_user_home
+    tmp_user_home="$(mktemp -d)"
+    run bash -c "
+        cd '$REPO_DIR'
+        HOME='$tmp_user_home'
+        git config --global --add safe.directory '*'
+        git config --global --add safe.directory '/custom/repo'
+        BOOTSTRAP_SOURCE_ONLY=1 . '$BOOTSTRAP_SCRIPT'
+        resolve_workspace
+        resolve_workspace
+    "
+    [ "$status" -eq 0 ]
+    run git config --file "$tmp_user_home/.gitconfig" --get-all safe.directory
+    [ "$status" -eq 0 ]
+    [[ "$output" != *"*"* ]]
+    [ "$output" = $'/custom/repo\n'"$REPO_DIR" ]
     rm -rf "$tmp_user_home"
 }
