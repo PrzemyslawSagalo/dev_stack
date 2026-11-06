@@ -35,6 +35,10 @@
         url: https://github.com/tmux/tmux/releases/download/3.8/tmux-3.8.tar.gz
         dest: /tmp/tmux-3.8.tar.gz
         mode: "0644"
+      register: system_tmux_download
+      until: system_tmux_download is success
+      retries: 3
+      delay: 5
 
     - name: Create temporary directory for tmux build
       ansible.builtin.file:

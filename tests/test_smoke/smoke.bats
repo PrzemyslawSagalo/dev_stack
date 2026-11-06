@@ -1,6 +1,7 @@
 #!/usr/bin/env bats
 
 setup() {
+    unset COPILOT_HOME
     if [ -f "$HOME/.profile" ]; then
         # shellcheck disable=SC1090,SC1091
         source "$HOME/.profile" 2>/dev/null || true
@@ -113,7 +114,7 @@ setup() {
 }
 
 @test "Antigravity configuration symlinks to Copilot components exist" {
-    [ -f "$HOME/.copilot/.mcp.json" ]
+    [ -f "$HOME/.copilot/mcp-config.json" ]
     [ -L "$HOME/.gemini/config/skills" ]
     [ -d "$HOME/.gemini/config/skills" ]
     [ -L "$HOME/.gemini/config/standards" ]
@@ -124,6 +125,25 @@ setup() {
     [ -d "$HOME/.gemini/config/commands" ]
     [ -L "$HOME/.gemini/config/mcp_config.json" ]
     [ -f "$HOME/.gemini/config/mcp_config.json" ]
+    [ "$(readlink -f "$HOME/.gemini/config/mcp_config.json")" = "$HOME/.copilot/mcp-config.json" ]
+    [ -L "$HOME/.gemini/config/GEMINI.md" ]
+    [ -f "$HOME/.gemini/config/GEMINI.md" ]
+    [ -L "$HOME/.gemini/config/AGENTS.md" ]
+    [ -f "$HOME/.gemini/config/AGENTS.md" ]
+    [ "$(readlink -f "$HOME/.gemini/config/GEMINI.md")" = "$HOME/.copilot/copilot-instructions.md" ]
+    [ "$(readlink -f "$HOME/.gemini/config/AGENTS.md")" = "$HOME/.copilot/copilot-instructions.md" ]
+    run grep "Subagent & Model Routing Policy" "$HOME/.copilot/copilot-instructions.md"
+    [ "$status" -eq 0 ]
+    run grep "Subagent & Model Routing Policy" "$HOME/.gemini/config/GEMINI.md"
+    [ "$status" -eq 0 ]
+    run grep "Subagent & Model Routing Policy" "$HOME/.gemini/config/AGENTS.md"
+    [ "$status" -eq 0 ]
+    run copilot instruction list
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"$HOME/.copilot/copilot-instructions.md"* ]]
+    run copilot skill list
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"conventional-commit"* ]]
 }
 
 @test "PYENV_ROOT is exported in user profile" {
