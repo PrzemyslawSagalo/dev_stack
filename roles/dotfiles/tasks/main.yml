@@ -26,16 +26,6 @@
     mode: "0644"
     directory_mode: "0755"
 
-- name: Remove legacy .config/copilot directory if present
-  ansible.builtin.file:
-    path: "{{ ansible_env.HOME }}/.config/copilot"
-    state: absent
-
-- name: Remove legacy mcp-config.json if present
-  ansible.builtin.file:
-    path: "{{ ansible_env.HOME }}/.copilot/mcp-config.json"
-    state: absent
-
 - name: Ensure ~/.gemini/config directory exists
   ansible.builtin.file:
     path: "{{ ansible_env.HOME }}/.gemini/config"
@@ -72,13 +62,28 @@
 
 - name: Symlink Copilot MCP configuration to Antigravity config
   ansible.builtin.file:
-    src: "{{ ansible_env.HOME }}/.copilot/.mcp.json"
+    src: "{{ ansible_env.HOME }}/.copilot/mcp-config.json"
     dest: "{{ ansible_env.HOME }}/.gemini/config/mcp_config.json"
+    state: link
+    force: true
+
+- name: Symlink Copilot instructions to Antigravity GEMINI.md
+  ansible.builtin.file:
+    src: "{{ ansible_env.HOME }}/.copilot/copilot-instructions.md"
+    dest: "{{ ansible_env.HOME }}/.gemini/config/GEMINI.md"
+    state: link
+    force: true
+
+- name: Symlink Copilot instructions to Antigravity AGENTS.md
+  ansible.builtin.file:
+    src: "{{ ansible_env.HOME }}/.copilot/copilot-instructions.md"
+    dest: "{{ ansible_env.HOME }}/.gemini/config/AGENTS.md"
     state: link
     force: true
 
 - name: Configure Maister plugin for Copilot and Antigravity
   ansible.builtin.import_tasks: maister.yml
+  tags: plugins
 
 - name: Ensure ~/.ssh directory exists
   ansible.builtin.file:

@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="assets/logo.jpg" alt="dev_stack Logo" width="600">
+</div>
+
 # Dev Stack
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)

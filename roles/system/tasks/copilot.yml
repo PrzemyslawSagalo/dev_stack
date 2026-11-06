@@ -40,10 +40,3 @@
   ansible.builtin.file:
     path: /usr/local/bin/copilot
     mode: "0755"
-
-- name: Remove legacy COPILOT_HOME from user profile
-  ansible.builtin.lineinfile:
-    path: "{{ ansible_env.HOME }}/.profile"
-    regexp: '^export COPILOT_HOME='
-    state: absent
-  become: false
