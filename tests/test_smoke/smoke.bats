@@ -56,6 +56,12 @@ setup() {
     [[ "$output" =~ "Docker version" ]]
 }
 
+@test "Workstation user (not only root) belongs to docker group" {
+    run id -nG "$(id -un)"
+    [ "$status" -eq 0 ]
+    [[ " $output " == *" docker "* ]]
+}
+
 @test "Google Antigravity CLI is installed and runnable" {
     run agy --version
     [ "$status" -eq 0 ]
