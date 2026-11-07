@@ -9,14 +9,9 @@
   block:
     - name: Download lazygit tarball
       ansible.builtin.get_url:
-        url: >-
-          https://github.com/jesseduffield/lazygit/releases/download/v{{
-          lazygit_version | default('0.66.1') }}/lazygit_{{
-          lazygit_version | default('0.66.1') }}_linux_x86_64.tar.gz
+        url: "{{ system_default_pkg_metadata.lazygit.url }}"
         dest: /tmp/lazygit.tar.gz
-        checksum: >-
-          sha256:https://github.com/jesseduffield/lazygit/releases/download/v{{
-          lazygit_version | default('0.66.1') }}/checksums.txt
+        checksum: "{{ system_default_pkg_metadata.lazygit.checksum }}"
         mode: "0644"
       register: system_lazygit_download
       until: system_lazygit_download is success

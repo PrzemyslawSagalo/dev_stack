@@ -9,9 +9,9 @@
   block:
     - name: Download Helm archive
       ansible.builtin.get_url:
-        url: "https://get.helm.sh/helm-v{{ helm_version | default('3.22.1') }}-linux-amd64.tar.gz"
-        dest: "/tmp/helm-v{{ helm_version | default('3.22.1') }}-linux-amd64.tar.gz"
-        checksum: "sha256:https://get.helm.sh/helm-v{{ helm_version | default('3.22.1') }}-linux-amd64.tar.gz.sha256sum"
+        url: "{{ system_default_pkg_metadata.helm.url }}"
+        dest: /tmp/helm.tar.gz
+        checksum: "{{ system_default_pkg_metadata.helm.checksum }}"
         mode: "0644"
       register: system_helm_download
       until: system_helm_download is success
@@ -20,17 +20,17 @@
 
     - name: Extract Helm binary to /usr/local/bin
       ansible.builtin.unarchive:
-        src: "/tmp/helm-v{{ helm_version | default('3.22.1') }}-linux-amd64.tar.gz"
+        src: /tmp/helm.tar.gz
         dest: /usr/local/bin
         remote_src: true
         extra_opts:
           - --strip-components=1
-          - linux-amd64/helm
+          - "linux-{{ system_arch.deb }}/helm"
         mode: "0755"
 
     - name: Clean up Helm archive
       ansible.builtin.file:
-        path: "/tmp/helm-v{{ helm_version | default('3.22.1') }}-linux-amd64.tar.gz"
+        path: /tmp/helm.tar.gz
         state: absent
 
 - name: Ensure Helm binary is executable

@@ -18,15 +18,9 @@
   block:
     - name: Download ripgrep tarball
       ansible.builtin.get_url:
-        url: >-
-          https://github.com/BurntSushi/ripgrep/releases/download/{{
-          ripgrep_version | default('14.1.1') }}/ripgrep-{{
-          ripgrep_version | default('14.1.1') }}-x86_64-unknown-linux-musl.tar.gz
+        url: "{{ system_default_pkg_metadata.ripgrep.url }}"
         dest: /tmp/ripgrep.tar.gz
-        checksum: >-
-          sha256:https://github.com/BurntSushi/ripgrep/releases/download/{{
-          ripgrep_version | default('14.1.1') }}/ripgrep-{{
-          ripgrep_version | default('14.1.1') }}-x86_64-unknown-linux-musl.tar.gz.sha256
+        checksum: "{{ system_default_pkg_metadata.ripgrep.checksum }}"
         mode: "0644"
       register: system_ripgrep_download
       until: system_ripgrep_download is success

@@ -145,3 +145,43 @@ setup() {
     [ "$status" -ne 0 ]
     rm -rf "$tmp_user_home" "$tmp_release_dir"
 }
+
+@test "system multi-arch metadata resolves correctly for x86_64 architecture" {
+    run bash -c "
+        BOOTSTRAP_SOURCE_ONLY=1 . '$BOOTSTRAP_SCRIPT'
+        configure_python_path
+        ansible localhost -i localhost, -c local \
+            -e 'ansible_architecture=x86_64' \
+            -e '@$REPO_DIR/roles/system/defaults/main.yml' \
+            -m ansible.builtin.debug -a 'var=system_default_pkg_metadata'
+    "
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"awscli-exe-linux-x86_64.zip"* ]]
+    [[ "$output" == *"copilot-linux-x64-"* ]]
+    [[ "$output" == *"docker-compose-linux-x86_64"* ]]
+    [[ "$output" == *"linux-amd64.tar.gz"* ]]
+    [[ "$output" == *"linux_x86_64.tar.gz"* ]]
+    [[ "$output" == *"openshift-client-linux.tar.gz"* ]]
+    [[ "$output" == *"-x86_64-unknown-linux-musl.tar.gz"* ]]
+    [[ "$output" == *"tree-sitter-linux-x64.gz"* ]]
+}
+
+@test "system multi-arch metadata resolves correctly for aarch64 architecture" {
+    run bash -c "
+        BOOTSTRAP_SOURCE_ONLY=1 . '$BOOTSTRAP_SCRIPT'
+        configure_python_path
+        ansible localhost -i localhost, -c local \
+            -e 'ansible_architecture=aarch64' \
+            -e '@$REPO_DIR/roles/system/defaults/main.yml' \
+            -m ansible.builtin.debug -a 'var=system_default_pkg_metadata'
+    "
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"awscli-exe-linux-aarch64.zip"* ]]
+    [[ "$output" == *"copilot-linux-arm64-"* ]]
+    [[ "$output" == *"docker-compose-linux-aarch64"* ]]
+    [[ "$output" == *"linux-arm64.tar.gz"* ]]
+    [[ "$output" == *"linux_arm64.tar.gz"* ]]
+    [[ "$output" == *"openshift-client-linux-arm64.tar.gz"* ]]
+    [[ "$output" == *"-aarch64-unknown-linux-gnu.tar.gz"* ]]
+    [[ "$output" == *"tree-sitter-linux-arm64.gz"* ]]
+}

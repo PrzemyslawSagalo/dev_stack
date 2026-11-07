@@ -40,7 +40,7 @@
   block:
     - name: Download nvm install script
       ansible.builtin.get_url:
-        url: https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh
+        url: "{{ system_default_pkg_metadata.nvm.url }}"
         dest: /tmp/nvm-install.sh
         mode: "0755"
 
@@ -56,12 +56,12 @@
         path: /tmp/nvm-install.sh
         state: absent
 
-- name: Install Node 23 via nvm
+- name: Install Node via nvm
   ansible.builtin.shell: |
     export NVM_DIR="$HOME/.nvm"
     [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-    nvm install 23
-    nvm alias default 23
+    nvm install {{ system_default_pkg_versions.node }}
+    nvm alias default {{ system_default_pkg_versions.node }}
   args:
     executable: /bin/bash
   changed_when: false
@@ -81,7 +81,7 @@
 - name: Remove legacy nvm use from bashrc
   ansible.builtin.lineinfile:
     path: "{{ ansible_env.HOME }}/.bashrc"
-    line: "nvm use 23 > /dev/null"
+    line: "nvm use {{ system_default_pkg_versions.node }} > /dev/null"
     state: absent
   become: false
 
@@ -95,7 +95,7 @@
   block:
     - name: Download tree-sitter CLI archive
       ansible.builtin.get_url:
-        url: https://github.com/tree-sitter/tree-sitter/releases/download/v0.22.6/tree-sitter-linux-x64.gz
+        url: "{{ system_default_pkg_metadata.tree_sitter.url }}"
         dest: /tmp/tree-sitter.gz
         mode: "0644"
 
@@ -124,13 +124,15 @@
   failed_when: false
 
 - name: Build and install Neovim from source
-  when: system_nvim_version_check.rc != 0 or 'NVIM v0.12.6' not in system_nvim_version_check.stdout
+  when: >-
+    system_nvim_version_check.rc != 0 or
+    ('NVIM v' ~ system_default_pkg_versions.nvim) not in system_nvim_version_check.stdout
   block:
     - name: Clone Neovim repository
       ansible.builtin.git:
         repo: https://github.com/neovim/neovim.git
         dest: /tmp/neovim
-        version: "v0.12.6"
+        version: "v{{ system_default_pkg_versions.nvim }}"
         depth: 1
         force: true
 
@@ -163,7 +165,7 @@
 
 - name: Download Luacheck binary
   ansible.builtin.get_url:
-    url: https://github.com/lunarmodules/luacheck/releases/download/v1.0.0/luacheck
+    url: "{{ system_default_pkg_metadata.luacheck.url }}"
     dest: /usr/local/bin/luacheck
     mode: "0755"
   when: not system_luacheck_bin.stat.exists
