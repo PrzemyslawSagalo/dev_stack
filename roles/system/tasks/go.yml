@@ -1,11 +1,12 @@
 ---
-- name: Check if Go binary exists
-  ansible.builtin.stat:
-    path: /usr/local/go/bin/go
-  register: system_go_bin
+- name: Check installed Go version
+  ansible.builtin.command: /usr/local/go/bin/go version
+  register: system_go_installed_version
+  failed_when: false
+  changed_when: false
 
 - name: Download and install Go
-  when: not system_go_bin.stat.exists
+  when: system_go_installed_version.rc != 0 or ('go' ~ system_default_pkg_versions.go ~ ' ') not in system_go_installed_version.stdout
   block:
     - name: Download Go archive
       ansible.builtin.get_url:

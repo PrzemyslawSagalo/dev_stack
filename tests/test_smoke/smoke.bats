@@ -210,3 +210,18 @@ setup() {
     run nvim --headless -c 'lua assert(vim.g.clipboard.name == "OSC 52", "OSC 52 provider missing"); assert(vim.opt.clipboard:get()[1] == "unnamedplus", "unnamedplus missing"); vim.fn.setreg("+", "clipboard_test")' -c 'q'
     [ "$status" -eq 0 ]
 }
+
+@test "Pre-commit configuration includes official Gitleaks secret detection" {
+    local repo_root
+    repo_root="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
+    [ -f "$repo_root/.pre-commit-config.yaml" ]
+
+    run grep -q "https://github.com/gitleaks/gitleaks" "$repo_root/.pre-commit-config.yaml"
+    [ "$status" -eq 0 ]
+
+    run grep -q "id: gitleaks" "$repo_root/.pre-commit-config.yaml"
+    [ "$status" -eq 0 ]
+
+    run pre-commit validate-config "$repo_root/.pre-commit-config.yaml"
+    [ "$status" -eq 0 ]
+}
