@@ -174,3 +174,15 @@ setup() {
     [[ "$output" =~ "maister" ]]
     [[ "$output" =~ "enabled" ]]
 }
+
+@test "Docker compose plugin is installed and runnable" {
+    run docker compose version
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Docker Compose version"* ]]
+}
+
+@test "Helm is installed and runnable" {
+    run helm version
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"version.BuildInfo"* ]]
+}
