@@ -222,6 +222,8 @@ setup() {
     run grep -q "id: gitleaks" "$repo_root/.pre-commit-config.yaml"
     [ "$status" -eq 0 ]
 
-    run pre-commit validate-config "$repo_root/.pre-commit-config.yaml"
-    [ "$status" -eq 0 ]
+    if command -v pre-commit >/dev/null 2>&1; then
+        run pre-commit validate-config "$repo_root/.pre-commit-config.yaml"
+        [ "$status" -eq 0 ]
+    fi
 }

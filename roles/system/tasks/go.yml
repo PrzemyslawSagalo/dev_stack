@@ -6,7 +6,7 @@
   changed_when: false
 
 - name: Download and install Go
-  when: system_go_installed_version.rc != 0 or ('go' ~ system_default_pkg_versions.go ~ ' ') not in system_go_installed_version.stdout
+  when: system_go_installed_version.rc != 0 or ('go' ~ system_default_pkg_versions.go) not in system_go_installed_version.stdout
   block:
     - name: Download Go archive
       ansible.builtin.get_url:
