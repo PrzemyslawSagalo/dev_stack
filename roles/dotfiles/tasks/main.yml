@@ -26,6 +26,12 @@
     mode: "0644"
     directory_mode: "0755"
 
+- name: Enforce secure permissions on ~/.copilot/mcp-config.json
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/.copilot/mcp-config.json"
+    mode: "0600"
+    state: file
+
 - name: Ensure ~/.gemini/config directory exists
   ansible.builtin.file:
     path: "{{ ansible_env.HOME }}/.gemini/config"
