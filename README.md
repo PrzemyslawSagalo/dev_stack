@@ -8,7 +8,7 @@
 
 Automated, reproducible, and tested Linux development environment provisioning using Ansible.
 
-Supports modern Linux distributions including **Ubuntu 22.04+** and **Amazon Linux 2023**.
+Supports modern Linux distributions including **Ubuntu 24.04+** and **Amazon Linux 2023**.
 
 ---
 

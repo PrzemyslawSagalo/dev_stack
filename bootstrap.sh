@@ -110,7 +110,7 @@ detect_package_manager() {
         fi
     else
         echo "Error: Unknown package manager or unsupported distribution '${OS_ID:-unknown}' (${OS_NAME:-Linux})." >&2
-        echo "       dev_stack officially supports Ubuntu 22.04+ and Amazon Linux 2023." >&2
+        echo "       dev_stack officially supports Ubuntu 24.04+ and Amazon Linux 2023." >&2
         echo "       Script supports package managers: apt-get, dnf, or yum." >&2
         exit 1
     fi

@@ -6,7 +6,7 @@
 
 - name: Download try script
   ansible.builtin.get_url:
-    url: "https://raw.githubusercontent.com/binpash/try/{{ try_version | default('v0.2.1') }}/try"
+    url: "https://raw.githubusercontent.com/binpash/try/v0.2.1/try"
     dest: /usr/local/bin/try
     checksum: "sha256:0a36febe39d6dcd4cf1c8fb95b2e47149b513a0016d2539daf31c7a11a74f478"
     mode: "0755"
