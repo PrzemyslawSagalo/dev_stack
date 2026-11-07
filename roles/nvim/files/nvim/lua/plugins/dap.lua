@@ -50,11 +50,11 @@ return {
 		end, opts)
 
 		-- Floating window
-		local screen_width = vim.o.columns
-		local screen_height = vim.o.lines
-		local floating_window_width = math.floor(screen_width * 0.9)
-		local floating_window_height = math.floor(screen_height * 0.9)
 		keymap("n", "<leader>df", function()
+			local screen_width = vim.o.columns
+			local screen_height = vim.o.lines
+			local floating_window_width = math.floor(screen_width * 0.9)
+			local floating_window_height = math.floor(screen_height * 0.9)
 			require("dapui").float_element(
 				nil,
 				{ width = floating_window_width, height = floating_window_height, enter = true, position = "center" }

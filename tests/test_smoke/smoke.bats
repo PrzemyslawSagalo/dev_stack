@@ -210,3 +210,10 @@ setup() {
     run nvim --headless -c 'lua assert(vim.g.clipboard.name == "OSC 52", "OSC 52 provider missing"); assert(vim.opt.clipboard:get()[1] == "unnamedplus", "unnamedplus missing"); vim.fn.setreg("+", "clipboard_test")' -c 'q'
     [ "$status" -eq 0 ]
 }
+
+@test "Neovim core options and help execution complete cleanly" {
+    run nvim --headless -c 'lua assert(vim.o.undofile == true and vim.o.swapfile == false and vim.o.signcolumn == "yes" and vim.o.termguicolors == true, "core options invalid")' +"help autoread" +qa
+    [ "$status" -eq 0 ]
+    run grep -E "auto-save|FixCursorHold" "$HOME/.config/nvim/lazy-lock.json"
+    [ "$status" -ne 0 ]
+}
