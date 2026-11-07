@@ -132,6 +132,7 @@ setup() {
     [ -L "$HOME/.gemini/config/mcp_config.json" ]
     [ -f "$HOME/.gemini/config/mcp_config.json" ]
     [ "$(readlink -f "$HOME/.gemini/config/mcp_config.json")" = "$HOME/.copilot/mcp-config.json" ]
+    [ "$(stat -c "%a" "$HOME/.copilot/mcp-config.json")" = "600" ]
     [ -L "$HOME/.gemini/config/GEMINI.md" ]
     [ -f "$HOME/.gemini/config/GEMINI.md" ]
     [ -L "$HOME/.gemini/config/AGENTS.md" ]
