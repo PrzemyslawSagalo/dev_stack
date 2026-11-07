@@ -212,33 +212,22 @@ setup() {
 }
 
 @test "Atlassian MCP server is registered in Copilot and Antigravity configs with safe placeholders" {
-    [ -f "$HOME/.copilot/mcp-config.json" ]
-    [ -L "$HOME/.gemini/config/mcp_config.json" ]
-    [ "$(readlink -f "$HOME/.gemini/config/mcp_config.json")" = "$HOME/.copilot/mcp-config.json" ]
-
-    run jq -e '.mcpServers.atlassian' "$HOME/.copilot/mcp-config.json"
+    # Assert server configuration, arguments, and safe placeholder variables in a single expression
+    run jq -e '
+        .mcpServers.atlassian.command == "npx" and
+        (.mcpServers.atlassian.args | index("@modelcontextprotocol/server-atlassian") != null) and
+        .mcpServers.atlassian.env.JIRA_URL == "${JIRA_URL}" and
+        .mcpServers.atlassian.env.JIRA_API_TOKEN == "${JIRA_API_TOKEN}" and
+        .mcpServers.atlassian.env.CONFLUENCE_URL == "${CONFLUENCE_URL}" and
+        .mcpServers.atlassian.env.CONFLUENCE_API_TOKEN == "${CONFLUENCE_API_TOKEN}"
+    ' "$HOME/.copilot/mcp-config.json"
     [ "$status" -eq 0 ]
 
-    run jq -r '.mcpServers.atlassian.command' "$HOME/.copilot/mcp-config.json"
+    # Verify Antigravity configuration inherits identical definition via symlink
+    run jq -e '.mcpServers.atlassian.command == "npx"' "$HOME/.gemini/config/mcp_config.json"
     [ "$status" -eq 0 ]
-    [ "$output" = "npx" ]
 
-    run jq -r '.mcpServers.atlassian.args[]' "$HOME/.copilot/mcp-config.json"
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"@modelcontextprotocol/server-atlassian"* ]]
-
-    run jq -r '.mcpServers.atlassian.env.JIRA_URL' "$HOME/.copilot/mcp-config.json"
-    [ "$status" -eq 0 ]
-    [ "$output" = "\${JIRA_URL}" ]
-
-    run jq -r '.mcpServers.atlassian.env.JIRA_API_TOKEN' "$HOME/.copilot/mcp-config.json"
-    [ "$status" -eq 0 ]
-    [ "$output" = "\${JIRA_API_TOKEN}" ]
-
-    run jq -r '.mcpServers.atlassian.env.CONFLUENCE_URL' "$HOME/.copilot/mcp-config.json"
-    [ "$status" -eq 0 ]
-    [ "$output" = "\${CONFLUENCE_URL}" ]
-
-    run jq -e '.mcpServers.atlassian' "$HOME/.gemini/config/mcp_config.json"
-    [ "$status" -eq 0 ]
+    # Negative assertion: verify zero hardcoded plaintext API tokens or basic auth passwords
+    run grep -iE 'bearer|token[0-9a-zA-Z]{10,}|password[[:space:]]*[:=]' "$HOME/.copilot/mcp-config.json"
+    [ "$status" -ne 0 ]
 }

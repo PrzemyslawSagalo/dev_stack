@@ -76,7 +76,7 @@ The server runs off-the-shelf via `npx -y @modelcontextprotocol/server-atlassian
 
 ### Environment Configuration
 
-Export the following environment variables in your shell environment (e.g., `~/.bashrc`, `~/.zshrc`, or local environment):
+For security, export these variables from a protected, non-committed environment file (e.g., `~/.atlassian.env` with `chmod 600 ~/.atlassian.env`) sourced in your shell profile:
 
 ```bash
 # Jira Configuration
