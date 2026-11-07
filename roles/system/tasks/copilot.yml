@@ -7,13 +7,9 @@
 - name: Install GitHub Copilot CLI
   when: not system_copilot_bin.stat.exists
   block:
-    - name: Determine Copilot CLI platform architecture
-      ansible.builtin.set_fact:
-        system_copilot_arch: "{{ 'linux-arm64' if ansible_architecture in ['aarch64', 'arm64'] else 'linux-x64' }}"
-
     - name: Download Copilot CLI archive
       ansible.builtin.get_url:
-        url: "https://registry.npmjs.org/@github/copilot-{{ system_copilot_arch }}/-/copilot-{{ system_copilot_arch }}-1.0.105.tgz"
+        url: "{{ system_default_pkg_metadata.copilot.url }}"
         dest: /tmp/copilot.tgz
         mode: "0644"
       register: system_copilot_download

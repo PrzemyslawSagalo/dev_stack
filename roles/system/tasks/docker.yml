@@ -12,7 +12,7 @@
     suites: "{{ ansible_distribution_release }}"
     components: stable
     signed_by: "https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg"
-    architectures: "{{ 'arm64' if ansible_architecture in ['aarch64', 'arm64'] else 'amd64' }}"
+    architectures: "{{ system_arch.deb }}"
   register: system_docker_repo
   until: system_docker_repo is success
   retries: 3
@@ -47,9 +47,9 @@
 
 - name: Download docker-compose plugin
   ansible.builtin.get_url:
-    url: "https://github.com/docker/compose/releases/download/v2.36.0/docker-compose-linux-x86_64"
+    url: "{{ system_default_pkg_metadata.docker_compose.url }}"
     dest: "{{ ansible_env.HOME }}/.docker/cli-plugins/docker-compose"
-    checksum: "sha256:https://github.com/docker/compose/releases/download/v2.36.0/docker-compose-linux-x86_64.sha256"
+    checksum: "{{ system_default_pkg_metadata.docker_compose.checksum }}"
     mode: "0755"
   register: system_docker_compose_download
   until: system_docker_compose_download is success

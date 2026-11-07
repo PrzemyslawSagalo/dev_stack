@@ -186,3 +186,11 @@ setup() {
     [ "$status" -eq 0 ]
     [[ "$output" == *"version.BuildInfo"* ]]
 }
+
+@test "Lazygit is installed, runnable, and aliased to lg" {
+    run lazygit --version
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"version="* ]]
+    run grep -qx "alias lg='lazygit'" "$HOME/.bash_aliases"
+    [ "$status" -eq 0 ]
+}

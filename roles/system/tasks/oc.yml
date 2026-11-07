@@ -9,9 +9,9 @@
   block:
     - name: Download OpenShift client tarball
       ansible.builtin.get_url:
-        url: "https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-linux.tar.gz"
+        url: "{{ system_default_pkg_metadata.oc.url }}"
         dest: /tmp/openshift-client-linux.tar.gz
-        checksum: "sha256:https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/sha256sum.txt"
+        checksum: "{{ system_default_pkg_metadata.oc.checksum }}"
         mode: "0644"
       register: system_oc_download
       until: system_oc_download is success
