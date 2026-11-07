@@ -1,9 +1,8 @@
-.PHONY: help setup update lint test-unit-ubuntu test-unit-amazonlinux test-unit test-smoke-ubuntu test-smoke-amazonlinux test-smoke test
+.PHONY: help setup lint test-unit-ubuntu test-unit-amazonlinux test-unit test-smoke-ubuntu test-smoke-amazonlinux test-smoke test
 
 help:
 	@echo "Available commands:"
 	@echo "  make setup                     - Installs the environment (requires Ansible)"
-	@echo "  make update                    - Pulls latest version from Git and updates environment"
 	@echo "  make lint                      - Runs pre-commit checks (ansible-lint, shellcheck, shfmt, stylua, luacheck)"
 	@echo "  make test-unit-ubuntu          - Runs unit tests in Ubuntu container"
 	@echo "  make test-unit-amazonlinux     - Runs unit tests in Amazon Linux container"
@@ -15,12 +14,6 @@ help:
 
 setup:
 	ansible-playbook -i localhost, -c local setup.yml
-
-update:
-	@echo "=> Pulling latest infrastructure from Git..."
-	git pull origin main
-	@echo "=> Updating environment..."
-	@$(MAKE) setup
 
 lint:
 	pre-commit run --all-files

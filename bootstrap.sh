@@ -120,10 +120,10 @@ install_base_dependencies() {
     if [ "$OS_FAMILY" = "debian" ]; then
         echo "==> Detected Debian/Ubuntu family ($PKG_MGR). Installing base dependencies..."
         $SUDO env DEBIAN_FRONTEND=noninteractive apt-get update
-        $SUDO env DEBIAN_FRONTEND=noninteractive apt-get install -y git make python3 python3-pip sudo bash
+        $SUDO env DEBIAN_FRONTEND=noninteractive apt-get install -y curl tar gzip python3 python3-pip sudo bash
     elif [ "$OS_FAMILY" = "amazon" ]; then
         echo "==> Detected Amazon Linux ($PKG_MGR). Installing base dependencies..."
-        $SUDO "$PKG_MGR" install -y git make python3 python3-pip sudo bash
+        $SUDO "$PKG_MGR" install -y curl-minimal tar gzip python3 python3-pip sudo bash
     fi
 }
 
@@ -175,46 +175,91 @@ configure_python_path() {
     hash -r 2>/dev/null || true
 }
 
-configure_safe_directory() {
-    target_dir="$1"
-    git config --global --unset-all safe.directory '^\*$' 2>/dev/null || true
-    if ! git config --global --get-all safe.directory 2>/dev/null | grep -Fx "$target_dir" >/dev/null 2>&1; then
-        git config --global --add safe.directory "$target_dir" 2>/dev/null || true
-    fi
-}
-
 resolve_workspace() {
     SCRIPT_DIR="$(cd "$(dirname "$0")" >/dev/null 2>&1 && pwd)" || SCRIPT_DIR=""
     if [ -n "$SCRIPT_DIR" ] && [ -f "$SCRIPT_DIR/setup.yml" ] && [ -d "$SCRIPT_DIR/roles/system" ]; then
-        echo "==> Detected in-repo workspace via script directory ($SCRIPT_DIR). Bypassing clone..."
+        echo "==> Detected in-repo workspace via script directory ($SCRIPT_DIR). Bypassing download..."
         DEST_DIR="$SCRIPT_DIR"
-        configure_safe_directory "$DEST_DIR"
         return 0
     fi
 
     if [ -f "./setup.yml" ] && [ -d "./roles/system" ]; then
-        echo "==> Detected in-repo workspace via current working directory. Bypassing clone..."
+        echo "==> Detected in-repo workspace via current working directory. Bypassing download..."
         DEST_DIR="$(pwd)"
-        configure_safe_directory "$DEST_DIR"
         return 0
     fi
 
-    REPO_URL="${REPO_URL:-https://github.com/PrzemyslawSagalo/dev_stack.git}"
-    DEST_DIR="${HOME:-/root}/.dev_stack"
+    RELEASE_BASE_URL="${RELEASE_BASE_URL:-https://github.com/PrzemyslawSagalo/dev_stack/releases/latest/download}"
+    ARCHIVE_URL="${ARCHIVE_URL:-$RELEASE_BASE_URL/dev_stack.tar.gz}"
+    CHECKSUM_URL="${CHECKSUM_URL:-$RELEASE_BASE_URL/dev_stack.tar.gz.sha256}"
+    DEST_DIR="$(mktemp -d)"
+    CLEANUP_DEST_DIR="1"
 
-    echo "==> Cloning fresh repository into $DEST_DIR..."
-    rm -rf "$DEST_DIR"
-    configure_safe_directory "$DEST_DIR"
-    git clone "$REPO_URL" "$DEST_DIR"
+    echo "==> Downloading, verifying, and extracting release package into temporary workspace ($DEST_DIR)..."
+    if ! ansible localhost -i localhost, -c local -e "ansible_python_interpreter=/usr/bin/python3" \
+        -m ansible.builtin.get_url \
+        -a "url=$ARCHIVE_URL dest=$DEST_DIR/dev_stack.tar.gz checksum=sha256:$CHECKSUM_URL" ||
+        ! ansible localhost -i localhost, -c local -e "ansible_python_interpreter=/usr/bin/python3" \
+            -m ansible.builtin.unarchive \
+            -a "src=$DEST_DIR/dev_stack.tar.gz dest=$DEST_DIR remote_src=true"; then
+        rm -rf "$DEST_DIR"
+        echo "Error: Failed to download or verify release package from $ARCHIVE_URL." >&2
+        exit 1
+    fi
+    rm -f "$DEST_DIR/dev_stack.tar.gz"
 }
 
 handover_to_ansible() {
     echo "==> Handing over execution to Ansible..."
+    if [ "${CLEANUP_DEST_DIR:-0}" = "1" ] && [ -n "${DEST_DIR:-}" ]; then
+        trap 'rm -rf "$DEST_DIR"' EXIT
+    fi
     cd "$DEST_DIR"
-    make setup
+    ansible-playbook -i localhost, -c local setup.yml
+}
+
+resolve_version() {
+    if [ -n "${DEV_STACK_VERSION:-}" ]; then
+        return 0
+    fi
+    SCRIPT_DIR="$(cd "$(dirname "$0")" >/dev/null 2>&1 && pwd)" || SCRIPT_DIR=""
+    if [ -n "$SCRIPT_DIR" ] && command -v git >/dev/null 2>&1; then
+        DEV_STACK_VERSION="$(git -C "$SCRIPT_DIR" describe --tags --abbrev=0 2>/dev/null || true)"
+    fi
+    if [ -z "${DEV_STACK_VERSION:-}" ] && command -v curl >/dev/null 2>&1; then
+        effective_url="$(curl -fsSLI -o /dev/null -w '%{url_effective}' "${RELEASE_LATEST_URL:-https://github.com/PrzemyslawSagalo/dev_stack/releases/latest}" 2>/dev/null || true)"
+        latest_tag="${effective_url##*/}"
+        if [ -n "$latest_tag" ] && [ "$latest_tag" != "latest" ] && [ "$latest_tag" != "releases" ]; then
+            DEV_STACK_VERSION="$latest_tag"
+        fi
+    fi
+    if [ -z "${DEV_STACK_VERSION:-}" ]; then
+        DEV_STACK_VERSION="latest"
+    fi
+}
+
+print_banner() {
+    resolve_version
+    if [ -z "${OS_NAME:-}" ]; then
+        detect_os
+    fi
+    ARCH_NAME="$(uname -m 2>/dev/null || echo unknown)"
+    cat <<EOF
+========================================================================
+    ____  _______     __   ____ _____  _    ____ _  __
+   |  _ \\| ____\\ \\   / /  / ___|_   _|/ \\  / ___| |/ /
+   | | | |  _|  \\ \\ / /   \\___ \\ | | / _ \\| |   | ' /
+   | |_| | |___  \\ V /     ___) || |/ ___ \\ |___| . \\
+   |____/|_____|  \\_/     |____/ |_/_/   \\_\\____|_|\\_\\
+
+   Automated Linux Development Environment Provisioning
+   Installing Version: ${DEV_STACK_VERSION} (${OS_NAME} ${ARCH_NAME})
+========================================================================
+EOF
 }
 
 main() {
+    print_banner
     echo "==> Starting environment initialization (Bootstrap)..."
     verify_sudo_access
     detect_os

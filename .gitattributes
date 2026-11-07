@@ -1,0 +1,11 @@
+.github export-ignore
+assets export-ignore
+tests export-ignore
+.gitignore export-ignore
+.gitattributes export-ignore
+.pre-commit-config.yaml export-ignore
+.luacheckrc export-ignore
+README.md export-ignore
+LICENSE export-ignore
+Makefile export-ignore
+bootstrap.sh export-ignore

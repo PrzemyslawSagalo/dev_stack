@@ -29,6 +29,17 @@ The primary session model acts strictly as Architect, Planner, and Orchestrator.
 * Subagents and background workflows should leverage GitHub Copilot CLI Pro+ (`copilot -p "..." -s --no-ask-user` and `copilot --fleet`) for code/test generation and secondary review with cost-efficient model delegation. Always include `--no-ask-user` for non-interactive runs so prompts do not block background execution.
 * Enforce least-privilege tool permissions in non-interactive runs: default to read-only analysis for reviews/audits, or explicitly scope tool permissions (e.g., `--allow-tool 'write' --deny-tool 'shell(git push)'`) inside trusted workspaces. Never pass unrestricted `--allow-all` without explicit user opt-in.
 
+## Architecture & Engineering Standards [STRICT]
+
+### Off-The-Shelf First (No Reinventing the Wheel)
+* **Research First**: ALWAYS research existing battle-tested libraries, CLI tools, official GitHub Actions, established pre-commit hooks, and native plugins BEFORE writing custom Bash, Python, Lua, or shell glue code.
+* **Native Modules Over Custom Shells**: In Ansible playbooks, strictly use native modules (`ansible.builtin.*`, `community.general.*`) and native task attributes (`retries:`, `delay:`, `until:`, `cache_valid_time:`, `deb822_repository`, `rpm_key`, `checksum:`) instead of ad-hoc `command`, `shell`, or curl-to-sh pipelines.
+* **Strict Cryptographic Integrity**: Never bypass signature or checksum validation (`disable_gpg_check: true` and `VERIFY_CHECKSUM: "false"` are strictly forbidden). Install tools via official GPG-signed package repositories or verified binary releases with pinned cryptographic checksums.
+
+### Pre-Implementation Research & Holistic Issue Deduplication
+* **Ground Truth Verification**: Always cross-reference proposed changes against the current codebase state, recent merged PRs, and active feature branches before implementing or planning. Never base decisions on outdated assumptions or obsolete file paths.
+* **Holistic Consolidation**: Check related issues across the stack before planning. If an issue is already resolved, close it referencing the solving PR. If an issue overlaps with or is a subset of another, consolidate requirements into a single canonical issue and close redundant ones to prevent fragmented plans and merge conflicts.
+
 ## Testing Protocol
 * Trigger: Generate tests ONLY when explicitly asked.
 
