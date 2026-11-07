@@ -1,61 +1,61 @@
 -- Headless Neovim Test Runner for dev_stack
+
+-- Resolve directory containing run_tests.lua dynamically
+local source_path = debug.getinfo(1, "S").source:sub(2)
+local test_dir = vim.fn.fnamemodify(source_path, ":h")
+package.path = test_dir .. "/?.lua;" .. package.path
+
 local test_modules = {
-	"roles.nvim.files.nvim.tests.test_options",
-	"roles.nvim.files.nvim.tests.test_keymaps",
-	"roles.nvim.files.nvim.tests.test_autoread_e2e",
-	"roles.nvim.files.nvim.tests.test_clipboard",
+	"test_options",
+	"test_keymaps",
+	"test_autoread_e2e",
+	"test_clipboard",
 }
 
--- Also support local require relative to tests directory
-package.path = package.path .. ";roles/nvim/files/nvim/tests/?.lua;tests/?.lua"
-
-print("==================================================")
-print("Running Neovim Headless Behavioral Test Suite")
-print("==================================================")
+io.stdout:write("==================================================\n")
+io.stdout:write("Running Neovim Headless Behavioral Test Suite\n")
+io.stdout:write("==================================================\n")
 
 local passed = 0
 local failed = 0
 local errors = {}
 
 for _, mod_name in ipairs(test_modules) do
-	local short_name = mod_name:match("[^.]+$")
-	io.write(string.format("  -> Running %-30s ... ", short_name))
-	io.flush()
+	io.stdout:write(string.format("  -> Running %-30s ... ", mod_name))
+	io.stdout:flush()
 
 	local ok, mod_or_err = pcall(require, mod_name)
 	if not ok then
-		-- Fallback to short name if package path differs
-		ok, mod_or_err = pcall(require, short_name)
-	end
-
-	if not ok then
-		io.write("FAIL (load error)\n")
+		io.stdout:write("FAIL (load error)\n")
 		failed = failed + 1
-		table.insert(errors, { name = short_name, err = mod_or_err })
+		table.insert(errors, { name = mod_name, err = mod_or_err })
 	else
+		-- Clean buffer state before each spec
+		vim.cmd("silent! %bdelete!")
+
 		local run_ok, run_err = pcall(mod_or_err.run)
 		if run_ok then
-			io.write("PASS\n")
+			io.stdout:write("PASS\n")
 			passed = passed + 1
 		else
-			io.write("FAIL\n")
+			io.stdout:write("FAIL\n")
 			failed = failed + 1
-			table.insert(errors, { name = short_name, err = run_err })
+			table.insert(errors, { name = mod_name, err = run_err })
 		end
 	end
 end
 
-print("--------------------------------------------------")
-print(string.format("Results: %d passed, %d failed", passed, failed))
-print("==================================================")
+io.stdout:write("--------------------------------------------------\n")
+io.stdout:write(string.format("Results: %d passed, %d failed\n", passed, failed))
+io.stdout:write("==================================================\n")
 
 if failed > 0 then
-	print("\nFailures:")
+	io.stdout:write("\nFailures:\n")
 	for _, f in ipairs(errors) do
-		print(string.format("\n[%s]:\n%s", f.name, tostring(f.err)))
+		io.stdout:write(string.format("\n[%s]:\n%s\n", f.name, tostring(f.err)))
 	end
 	os.exit(1)
 else
-	print("All tests passed successfully.")
+	io.stdout:write("All tests passed successfully.\n")
 	os.exit(0)
 end

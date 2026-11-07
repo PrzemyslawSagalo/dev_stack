@@ -20,7 +20,7 @@ lint:
 	pre-commit run --all-files
 
 test-nvim:
-	XDG_CONFIG_HOME=roles/nvim/files nvim --headless -u roles/nvim/files/nvim/init.lua -l roles/nvim/files/nvim/tests/run_tests.lua
+	NVIM_SMOKE_TEST=1 XDG_CONFIG_HOME=$(CURDIR)/roles/nvim/files nvim --headless -u $(CURDIR)/roles/nvim/files/nvim/init.lua -l $(CURDIR)/roles/nvim/files/nvim/tests/run_tests.lua
 
 test-unit-ubuntu:
 	./tests/run.sh unit ubuntu:24.04
