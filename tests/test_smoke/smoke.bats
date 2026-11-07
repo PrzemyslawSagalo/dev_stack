@@ -217,3 +217,11 @@ setup() {
     run grep -E "auto-save|FixCursorHold" "$HOME/.config/nvim/lazy-lock.json"
     [ "$status" -ne 0 ]
 }
+
+@test "Neovim headless behavioral test suite passes cleanly" {
+    local repo_root
+    repo_root="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
+    run make -C "$repo_root" test-nvim
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"All tests passed successfully."* ]]
+}
