@@ -195,3 +195,18 @@ setup() {
     run grep -qx "alias lg='lazygit'" "$HOME/.bash_aliases"
     [ "$status" -eq 0 ]
 }
+
+@test "Tmux configuration includes mouse mode and OSC 52 clipboard pass-through" {
+    [ -f "$HOME/.tmux.conf" ]
+    run grep -qx "set -g mouse on" "$HOME/.tmux.conf"
+    [ "$status" -eq 0 ]
+    run grep -qx "set -s set-clipboard on" "$HOME/.tmux.conf"
+    [ "$status" -eq 0 ]
+    run grep -q "terminal-features ',tmux-256color:clipboard'" "$HOME/.tmux.conf"
+    [ "$status" -eq 0 ]
+}
+
+@test "Neovim initializes OSC 52 clipboard provider and unnamedplus" {
+    run nvim --headless -c 'lua assert(vim.g.clipboard.name == "OSC 52", "OSC 52 provider missing"); assert(vim.opt.clipboard:get()[1] == "unnamedplus", "unnamedplus missing"); vim.fn.setreg("+", "clipboard_test")' -c 'q'
+    [ "$status" -eq 0 ]
+}
