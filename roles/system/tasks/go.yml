@@ -4,13 +4,30 @@
     path: /usr/local/go/bin/go
   register: system_go_bin
 
-- name: Download and extract Go
-  ansible.builtin.unarchive:
-    src: "https://go.dev/dl/go{{ go_version | default('1.24.1') }}.linux-amd64.tar.gz"
-    dest: "/usr/local"
-    remote_src: true
-    creates: /usr/local/go/bin/go
+- name: Download and install Go
   when: not system_go_bin.stat.exists
+  block:
+    - name: Download Go archive
+      ansible.builtin.get_url:
+        url: "https://go.dev/dl/go{{ go_version | default('1.24.1') }}.linux-amd64.tar.gz"
+        dest: "/tmp/go{{ go_version | default('1.24.1') }}.linux-amd64.tar.gz"
+        checksum: "sha256:https://dl.google.com/go/go{{ go_version | default('1.24.1') }}.linux-amd64.tar.gz.sha256"
+        mode: "0644"
+      register: system_go_download
+      until: system_go_download is success
+      retries: 3
+      delay: 5
+
+    - name: Extract Go to /usr/local
+      ansible.builtin.unarchive:
+        src: "/tmp/go{{ go_version | default('1.24.1') }}.linux-amd64.tar.gz"
+        dest: "/usr/local"
+        remote_src: true
+
+    - name: Remove Go temporary archive
+      ansible.builtin.file:
+        path: "/tmp/go{{ go_version | default('1.24.1') }}.linux-amd64.tar.gz"
+        state: absent
 
 - name: Symlink Go binary to /usr/local/bin
   ansible.builtin.file:

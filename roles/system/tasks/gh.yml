@@ -11,6 +11,10 @@
     url: https://cli.github.com/packages/githubcli-archive-keyring.gpg
     dest: /etc/apt/keyrings/githubcli-archive-keyring.gpg
     mode: "0644"
+  register: system_gh_key_download
+  until: system_gh_key_download is success
+  retries: 3
+  delay: 5
   when: ansible_os_family == 'Debian'
 
 - name: Add GitHub CLI apt repository (Debian)
@@ -21,13 +25,14 @@
       https://cli.github.com/packages stable main
     filename: github-cli
     state: present
+  register: system_gh_repo
   when: ansible_os_family == 'Debian'
 
 - name: Install GitHub CLI (Debian)
   ansible.builtin.apt:
     name: gh
     state: present
-    update_cache: true
+    update_cache: "{{ system_gh_repo is changed }}"
   when: ansible_os_family == 'Debian'
 
 - name: Add GitHub CLI repo (Amazon Linux)
@@ -35,6 +40,10 @@
     url: https://cli.github.com/packages/rpm/gh-cli.repo
     dest: /etc/yum.repos.d/gh-cli.repo
     mode: "0644"
+  register: system_gh_repo_download
+  until: system_gh_repo_download is success
+  retries: 3
+  delay: 5
   when: ansible_distribution == 'Amazon'
 
 - name: Install GitHub CLI (Amazon Linux)
