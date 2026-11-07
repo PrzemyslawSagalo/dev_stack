@@ -210,3 +210,35 @@ setup() {
     run nvim --headless -c 'lua assert(vim.g.clipboard.name == "OSC 52", "OSC 52 provider missing"); assert(vim.opt.clipboard:get()[1] == "unnamedplus", "unnamedplus missing"); vim.fn.setreg("+", "clipboard_test")' -c 'q'
     [ "$status" -eq 0 ]
 }
+
+@test "Atlassian MCP server is registered in Copilot and Antigravity configs with safe placeholders" {
+    [ -f "$HOME/.copilot/mcp-config.json" ]
+    [ -L "$HOME/.gemini/config/mcp_config.json" ]
+    [ "$(readlink -f "$HOME/.gemini/config/mcp_config.json")" = "$HOME/.copilot/mcp-config.json" ]
+
+    run jq -e '.mcpServers.atlassian' "$HOME/.copilot/mcp-config.json"
+    [ "$status" -eq 0 ]
+
+    run jq -r '.mcpServers.atlassian.command' "$HOME/.copilot/mcp-config.json"
+    [ "$status" -eq 0 ]
+    [ "$output" = "npx" ]
+
+    run jq -r '.mcpServers.atlassian.args[]' "$HOME/.copilot/mcp-config.json"
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"@modelcontextprotocol/server-atlassian"* ]]
+
+    run jq -r '.mcpServers.atlassian.env.JIRA_URL' "$HOME/.copilot/mcp-config.json"
+    [ "$status" -eq 0 ]
+    [ "$output" = "\${JIRA_URL}" ]
+
+    run jq -r '.mcpServers.atlassian.env.JIRA_API_TOKEN' "$HOME/.copilot/mcp-config.json"
+    [ "$status" -eq 0 ]
+    [ "$output" = "\${JIRA_API_TOKEN}" ]
+
+    run jq -r '.mcpServers.atlassian.env.CONFLUENCE_URL' "$HOME/.copilot/mcp-config.json"
+    [ "$status" -eq 0 ]
+    [ "$output" = "\${CONFLUENCE_URL}" ]
+
+    run jq -e '.mcpServers.atlassian' "$HOME/.gemini/config/mcp_config.json"
+    [ "$status" -eq 0 ]
+}

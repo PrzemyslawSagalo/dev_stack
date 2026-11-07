@@ -62,9 +62,36 @@ ansible-playbook setup.yml
   * Terminal multiplexer configuration (`.tmux.conf`) with vi-mode navigation.
   * SSH client configuration (`~/.ssh/config`).
   * Git global configuration (`~/.gitconfig`).
-  * AI assistant configuration (`.copilot`).
+  * AI assistant configuration (`.copilot` and `.gemini` MCP configuration).
 * **Editor (`roles/nvim`)**:
   * Modern Neovim IDE configuration.
+
+---
+
+## Atlassian MCP Integration (Jira & Confluence)
+
+`dev_stack` configures Model Context Protocol (MCP) servers for direct integration with Atlassian Jira and Confluence in both GitHub Copilot CLI (`~/.copilot/mcp-config.json`) and Google Antigravity (`~/.gemini/config/mcp_config.json`).
+
+The server runs off-the-shelf via `npx -y @modelcontextprotocol/server-atlassian` and consumes standard environment variables.
+
+### Environment Configuration
+
+Export the following environment variables in your shell environment (e.g., `~/.bashrc`, `~/.zshrc`, or local environment):
+
+```bash
+# Jira Configuration
+export JIRA_URL="https://your-domain.atlassian.net"
+export JIRA_USERNAME="your-email@example.com"
+export JIRA_API_TOKEN="your_atlassian_api_token"
+
+# Confluence Configuration
+export CONFLUENCE_URL="https://your-domain.atlassian.net/wiki"
+export CONFLUENCE_USERNAME="your-email@example.com"
+export CONFLUENCE_API_TOKEN="your_atlassian_api_token"
+```
+
+> [!NOTE]
+> Generate your Atlassian API token from **Atlassian Account Settings → Security → Create and manage API tokens**. Zero credentials are stored in git.
 
 ---
 
