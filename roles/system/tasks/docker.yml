@@ -5,31 +5,31 @@
     state: present
   when: ansible_distribution == 'Amazon'
 
-- name: Check if Docker binary is installed
-  ansible.builtin.stat:
-    path: /usr/bin/docker
-  register: system_docker_bin
+- name: Add Docker repository (Debian)
+  ansible.builtin.deb822_repository:
+    name: docker
+    uris: "https://download.docker.com/linux/{{ ansible_distribution | lower }}"
+    suites: "{{ ansible_distribution_release }}"
+    components: stable
+    signed_by: "https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg"
+    architectures: "{{ 'arm64' if ansible_architecture in ['aarch64', 'arm64'] else 'amd64' }}"
+  register: system_docker_repo
+  until: system_docker_repo is success
+  retries: 3
+  delay: 5
+  when: ansible_os_family == 'Debian'
 
-- name: Install Docker via official script (Debian)
-  when:
-    - ansible_distribution != 'Amazon'
-    - not system_docker_bin.stat.exists
-  block:
-    - name: Download Docker install script
-      ansible.builtin.get_url:
-        url: https://get.docker.com
-        dest: /tmp/get-docker.sh
-        mode: "0755"
-
-    - name: Run Docker install script
-      ansible.builtin.command:
-        cmd: /tmp/get-docker.sh
-      changed_when: true
-
-    - name: Clean up Docker install script
-      ansible.builtin.file:
-        path: /tmp/get-docker.sh
-        state: absent
+- name: Install Docker (Debian)
+  ansible.builtin.apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+    state: present
+    update_cache: "{{ system_docker_repo is changed }}"
+  when: ansible_os_family == 'Debian'
 
 - name: Ensure user is in docker group
   ansible.builtin.user:
@@ -43,13 +43,20 @@
     state: directory
     mode: "0755"
   become: false
+  when: ansible_distribution == 'Amazon'
 
 - name: Download docker-compose plugin
   ansible.builtin.get_url:
     url: "https://github.com/docker/compose/releases/download/v2.36.0/docker-compose-linux-x86_64"
     dest: "{{ ansible_env.HOME }}/.docker/cli-plugins/docker-compose"
+    checksum: "sha256:https://github.com/docker/compose/releases/download/v2.36.0/docker-compose-linux-x86_64.sha256"
     mode: "0755"
+  register: system_docker_compose_download
+  until: system_docker_compose_download is success
+  retries: 3
+  delay: 5
   become: false
+  when: ansible_distribution == 'Amazon'
 
 - name: Ensure Docker service is enabled and started
   ansible.builtin.service:

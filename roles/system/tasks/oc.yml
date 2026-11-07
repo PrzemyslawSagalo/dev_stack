@@ -1,10 +1,33 @@
 ---
-- name: Download and extract OpenShift client
-  ansible.builtin.unarchive:
-    src: "https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-linux.tar.gz"
-    dest: "/usr/local/bin"
-    remote_src: true
-    extra_opts:
-      - oc
-    mode: "0755"
-    creates: /usr/local/bin/oc
+- name: Check if OpenShift client binary exists
+  ansible.builtin.stat:
+    path: /usr/local/bin/oc
+  register: system_oc_bin
+
+- name: Download and install OpenShift client
+  when: not system_oc_bin.stat.exists
+  block:
+    - name: Download OpenShift client tarball
+      ansible.builtin.get_url:
+        url: "https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-linux.tar.gz"
+        dest: /tmp/openshift-client-linux.tar.gz
+        checksum: "sha256:https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/sha256sum.txt"
+        mode: "0644"
+      register: system_oc_download
+      until: system_oc_download is success
+      retries: 3
+      delay: 5
+
+    - name: Extract OpenShift client binary to /usr/local/bin
+      ansible.builtin.unarchive:
+        src: /tmp/openshift-client-linux.tar.gz
+        dest: /usr/local/bin
+        remote_src: true
+        extra_opts:
+          - oc
+        mode: "0755"
+
+    - name: Remove OpenShift client temporary tarball
+      ansible.builtin.file:
+        path: /tmp/openshift-client-linux.tar.gz
+        state: absent

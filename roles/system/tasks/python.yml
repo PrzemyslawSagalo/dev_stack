@@ -53,6 +53,10 @@
         url: https://pyenv.run
         dest: /tmp/pyenv_install.sh
         mode: "0755"
+      register: system_pyenv_download
+      until: system_pyenv_download is success
+      retries: 3
+      delay: 5
 
     - name: Run pyenv installer
       ansible.builtin.command:

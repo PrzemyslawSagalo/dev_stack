@@ -7,24 +7,33 @@
 - name: Install Helm
   when: not system_helm_bin.stat.exists
   block:
-    - name: Download Helm install script
+    - name: Download Helm archive
       ansible.builtin.get_url:
-        url: https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
-        dest: /tmp/get_helm.sh
-        mode: "0700"
+        url: "https://get.helm.sh/helm-v{{ helm_version | default('3.22.1') }}-linux-amd64.tar.gz"
+        dest: "/tmp/helm-v{{ helm_version | default('3.22.1') }}-linux-amd64.tar.gz"
+        checksum: "sha256:https://get.helm.sh/helm-v{{ helm_version | default('3.22.1') }}-linux-amd64.tar.gz.sha256sum"
+        mode: "0644"
       register: system_helm_download
       until: system_helm_download is success
       retries: 3
       delay: 5
 
-    - name: Run Helm install script
-      ansible.builtin.command:
-        cmd: /tmp/get_helm.sh
-      environment:
-        VERIFY_CHECKSUM: "false"
-      changed_when: true
+    - name: Extract Helm binary to /usr/local/bin
+      ansible.builtin.unarchive:
+        src: "/tmp/helm-v{{ helm_version | default('3.22.1') }}-linux-amd64.tar.gz"
+        dest: /usr/local/bin
+        remote_src: true
+        extra_opts:
+          - --strip-components=1
+          - linux-amd64/helm
+        mode: "0755"
 
-    - name: Clean up Helm install script
+    - name: Clean up Helm archive
       ansible.builtin.file:
-        path: /tmp/get_helm.sh
+        path: "/tmp/helm-v{{ helm_version | default('3.22.1') }}-linux-amd64.tar.gz"
         state: absent
+
+- name: Ensure Helm binary is executable
+  ansible.builtin.file:
+    path: /usr/local/bin/helm
+    mode: "0755"

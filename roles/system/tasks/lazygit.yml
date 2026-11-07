@@ -12,8 +12,11 @@
         url: >-
           https://github.com/jesseduffield/lazygit/releases/download/v{{
           lazygit_version | default('0.66.1') }}/lazygit_{{
-          lazygit_version | default('0.66.1') }}_Linux_x86_64.tar.gz
+          lazygit_version | default('0.66.1') }}_linux_x86_64.tar.gz
         dest: /tmp/lazygit.tar.gz
+        checksum: >-
+          sha256:https://github.com/jesseduffield/lazygit/releases/download/v{{
+          lazygit_version | default('0.66.1') }}/checksums.txt
         mode: "0644"
       register: system_lazygit_download
       until: system_lazygit_download is success

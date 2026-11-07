@@ -5,18 +5,46 @@
     state: present
   when: ansible_os_family == 'Debian'
 
-- name: Install ripgrep (Amazon Linux)
-  ansible.builtin.unarchive:
-    src: >-
-      https://github.com/BurntSushi/ripgrep/releases/download/{{
-      ripgrep_version | default('14.1.1') }}/ripgrep-{{
-      ripgrep_version | default('14.1.1') }}-x86_64-unknown-linux-musl.tar.gz
-    dest: /usr/local/bin
-    remote_src: true
-    extra_opts:
-      - --strip-components=1
-      - --wildcards
-      - "*/rg"
-    mode: "0755"
-    creates: /usr/local/bin/rg
+- name: Check if ripgrep binary exists (Amazon Linux)
+  ansible.builtin.stat:
+    path: /usr/local/bin/rg
+  register: system_ripgrep_bin
   when: ansible_distribution == 'Amazon'
+
+- name: Download and install ripgrep (Amazon Linux)
+  when:
+    - ansible_distribution == 'Amazon'
+    - not system_ripgrep_bin.stat.exists
+  block:
+    - name: Download ripgrep tarball
+      ansible.builtin.get_url:
+        url: >-
+          https://github.com/BurntSushi/ripgrep/releases/download/{{
+          ripgrep_version | default('14.1.1') }}/ripgrep-{{
+          ripgrep_version | default('14.1.1') }}-x86_64-unknown-linux-musl.tar.gz
+        dest: /tmp/ripgrep.tar.gz
+        checksum: >-
+          sha256:https://github.com/BurntSushi/ripgrep/releases/download/{{
+          ripgrep_version | default('14.1.1') }}/ripgrep-{{
+          ripgrep_version | default('14.1.1') }}-x86_64-unknown-linux-musl.tar.gz.sha256
+        mode: "0644"
+      register: system_ripgrep_download
+      until: system_ripgrep_download is success
+      retries: 3
+      delay: 5
+
+    - name: Extract ripgrep binary to /usr/local/bin
+      ansible.builtin.unarchive:
+        src: /tmp/ripgrep.tar.gz
+        dest: /usr/local/bin
+        remote_src: true
+        extra_opts:
+          - --strip-components=1
+          - --wildcards
+          - "*/rg"
+        mode: "0755"
+
+    - name: Remove ripgrep temporary tarball
+      ansible.builtin.file:
+        path: /tmp/ripgrep.tar.gz
+        state: absent
