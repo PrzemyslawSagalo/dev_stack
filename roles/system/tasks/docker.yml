@@ -5,12 +5,6 @@
     state: present
   when: ansible_distribution == 'Amazon'
 
-- name: Ensure python3-debian is installed (Debian)
-  ansible.builtin.apt:
-    name: python3-debian
-    state: present
-  when: ansible_os_family == 'Debian'
-
 - name: Add Docker repository (Debian)
   ansible.builtin.deb822_repository:
     name: docker

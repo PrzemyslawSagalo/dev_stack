@@ -22,6 +22,12 @@
       - rsync
     state: present
 
+- name: Ensure python3-debian is installed for deb822_repository (Debian)
+  ansible.builtin.apt:
+    name: python3-debian
+    state: present
+  when: ansible_os_family == 'Debian'
+
 - name: Ensure .profile exists (for user environment)
   ansible.builtin.copy:
     dest: "{{ ansible_env.HOME }}/.profile"
