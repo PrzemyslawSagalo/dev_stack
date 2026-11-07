@@ -43,9 +43,10 @@ setup() {
         install_base_dependencies
     "
     [ "$status" -eq 0 ]
-    command -v git >/dev/null 2>&1
-    command -v make >/dev/null 2>&1
     command -v python3 >/dev/null 2>&1
+    command -v curl >/dev/null 2>&1
+    command -v tar >/dev/null 2>&1
+    command -v gzip >/dev/null 2>&1
 }
 
 @test "install_ansible installs ansible-playbook on system" {
@@ -94,42 +95,53 @@ setup() {
     rm -rf "$tmp_user_home"
 }
 
-@test "resolve_workspace clones repository when executed outside workspace" {
-    local tmp_user_home
+@test "resolve_workspace downloads, verifies, and extracts release package when executed outside workspace" {
+    local tmp_user_home tmp_release_dir
     tmp_user_home="$(mktemp -d)"
+    tmp_release_dir="$(mktemp -d)"
+
+    git -C "$REPO_DIR" archive --format=tar.gz -9 -o "$tmp_release_dir/dev_stack.tar.gz" HEAD
+    (cd "$tmp_release_dir" && sha256sum dev_stack.tar.gz >dev_stack.tar.gz.sha256)
+
     run bash -c "
         cd /tmp
         HOME='$tmp_user_home'
+        RELEASE_BASE_URL='file://$tmp_release_dir'
         BOOTSTRAP_SOURCE_ONLY=1 . '$BOOTSTRAP_SCRIPT'
+        configure_python_path
         resolve_workspace
         echo \"DEST_DIR=\$DEST_DIR\"
+        echo \"CLEANUP_DEST_DIR=\$CLEANUP_DEST_DIR\"
+        [ -f \"\$DEST_DIR/setup.yml\" ]
+        [ -d \"\$DEST_DIR/roles/system\" ]
+        [ ! -d \"\$DEST_DIR/.git\" ]
+        [ ! -d \"\$DEST_DIR/tests\" ]
+        [ ! -d \"\$DEST_DIR/.github\" ]
+        [ \"\$CLEANUP_DEST_DIR\" = \"1\" ]
+        rm -rf \"\$DEST_DIR\"
     "
     [ "$status" -eq 0 ]
-    [[ "$output" == *"DEST_DIR=$tmp_user_home/.dev_stack"* ]]
-    [ -d "$tmp_user_home/.dev_stack/.git" ]
-    run git config --file "$tmp_user_home/.gitconfig" --get-all safe.directory
-    [ "$status" -eq 0 ]
-    [ "$output" = "$tmp_user_home/.dev_stack" ]
-    [[ "$output" != *"*"* ]]
-    rm -rf "$tmp_user_home"
+    [[ "$output" == *"DEST_DIR=/tmp/"* ]]
+    [[ "$output" == *"CLEANUP_DEST_DIR=1"* ]]
+    rm -rf "$tmp_user_home" "$tmp_release_dir"
 }
 
-@test "resolve_workspace configures safe.directory scoped to DEST_DIR idempotently" {
-    local tmp_user_home
+@test "resolve_workspace fails when release package checksum does not match" {
+    local tmp_user_home tmp_release_dir
     tmp_user_home="$(mktemp -d)"
+    tmp_release_dir="$(mktemp -d)"
+
+    git -C "$REPO_DIR" archive --format=tar.gz -9 -o "$tmp_release_dir/dev_stack.tar.gz" HEAD
+    echo "0000000000000000000000000000000000000000000000000000000000000000  dev_stack.tar.gz" >"$tmp_release_dir/dev_stack.tar.gz.sha256"
+
     run bash -c "
-        cd '$REPO_DIR'
+        cd /tmp
         HOME='$tmp_user_home'
-        git config --global --add safe.directory '*'
-        git config --global --add safe.directory '/custom/repo'
+        RELEASE_BASE_URL='file://$tmp_release_dir'
         BOOTSTRAP_SOURCE_ONLY=1 . '$BOOTSTRAP_SCRIPT'
-        resolve_workspace
+        configure_python_path
         resolve_workspace
     "
-    [ "$status" -eq 0 ]
-    run git config --file "$tmp_user_home/.gitconfig" --get-all safe.directory
-    [ "$status" -eq 0 ]
-    [[ "$output" != *"*"* ]]
-    [ "$output" = $'/custom/repo\n'"$REPO_DIR" ]
-    rm -rf "$tmp_user_home"
+    [ "$status" -ne 0 ]
+    rm -rf "$tmp_user_home" "$tmp_release_dir"
 }
