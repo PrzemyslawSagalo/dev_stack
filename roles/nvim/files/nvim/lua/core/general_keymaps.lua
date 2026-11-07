@@ -37,7 +37,7 @@ keymap("n", "<leader><Right>", ":vertical resize +2<CR>", opts)
 -- Navigate buffers
 keymap("n", "<S-l>", ":bnext<CR>", opts)
 keymap("n", "<S-h>", ":bprevious<CR>", opts)
-keymap("n", "<leader>q", ":bd | bprev<CR>", opts)
+keymap("n", "<leader>q", ":Bdelete<CR>", opts)
 
 -- Insert --
 -- Press jk fast to enter
