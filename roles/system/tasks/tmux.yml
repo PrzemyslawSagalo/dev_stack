@@ -6,8 +6,10 @@
   changed_when: false
   failed_when: false
 
-- name: Install tmux 3.8 from source
-  when: system_tmux_version_check.rc != 0 or 'tmux 3.8' not in system_tmux_version_check.stdout
+- name: Install tmux from source
+  when: >-
+    system_tmux_version_check.rc != 0 or
+    ('tmux ' ~ system_default_pkg_versions.tmux) not in system_tmux_version_check.stdout
   block:
     - name: Install tmux build dependencies (Debian)
       ansible.builtin.apt:
@@ -30,10 +32,10 @@
         state: present
       when: ansible_distribution == 'Amazon'
 
-    - name: Download tmux 3.8 source archive
+    - name: Download tmux source archive
       ansible.builtin.get_url:
-        url: https://github.com/tmux/tmux/releases/download/3.8/tmux-3.8.tar.gz
-        dest: /tmp/tmux-3.8.tar.gz
+        url: "{{ system_default_pkg_metadata.tmux.url }}"
+        dest: /tmp/tmux.tar.gz
         mode: "0644"
       register: system_tmux_download
       until: system_tmux_download is success
@@ -42,26 +44,26 @@
 
     - name: Create temporary directory for tmux build
       ansible.builtin.file:
-        path: /tmp/tmux-3.8
+        path: /tmp/tmux
         state: directory
         mode: "0755"
 
-    - name: Extract tmux 3.8 source archive
+    - name: Extract tmux source archive
       ansible.builtin.unarchive:
-        src: /tmp/tmux-3.8.tar.gz
-        dest: /tmp/tmux-3.8
+        src: /tmp/tmux.tar.gz
+        dest: /tmp/tmux
         remote_src: true
         extra_opts:
           - --strip-components=1
 
-    - name: Build and install tmux 3.8
+    - name: Build and install tmux
       ansible.builtin.shell: |
         set -euo pipefail
         ./configure --prefix=/usr/local
         make -j"$(nproc)"
         make install
       args:
-        chdir: /tmp/tmux-3.8
+        chdir: /tmp/tmux
         executable: /bin/bash
       changed_when: true
 
@@ -70,5 +72,5 @@
         path: "{{ item }}"
         state: absent
       loop:
-        - /tmp/tmux-3.8
-        - /tmp/tmux-3.8.tar.gz
+        - /tmp/tmux
+        - /tmp/tmux.tar.gz

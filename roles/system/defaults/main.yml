@@ -1,0 +1,88 @@
+---
+system_is_arm64: "{{ ansible_architecture in ['aarch64', 'arm64'] }}"
+
+system_arch:
+  is_arm64: "{{ system_is_arm64 }}"
+  deb: "{{ 'arm64' if system_is_arm64 else 'amd64' }}"
+  uname: "{{ 'aarch64' if system_is_arm64 else 'x86_64' }}"
+  x64: "{{ 'arm64' if system_is_arm64 else 'x64' }}"
+  ripgrep: "{{ 'aarch64-unknown-linux-gnu' if system_is_arm64 else 'x86_64-unknown-linux-musl' }}"
+
+system_default_pkg_versions:
+  copilot: "1.0.105"
+  docker_compose: "2.36.0"
+  go: "1.24.1"
+  helm: "3.22.1"
+  lazygit: "0.66.1"
+  luacheck: "1.0.0"
+  node: "23"
+  nvim: "0.12.6"
+  nvm: "0.40.3"
+  python:
+    default: "3.13.2"
+    installed:
+      - "3.13.2"
+      - "3.12.9"
+      - "3.11.11"
+  ripgrep: "14.1.1"
+  tmux: "3.8"
+  tree_sitter: "0.22.6"
+  try: "v0.2.1"
+
+system_default_pkg_metadata:
+  aws:
+    url: "https://awscli.amazonaws.com/awscli-exe-linux-{{ system_arch.uname }}.zip"
+  copilot:
+    url: >-
+      https://registry.npmjs.org/@github/copilot-linux-{{
+      system_arch.x64 }}/-/copilot-linux-{{
+      system_arch.x64 }}-{{ system_default_pkg_versions.copilot }}.tgz
+  docker_compose:
+    url: >-
+      https://github.com/docker/compose/releases/download/v{{
+      system_default_pkg_versions.docker_compose }}/docker-compose-linux-{{ system_arch.uname }}
+    checksum: >-
+      sha256:https://github.com/docker/compose/releases/download/v{{
+      system_default_pkg_versions.docker_compose }}/docker-compose-linux-{{ system_arch.uname }}.sha256
+  go:
+    url: "https://go.dev/dl/go{{ system_default_pkg_versions.go }}.linux-{{ system_arch.deb }}.tar.gz"
+    checksum: "sha256:https://dl.google.com/go/go{{ system_default_pkg_versions.go }}.linux-{{ system_arch.deb }}.tar.gz.sha256"
+  helm:
+    url: "https://get.helm.sh/helm-v{{ system_default_pkg_versions.helm }}-linux-{{ system_arch.deb }}.tar.gz"
+    checksum: "sha256:https://get.helm.sh/helm-v{{ system_default_pkg_versions.helm }}-linux-{{ system_arch.deb }}.tar.gz.sha256sum"
+  lazygit:
+    url: >-
+      https://github.com/jesseduffield/lazygit/releases/download/v{{
+      system_default_pkg_versions.lazygit }}/lazygit_{{
+      system_default_pkg_versions.lazygit }}_linux_{{
+      'arm64' if system_arch.is_arm64 else 'x86_64' }}.tar.gz
+    checksum: >-
+      sha256:https://github.com/jesseduffield/lazygit/releases/download/v{{
+      system_default_pkg_versions.lazygit }}/checksums.txt
+  luacheck:
+    url: "https://github.com/lunarmodules/luacheck/releases/download/v{{ system_default_pkg_versions.luacheck }}/luacheck"
+  nvm:
+    url: "https://raw.githubusercontent.com/nvm-sh/nvm/v{{ system_default_pkg_versions.nvm }}/install.sh"
+  oc:
+    url: >-
+      https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-linux{{
+      '-arm64' if system_arch.is_arm64 else '' }}.tar.gz
+    checksum: "sha256:https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/sha256sum.txt"
+  ripgrep:
+    url: >-
+      https://github.com/BurntSushi/ripgrep/releases/download/{{
+      system_default_pkg_versions.ripgrep }}/ripgrep-{{
+      system_default_pkg_versions.ripgrep }}-{{ system_arch.ripgrep }}.tar.gz
+    checksum: >-
+      sha256:https://github.com/BurntSushi/ripgrep/releases/download/{{
+      system_default_pkg_versions.ripgrep }}/ripgrep-{{
+      system_default_pkg_versions.ripgrep }}-{{ system_arch.ripgrep }}.tar.gz.sha256
+  tmux:
+    url: "https://github.com/tmux/tmux/releases/download/{{ system_default_pkg_versions.tmux }}/tmux-{{ system_default_pkg_versions.tmux }}.tar.gz"
+  tree_sitter:
+    url: >-
+      https://github.com/tree-sitter/tree-sitter/releases/download/v{{
+      system_default_pkg_versions.tree_sitter }}/tree-sitter-linux-{{ system_arch.x64 }}.gz
+  try:
+    url: "https://raw.githubusercontent.com/binpash/try/{{ system_default_pkg_versions.try }}/try"
+    checksum: "sha256:0a36febe39d6dcd4cf1c8fb95b2e47149b513a0016d2539daf31c7a11a74f478"

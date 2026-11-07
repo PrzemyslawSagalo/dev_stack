@@ -32,54 +32,20 @@
     state: directory
     mode: "0755"
 
-- name: Symlink Copilot skills to Antigravity config
+- name: Symlink Copilot components to Antigravity config
   ansible.builtin.file:
-    src: "{{ ansible_env.HOME }}/.copilot/skills"
-    dest: "{{ ansible_env.HOME }}/.gemini/config/skills"
+    src: "{{ ansible_env.HOME }}/.copilot/{{ item.src }}"
+    dest: "{{ ansible_env.HOME }}/.gemini/config/{{ item.dest }}"
     state: link
     force: true
-
-- name: Symlink Copilot standards to Antigravity config
-  ansible.builtin.file:
-    src: "{{ ansible_env.HOME }}/.copilot/standards"
-    dest: "{{ ansible_env.HOME }}/.gemini/config/standards"
-    state: link
-    force: true
-
-- name: Symlink Copilot agents to Antigravity config
-  ansible.builtin.file:
-    src: "{{ ansible_env.HOME }}/.copilot/agents"
-    dest: "{{ ansible_env.HOME }}/.gemini/config/agents"
-    state: link
-    force: true
-
-- name: Symlink Copilot commands to Antigravity config
-  ansible.builtin.file:
-    src: "{{ ansible_env.HOME }}/.copilot/commands"
-    dest: "{{ ansible_env.HOME }}/.gemini/config/commands"
-    state: link
-    force: true
-
-- name: Symlink Copilot MCP configuration to Antigravity config
-  ansible.builtin.file:
-    src: "{{ ansible_env.HOME }}/.copilot/mcp-config.json"
-    dest: "{{ ansible_env.HOME }}/.gemini/config/mcp_config.json"
-    state: link
-    force: true
-
-- name: Symlink Copilot instructions to Antigravity GEMINI.md
-  ansible.builtin.file:
-    src: "{{ ansible_env.HOME }}/.copilot/copilot-instructions.md"
-    dest: "{{ ansible_env.HOME }}/.gemini/config/GEMINI.md"
-    state: link
-    force: true
-
-- name: Symlink Copilot instructions to Antigravity AGENTS.md
-  ansible.builtin.file:
-    src: "{{ ansible_env.HOME }}/.copilot/copilot-instructions.md"
-    dest: "{{ ansible_env.HOME }}/.gemini/config/AGENTS.md"
-    state: link
-    force: true
+  loop:
+    - { src: skills, dest: skills }
+    - { src: standards, dest: standards }
+    - { src: agents, dest: agents }
+    - { src: commands, dest: commands }
+    - { src: mcp-config.json, dest: mcp_config.json }
+    - { src: copilot-instructions.md, dest: GEMINI.md }
+    - { src: copilot-instructions.md, dest: AGENTS.md }
 
 - name: Configure Maister plugin for Copilot and Antigravity
   ansible.builtin.import_tasks: maister.yml

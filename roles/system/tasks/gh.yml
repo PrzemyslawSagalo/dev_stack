@@ -6,7 +6,7 @@
     suites: stable
     components: main
     signed_by: https://cli.github.com/packages/githubcli-archive-keyring.gpg
-    architectures: "{{ 'arm64' if ansible_architecture in ['aarch64', 'arm64'] else 'amd64' }}"
+    architectures: "{{ system_arch.deb }}"
   register: system_gh_repo
   until: system_gh_repo is success
   retries: 3

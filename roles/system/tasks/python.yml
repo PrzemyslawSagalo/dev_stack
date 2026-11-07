@@ -96,12 +96,12 @@
     export PATH="$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH"
     eval "$(pyenv init -)"
     installed_versions="$(pyenv versions --bare || true)"
-    for ver in 3.13.2 3.12.9 3.11.11; do
+    for ver in {{ system_default_pkg_versions.python.installed | join(' ') }}; do
       if [ ! -d "$PYENV_ROOT/versions/$ver" ] && ! echo "$installed_versions" | grep -qx "$ver"; then
         pyenv install -s "$ver"
       fi
     done
-    pyenv global 3.13.2
+    pyenv global {{ system_default_pkg_versions.python.default }}
   args:
     executable: /bin/bash
   changed_when: false
