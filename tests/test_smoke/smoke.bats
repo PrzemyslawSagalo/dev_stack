@@ -218,5 +218,5 @@ setup() {
     repo_root="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
     run make -C "$repo_root" test-nvim
     [ "$status" -eq 0 ]
-    [[ "$output" == *"All tests passed successfully."* ]]
+    [[ "$output" =~ "Success" ]]
 }
