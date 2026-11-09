@@ -3,17 +3,16 @@ return {
 	event = "InsertEnter",
 	keys = {
 		{
-			"<C-c>",
+			"<M-\\>",
 			'copilot#Accept("\\<CR>")',
 			mode = "i",
 			expr = true,
 			replace_keycodes = false,
 			desc = "Copilot Accept",
 		},
-		{ "<C-k>", "<Plug>(copilot-next)", mode = "i", desc = "Copilot Next" },
-		{ "<C-j>", "<Plug>(copilot-previous)", mode = "i", desc = "Copilot Previous" },
-		{ "<C-w>", "<Plug>(copilot-accept-word)", mode = "i", desc = "Copilot Accept Word" },
-		{ "<C-]>", "<Plug>(copilot-dismiss)", mode = "i", desc = "Copilot Dismiss" },
+		{ "<M-]>", "<Plug>(copilot-next)", mode = "i", desc = "Copilot Next" },
+		{ "<M-[>", "<Plug>(copilot-previous)", mode = "i", desc = "Copilot Previous" },
+		{ "<M-w>", "<Plug>(copilot-dismiss)", mode = "i", desc = "Copilot Dismiss" },
 	},
 	config = function()
 		-- Configuration for github/copilot.vim
