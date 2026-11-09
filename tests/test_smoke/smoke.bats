@@ -204,9 +204,19 @@ setup() {
     [ "$status" -eq 0 ]
     run grep -q "terminal-features ',tmux-256color:clipboard'" "$HOME/.tmux.conf"
     [ "$status" -eq 0 ]
+    run grep -q "terminal-features ',xterm-256color:RGB'" "$HOME/.tmux.conf"
+    [ "$status" -eq 0 ]
 }
 
 @test "Neovim initializes OSC 52 clipboard provider and unnamedplus" {
     run nvim --headless -c 'lua assert(vim.g.clipboard.name == "OSC 52", "OSC 52 provider missing"); assert(vim.opt.clipboard:get()[1] == "unnamedplus", "unnamedplus missing"); vim.fn.setreg("+", "clipboard_test")' -c 'q'
     [ "$status" -eq 0 ]
+}
+
+@test "Neovim headless behavioral test suite passes cleanly" {
+    local repo_root
+    repo_root="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
+    run make -C "$repo_root" test-nvim
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"All tests passed successfully."* ]]
 }
