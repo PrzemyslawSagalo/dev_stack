@@ -1,7 +1,11 @@
 -- luacheck: std +busted
-local current_file = debug.getinfo(1, "S").source:sub(2)
-local nvim_root = vim.fs.normalize(vim.fs.dirname(vim.fs.dirname(current_file)))
-vim.opt.rtp:prepend(nvim_root)
+local source = debug.getinfo(1, "S").source
+local current_file = source:sub(1, 1) == "@" and source:sub(2) or source
+local repo_root = vim.fs.normalize(vim.fs.dirname(vim.fs.dirname(vim.fs.dirname(vim.fs.dirname(current_file)))))
+local nvim_root = repo_root .. "/roles/nvim/files/nvim"
+if vim.fn.isdirectory(nvim_root) == 1 then
+	vim.opt.rtp:prepend(nvim_root)
+end
 
 local function find_keymap(mode, lhs)
 	local keymaps = vim.api.nvim_get_keymap(mode)
@@ -48,6 +52,10 @@ describe("copilot keymaps", function()
 		copilot_spec = require("plugins.copilot")
 	end)
 
+	after_each(function()
+		package.loaded["plugins.copilot"] = nil
+	end)
+
 	it("has zero collisions on <C-j>, <C-k>, <C-c> in insert mode", function()
 		local forbidden = {
 			["<C-j>"] = true,
@@ -77,6 +85,24 @@ describe("copilot keymaps", function()
 end)
 
 describe("dap dynamic float sizing", function()
+	local orig_columns
+	local orig_lines
+
+	before_each(function()
+		orig_columns = vim.o.columns
+		orig_lines = vim.o.lines
+	end)
+
+	after_each(function()
+		vim.o.columns = orig_columns
+		vim.o.lines = orig_lines
+		package.loaded["dapui"] = nil
+		package.loaded["dap"] = nil
+		package.loaded["mason-nvim-dap"] = nil
+		package.loaded["dap-python"] = nil
+		package.loaded["plugins.dap"] = nil
+	end)
+
 	it("dynamically recalculates float size per invocation", function()
 		local float_calls = {}
 		package.loaded["dapui"] = {
