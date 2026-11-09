@@ -6,15 +6,15 @@ DISTRO="${2:-ubuntu:24.04}"
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
 case "$DISTRO" in
-    ubuntu | ubuntu:24.04)
-        IMAGE="ubuntu:24.04"
-        ;;
-    amazonlinux | amazonlinux:2023 | amzn | amzn2023)
-        IMAGE="amazonlinux:2023"
-        ;;
-    *)
-        IMAGE="$DISTRO"
-        ;;
+ubuntu | ubuntu:24.04)
+	IMAGE="ubuntu:24.04"
+	;;
+amazonlinux | amazonlinux:2023 | amzn | amzn2023)
+	IMAGE="amazonlinux:2023"
+	;;
+*)
+	IMAGE="$DISTRO"
+	;;
 esac
 
 echo "=========================================================="
@@ -23,14 +23,14 @@ echo " Repository root: $REPO_DIR"
 echo "=========================================================="
 
 if ! docker info >/dev/null 2>&1; then
-    echo "Error: Docker daemon is not running." >&2
-    exit 1
+	echo "Error: Docker daemon is not running." >&2
+	exit 1
 fi
 
 docker run --rm -t \
-    -v "$REPO_DIR:/dev_stack:ro" \
-    "$IMAGE" \
-    bash -c '
+	-v "$REPO_DIR:/dev_stack:ro" \
+	"$IMAGE" \
+	bash -c '
         set -euo pipefail
         SUITE="$1"
 
@@ -60,7 +60,7 @@ docker run --rm -t \
         chown -R devuser:devuser /home/devuser/dev_stack
 
         run_as_devuser() {
-            sudo -H -u devuser bash -l -c 'set -euo pipefail; cd ~/dev_stack; "$@"' _ "$@"
+            sudo -H -u devuser bash -l -c "set -euo pipefail; cd ~/dev_stack; \"\$@\"" _ "$@"
         }
 
         case "$SUITE" in
