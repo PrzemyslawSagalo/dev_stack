@@ -48,7 +48,9 @@ describe("AI agent external modification - FileChangedShell autocmds", function(
 
 		-- Step 4: Event trigger (simulating returning to terminal or cursor idle)
 		vim.api.nvim_exec_autocmds("FocusGained", {})
-		vim.cmd("checktime")
+		vim.wait(100, function()
+			return false
+		end)
 
 		-- Step 5: Reload assertion (buffer automatically updated to AI version without prompting)
 		local lines_after_reload = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
@@ -75,10 +77,10 @@ describe("AI agent external modification - FileChangedShell autocmds", function(
 		f:write("agent code attempting to overwrite user work\n")
 		f:close()
 
-		-- Step 3: Trigger checktime check
-		-- Use pcall because in headless environment, "ask" prompt would raise prompt error
-		pcall(function()
-			vim.cmd("checktime")
+		-- Step 3: Event trigger (simulating returning to terminal)
+		vim.api.nvim_exec_autocmds("FocusGained", {})
+		vim.wait(100, function()
+			return false
 		end)
 
 		-- Step 4: Protection assertion

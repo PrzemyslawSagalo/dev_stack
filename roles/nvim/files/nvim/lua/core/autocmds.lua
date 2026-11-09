@@ -5,7 +5,9 @@ vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter", "CursorHold", "CursorHo
 	desc = "Synchronize file state with disk",
 	callback = function()
 		if vim.fn.getcmdwintype() == "" and vim.api.nvim_get_mode().mode ~= "c" then
-			vim.cmd("checktime")
+			vim.schedule(function()
+				pcall(vim.cmd, "checktime")
+			end)
 		end
 	end,
 })
