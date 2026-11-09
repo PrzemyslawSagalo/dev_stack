@@ -34,7 +34,7 @@ docker run --rm -t \
         set -euo pipefail
         SUITE="$1"
 
-        echo "==> [Test Setup: $SUITE] Initializing clean container environment..."
+        echo "==> [Setup: Dependencies] Installing bootstrap prerequisites..."
         if [ -f /etc/debian_version ]; then
             export DEBIAN_FRONTEND=noninteractive
             apt-get update -qq
@@ -43,40 +43,48 @@ docker run --rm -t \
             dnf install -y -q sudo bash shadow-utils git
         fi
 
+        echo "==> [Setup: User] Provisioning devuser..."
         useradd -m -s /bin/bash devuser
         echo "devuser ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/devuser
         chmod 0440 /etc/sudoers.d/devuser
 
-        echo "==> [Test Setup: Bats] Installing bats-core..."
+        echo "==> [Setup: Bats] Installing bats-core..."
         rm -rf /tmp/bats-core
         git clone --depth 1 https://github.com/bats-core/bats-core.git /tmp/bats-core
         /tmp/bats-core/install.sh /usr/local
         rm -rf /tmp/bats-core
 
-        echo "==> [Test Setup: Workspace] Preparing workspace for devuser..."
+        echo "==> [Setup: Workspace] Preparing workspace for devuser..."
         rm -rf /home/devuser/dev_stack
         cp -a /dev_stack /home/devuser/dev_stack
         chown -R devuser:devuser /home/devuser/dev_stack
 
-        if [ "$SUITE" = "smoke" ]; then
-            echo "==> [Smoke Test: Installation] Running ./bootstrap.sh..."
-            sudo -u devuser bash -l -c "
-                set -euo pipefail
-                cd ~/dev_stack
-                ./bootstrap.sh
-            "
-            echo "==> [Smoke Test: Verification] Running bats smoke tests..."
-            sudo -u devuser bash -l -c "
-                cd ~/dev_stack
-                bats tests/test_smoke/smoke.bats
-            "
-        else
-            echo "==> [Unit Test: Verification] Running bats unit tests..."
-            sudo -u devuser bash -l -c "
-                cd ~/dev_stack
-                bats tests/unit/test_bootstrap.bats
-            "
-        fi
+        run_as_devuser() {
+            sudo -H -u devuser bash -l -c "set -euo pipefail; cd ~/dev_stack; \"\$@\"" _ "$@"
+        }
+
+        case "$SUITE" in
+            unit)
+                echo "==> [Suite: Unit] Running unit tests..."
+                run_as_devuser bats --print-output-on-failure tests/unit
+                ;;
+            smoke)
+                echo "==> [Suite: Smoke] Installing system environment..."
+                run_as_devuser ./bootstrap.sh
+                echo "==> [Suite: Smoke] Running smoke tests..."
+                run_as_devuser bats --print-output-on-failure tests/smoke
+                ;;
+            e2e)
+                echo "==> [Suite: E2E] Installing system environment..."
+                run_as_devuser ./bootstrap.sh
+                echo "==> [Suite: E2E] Running end-to-end tests..."
+                run_as_devuser env XDG_CONFIG_HOME=/home/devuser/dev_stack/roles/nvim/files nvim --headless -c "PlenaryBustedDirectory tests/e2e/nvim"
+                ;;
+            *)
+                echo "Error: Unknown test suite: $SUITE (supported: unit, smoke, e2e)" >&2
+                exit 1
+                ;;
+        esac
 
         echo "==> [Test SUCCESS: $SUITE] Completed successfully!"
     ' bash "$SUITE"

@@ -57,8 +57,28 @@ jobs:
       - name: Run containerized unit tests
         run: ./tests/run.sh unit "${{ matrix.distro }}"
 
+  test_e2e:
+    name: tests/e2e (${{ matrix.distro }})
+    needs:
+      - lint
+      - test_unit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        distro:
+          - "ubuntu:24.04"
+          - "amazonlinux:2023"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Run containerized e2e tests
+        run: ./tests/run.sh e2e "${{ matrix.distro }}"
+
   test_smoke:
-    name: tests/test_smoke (${{ matrix.distro }})
+    name: tests/smoke (${{ matrix.distro }})
     needs:
       - lint
       - test_unit

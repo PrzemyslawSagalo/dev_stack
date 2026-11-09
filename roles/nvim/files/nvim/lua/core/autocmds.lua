@@ -5,7 +5,9 @@ vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter", "CursorHold", "CursorHo
 	desc = "Synchronize file state with disk",
 	callback = function()
 		if vim.fn.getcmdwintype() == "" and vim.api.nvim_get_mode().mode ~= "c" then
-			vim.cmd("checktime")
+			vim.schedule(function()
+				pcall(vim.cmd, "checktime")
+			end)
 		end
 	end,
 })
@@ -87,5 +89,16 @@ vim.api.nvim_create_autocmd("BufWritePost", {
 		if not ok then
 			vim.notify("Failed to reload project DAP config: " .. tostring(err), vim.log.levels.ERROR)
 		end
+	end,
+})
+
+-- Disable persistent undo for temporary and ephemeral files
+local undo_filter_group = vim.api.nvim_create_augroup("UndoFilter", { clear = true })
+vim.api.nvim_create_autocmd({ "FileType", "BufWritePre" }, {
+	group = undo_filter_group,
+	pattern = { "gitcommit", "gitrebase", "/tmp/*", "*.tmp" },
+	desc = "Disable persistent undo for temporary and ephemeral files",
+	callback = function()
+		vim.opt_local.undofile = false
 	end,
 })

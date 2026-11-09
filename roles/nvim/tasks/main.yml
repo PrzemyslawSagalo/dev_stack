@@ -53,3 +53,11 @@
     dest: "{{ ansible_env.HOME }}/.config/nvim/"
     mode: preserve
     directory_mode: "0755"
+
+- name: Pre-install Neovim plugins headlessly
+  ansible.builtin.command:
+    cmd: nvim --headless "+Lazy! restore" +qa
+  environment:
+    HOME: "{{ ansible_env.HOME }}"
+  register: nvim_lazy_restore
+  changed_when: "'Installed' in nvim_lazy_restore.stdout or 'clone' in nvim_lazy_restore.stdout"

@@ -82,6 +82,7 @@ setup() {
 
 @test "Neovim configuration exists and is non-empty" {
     [ -s "$HOME/.config/nvim/init.lua" ]
+    [ ! -d "$HOME/.config/nvim/tests" ]
 }
 
 @test "Neovim configuration purges orphaned files and directories" {
@@ -196,7 +197,7 @@ setup() {
     [ "$status" -eq 0 ]
 }
 
-@test "Tmux configuration includes mouse mode and OSC 52 clipboard pass-through" {
+@test "Tmux configuration enables mouse mode, OSC 52 clipboard pass-through, and True Color RGB" {
     [ -f "$HOME/.tmux.conf" ]
     run grep -qx "set -g mouse on" "$HOME/.tmux.conf"
     [ "$status" -eq 0 ]
@@ -204,9 +205,17 @@ setup() {
     [ "$status" -eq 0 ]
     run grep -q "terminal-features ',tmux-256color:clipboard'" "$HOME/.tmux.conf"
     [ "$status" -eq 0 ]
+    run grep -q "terminal-features ',xterm-256color:clipboard'" "$HOME/.tmux.conf"
+    [ "$status" -eq 0 ]
+    run grep -q "terminal-features ',xterm-256color:RGB'" "$HOME/.tmux.conf"
+    [ "$status" -eq 0 ]
 }
 
 @test "Neovim initializes OSC 52 clipboard provider and unnamedplus" {
     run nvim --headless -c 'lua assert(vim.g.clipboard.name == "OSC 52", "OSC 52 provider missing"); assert(vim.opt.clipboard:get()[1] == "unnamedplus", "unnamedplus missing"); vim.fn.setreg("+", "clipboard_test")' -c 'q'
     [ "$status" -eq 0 ]
+}
+
+@test "Neovim plugins are pre-installed headlessly in lazy directory" {
+    [ -d "$HOME/.local/share/nvim/lazy/plenary.nvim" ]
 }
