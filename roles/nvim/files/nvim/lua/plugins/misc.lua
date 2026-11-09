@@ -1,5 +1,4 @@
 return {
-	{ "Pocco81/auto-save.nvim" },
 	{ "moll/vim-bbye" },
 	{
 		"folke/todo-comments.nvim",
