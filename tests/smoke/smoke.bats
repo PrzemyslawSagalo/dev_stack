@@ -197,13 +197,15 @@ setup() {
     [ "$status" -eq 0 ]
 }
 
-@test "Tmux configuration includes mouse mode and OSC 52 clipboard pass-through" {
+@test "Tmux configuration enables mouse mode, OSC 52 clipboard pass-through, and True Color RGB" {
     [ -f "$HOME/.tmux.conf" ]
     run grep -qx "set -g mouse on" "$HOME/.tmux.conf"
     [ "$status" -eq 0 ]
     run grep -qx "set -s set-clipboard on" "$HOME/.tmux.conf"
     [ "$status" -eq 0 ]
     run grep -q "terminal-features ',tmux-256color:clipboard'" "$HOME/.tmux.conf"
+    [ "$status" -eq 0 ]
+    run grep -q "terminal-features ',xterm-256color:clipboard'" "$HOME/.tmux.conf"
     [ "$status" -eq 0 ]
     run grep -q "terminal-features ',xterm-256color:RGB'" "$HOME/.tmux.conf"
     [ "$status" -eq 0 ]

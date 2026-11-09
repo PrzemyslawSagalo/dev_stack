@@ -20,7 +20,7 @@ lint:
 	pre-commit run --all-files
 
 test-nvim:
-	XDG_CONFIG_HOME=$(CURDIR)/roles/nvim/files nvim --headless -c "PlenaryBustedDirectory tests/e2e/nvim {minimal_init = '$(CURDIR)/roles/nvim/files/nvim/init.lua'}"
+	XDG_CONFIG_HOME=$(CURDIR)/roles/nvim/files nvim --headless -c "PlenaryBustedDirectory tests/e2e/nvim"
 
 test-unit-ubuntu:
 	./tests/run.sh unit ubuntu:24.04
