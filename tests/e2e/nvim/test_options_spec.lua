@@ -1,10 +1,16 @@
 describe("neovim core options", function()
 	local tracked_bufs = {}
+	local tracked_files = {}
 
 	local function create_test_buf()
 		local buf = vim.api.nvim_create_buf(true, false)
 		table.insert(tracked_bufs, buf)
 		return buf
+	end
+
+	local function track_file(path)
+		table.insert(tracked_files, path)
+		return path
 	end
 
 	after_each(function()
@@ -14,6 +20,16 @@ describe("neovim core options", function()
 			end
 		end
 		tracked_bufs = {}
+
+		for _, file_path in ipairs(tracked_files) do
+			pcall(os.remove, file_path)
+			local undo_pattern = vim.fn.stdpath("state") .. "/undo/*" .. vim.fn.fnamemodify(file_path, ":t") .. "*"
+			local undofiles = vim.fn.glob(undo_pattern, false, true)
+			for _, undo_path in ipairs(undofiles) do
+				pcall(os.remove, undo_path)
+			end
+		end
+		tracked_files = {}
 	end)
 
 	describe("standard options", function()
@@ -36,10 +52,9 @@ describe("neovim core options", function()
 
 	describe("undofile persistence", function()
 		it("persists undo history across buffer reloads for persistent files", function()
-			local persistent_file = vim.fn.stdpath("cache")
-				.. "/test_persistent_"
-				.. vim.fn.fnamemodify(vim.fn.tempname(), ":t")
-				.. ".txt"
+			local persistent_file = track_file(
+				vim.fn.stdpath("cache") .. "/test_persistent_" .. vim.fn.fnamemodify(vim.fn.tempname(), ":t") .. ".txt"
+			)
 
 			-- Step A: Create initial file content
 			local buf1 = create_test_buf()
@@ -119,15 +134,14 @@ describe("neovim core options", function()
 		end
 
 		it("disables undofile on BufWritePre for /tmp/* files", function()
-			local tmp_path = "/tmp/test_ephemeral_" .. vim.fn.fnamemodify(vim.fn.tempname(), ":t") .. ".txt"
+			local tmp_path = track_file("/tmp/test_ephemeral_" .. vim.fn.fnamemodify(vim.fn.tempname(), ":t") .. ".txt")
 			assert_ephemeral_write_disables_undo(tmp_path)
 		end)
 
 		it("disables undofile on BufWritePre for *.tmp files", function()
-			local tmp_file = vim.fn.stdpath("cache")
-				.. "/test_ephemeral_"
-				.. vim.fn.fnamemodify(vim.fn.tempname(), ":t")
-				.. ".tmp"
+			local tmp_file = track_file(
+				vim.fn.stdpath("cache") .. "/test_ephemeral_" .. vim.fn.fnamemodify(vim.fn.tempname(), ":t") .. ".tmp"
+			)
 			assert_ephemeral_write_disables_undo(tmp_file)
 		end)
 	end)
