@@ -16,23 +16,14 @@
 ## Subagent & Model Routing Policy [STRICT]
 The primary session model acts strictly as Architect, Planner, and Orchestrator.
 
-### Primary Session Hard Enforcement Gate
-* **STRICT PROHIBITION ON DIRECT IMPLEMENTATION**: The primary session model is STRICTLY FORBIDDEN from calling `write_file`, `edit_file` on repository codebase files, or executing implementation tasks, test writing, refactoring, or linters/formatters (`make lint`, `pre-commit`) directly in the main session.
-* **PERMITTED PRIMARY ACTIONS**: The primary model is ONLY permitted to:
-  1. Read files and check status for architecture/planning (`read_file`, `git status`, `git log`, `gh issue list`, `gh pr list`).
-  2. Formulate architectural designs and present plans to the user for explicit approval.
-  3. Spawn, instruct, and coordinate subagents (`invoke_subagent`).
-  4. Review subagent outputs, check PR/CI status, and report final status to the user.
-* **MANDATORY DELEGATION**: ALL file edits, test creations, refactoring, and lint/build executions MUST be delegated to subagents (`invoke_subagent` with `Model: "flash"` or `Model: "flash_lite"`).
-
-### Antigravity (`agy`)
-* Standing explicit user mandate: ALWAYS invoke subagents (`invoke_subagent`) with `Model: "flash"` (or `Model: "flash_lite"` for trivial/high-volume tasks) instead of `"inherit"`.
-* Reserve the Pro/High-tier model strictly for orchestration, complex planning, and architectural decisions.
-* Parallelize independent tasks (issue creation, file edits across non-overlapping modules, linting, test writing) across multiple concurrent subagents.
-
-### GitHub Copilot (`copilot`)
-* When using `--fleet`, spawning subagents/tasks, or selecting models (`--model` / `--auto-tier`), always delegate scanning, context gathering, boilerplate/test generation, linting, and routine edits to cheaper, faster models (e.g., `claude-haiku-4.5`, `gpt-5-mini`, `gpt-4.1`, `gemini-flash`) whenever rational.
-* Premium reasoning models are strictly reserved for architecture, complex planning, and hard debugging.
+### Universal Multi-Orchestrator Dynamic Model Routing (Cost vs Time vs Quality)
+* **Role of Orchestrator**: The primary session model (whether in Antigravity `agy`, GitHub Copilot CLI, or other tools) acts strictly as Architect, Planner, and Coordinator.
+* **Primary Session Hard Enforcement Gate**: Direct implementation, code editing, test creation, and lint/build execution in the primary session is prohibited; all execution must be delegated to optimal subagents/subtasks.
+* **3-Tier Hierarchy (Cost vs Time vs Quality)**:
+  * **Tier 1: Architecture, Planning & Orchestration (High / Reasoning Tier)**: Claude Opus/Sonnet, GPT-5/o-series, Gemini Pro. Exclusively for high-level trade-offs, architecture, reviewing subagents, and user communication. Never used for direct routine execution.
+  * **Tier 2: Code Implementation, Refactoring, Complex Tests (Fast / Balanced Tier)**: Gemini Flash, Claude Haiku, GPT-5-mini, GPT-4.1, Copilot `--auto-tier`. Highest cost-to-performance ratio and minimal latency for writing code, test suites, and bug fixes.
+  * **Tier 3: Trivial, Formatting, Linters & Scans (Light / Ultra-fast Tier)**: Gemini Flash-Lite, mini/nano models. Running pre-commit, fixing formatting, audits, status gathering, templated issues.
+* **Rule of Optimization**: Never use a high-cost reasoning tier for execution when a fast/light tier achieves 100% equivalent quality in less time and at a fraction of the cost.
 
 ### Subagent & CLI Interoperability
 * Subagents and background workflows should leverage GitHub Copilot CLI Pro+ (`copilot -p "..." -s --no-ask-user` and `copilot --fleet`) for code/test generation and secondary review with cost-efficient model delegation. Always include `--no-ask-user` for non-interactive runs so prompts do not block background execution.
@@ -41,9 +32,11 @@ The primary session model acts strictly as Architect, Planner, and Orchestrator.
 ## Architecture & Engineering Standards [STRICT]
 
 ### Off-The-Shelf First (No Reinventing the Wheel)
-* **Research First**: ALWAYS research existing battle-tested libraries, CLI tools, official GitHub Actions, established pre-commit hooks, and native plugins BEFORE writing custom Bash, Python, Lua, or shell glue code.
+* **Universal Off-The-Shelf Rule (All Stacks & Technologies)**: In ANY technology stack, programming language (Python, C++, Bash, Lua, Go, Rust, TypeScript, etc.), infrastructure tool (Ansible, Docker, Terraform), or CI/CD workflow:
+  1. ALWAYS conduct an exhaustive audit of existing project dependencies and established industry standard libraries/tools before writing custom code.
+  2. NEVER write custom wrappers, ad-hoc execution harnesses, or custom glue code when battle-tested off-the-shelf tools exist in that ecosystem.
+  3. Custom solutions are strictly an exceptional last resort when exhaustive research proves no suitable tool exists, and must be explicitly justified.
 * **Native Modules Over Custom Shells**: In Ansible playbooks, strictly use native modules (`ansible.builtin.*`, `community.general.*`) and native task attributes (`retries:`, `delay:`, `until:`, `cache_valid_time:`, `deb822_repository`, `rpm_key`, `checksum:`) instead of ad-hoc `command`, `shell`, or curl-to-sh pipelines.
-* **Zero Custom Test Runners / Framework Wrappers**: NEVER write custom test runners, execution loops, or assertion harnesses. Always use standard established frameworks: `pytest` with `assertpy` for Python, `bats-core` for Bash, and `plenary.busted` for Neovim/Lua.
 * **Strict Cryptographic Integrity**: Never bypass signature or checksum validation (`disable_gpg_check: true` and `VERIFY_CHECKSUM: "false"` are strictly forbidden). Install tools via official GPG-signed package repositories or verified binary releases with pinned cryptographic checksums.
 
 ### Pre-Implementation Research & Holistic Issue Deduplication

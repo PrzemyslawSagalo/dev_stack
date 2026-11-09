@@ -82,6 +82,7 @@ setup() {
 
 @test "Neovim configuration exists and is non-empty" {
     [ -s "$HOME/.config/nvim/init.lua" ]
+    [ ! -d "$HOME/.config/nvim/tests" ]
 }
 
 @test "Neovim configuration purges orphaned files and directories" {
