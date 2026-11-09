@@ -60,7 +60,7 @@ docker run --rm -t \
         chown -R devuser:devuser /home/devuser/dev_stack
 
         run_as_devuser() {
-            sudo -u devuser bash -l -c "set -euo pipefail; cd ~/dev_stack; $*"
+            sudo -H -u devuser bash -l -c 'set -euo pipefail; cd ~/dev_stack; "$@"' _ "$@"
         }
 
         case "$SUITE" in
@@ -78,7 +78,7 @@ docker run --rm -t \
                 echo "==> [Suite: E2E] Installing system environment..."
                 run_as_devuser ./bootstrap.sh
                 echo "==> [Suite: E2E] Running end-to-end tests..."
-                run_as_devuser XDG_CONFIG_HOME=/home/devuser/dev_stack/roles/nvim/files nvim --headless -c "PlenaryBustedDirectory tests/e2e/nvim"
+                run_as_devuser env XDG_CONFIG_HOME=/home/devuser/dev_stack/roles/nvim/files nvim --headless -c "PlenaryBustedDirectory tests/e2e/nvim"
                 ;;
             *)
                 echo "Error: Unknown test suite: $SUITE (supported: unit, smoke, e2e)" >&2
