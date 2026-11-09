@@ -89,3 +89,14 @@ vim.api.nvim_create_autocmd("BufWritePost", {
 		end
 	end,
 })
+
+-- Disable persistent undo for temporary and ephemeral files
+local undo_filter_group = vim.api.nvim_create_augroup("UndoFilter", { clear = true })
+vim.api.nvim_create_autocmd({ "FileType", "BufWritePre" }, {
+	group = undo_filter_group,
+	pattern = { "gitcommit", "gitrebase", "/tmp/*", "*.tmp" },
+	desc = "Disable persistent undo for temporary and ephemeral files",
+	callback = function()
+		vim.opt_local.undofile = false
+	end,
+})
