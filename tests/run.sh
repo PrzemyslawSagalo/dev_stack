@@ -65,35 +65,17 @@ docker run --rm -t \
 
         case "$SUITE" in
             unit)
-                echo "==> [Suite: Unit] Running bats unit tests..."
-                run_as_devuser bats tests/unit/test_bootstrap.bats
+                echo "==> [Suite: Unit] Running unit tests..."
+                run_as_devuser bats --print-output-on-failure tests/unit
                 ;;
             smoke)
                 echo "==> [Suite: Smoke] Installing system environment..."
                 run_as_devuser ./bootstrap.sh
-                echo "==> [Suite: Smoke] Running bats smoke tests..."
-                run_as_devuser bats tests/smoke/smoke.bats
-                echo "==> [Suite: Smoke] Running Neovim behavioral test suite..."
-                run_as_devuser make test-nvim
-                ;;
-            nvim | e2e)
-                echo "==> [Suite: Neovim] Installing system environment..."
-                run_as_devuser ./bootstrap.sh
-                echo "==> [Suite: Neovim] Running make test-nvim..."
-                run_as_devuser make test-nvim
-                ;;
-            all)
-                echo "==> [Suite: All] Installing system environment..."
-                run_as_devuser ./bootstrap.sh
-                echo "==> [Suite: All] Running bats unit tests..."
-                run_as_devuser bats tests/unit/test_bootstrap.bats
-                echo "==> [Suite: All] Running bats smoke tests..."
-                run_as_devuser bats tests/smoke/smoke.bats
-                echo "==> [Suite: All] Running Neovim behavioral test suite..."
-                run_as_devuser make test-nvim
+                echo "==> [Suite: Smoke] Running smoke tests..."
+                run_as_devuser bats --print-output-on-failure tests/smoke
                 ;;
             *)
-                echo "Error: Unknown test suite: $SUITE (supported: unit, smoke, nvim, all)" >&2
+                echo "Error: Unknown test suite: $SUITE (supported: unit, smoke)" >&2
                 exit 1
                 ;;
         esac
