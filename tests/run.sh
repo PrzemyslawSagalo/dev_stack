@@ -70,6 +70,11 @@ docker run --rm -t \
                 cd ~/dev_stack
                 bats tests/smoke/smoke.bats
             "
+            echo "==> [Smoke Test: Neovim Behavioral Suite] Running make test-nvim..."
+            sudo -u devuser bash -l -c "
+                cd ~/dev_stack
+                make test-nvim
+            "
         else
             echo "==> [Unit Test: Verification] Running bats unit tests..."
             sudo -u devuser bash -l -c "
