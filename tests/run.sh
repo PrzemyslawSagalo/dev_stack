@@ -74,8 +74,14 @@ docker run --rm -t \
                 echo "==> [Suite: Smoke] Running smoke tests..."
                 run_as_devuser bats --print-output-on-failure tests/smoke
                 ;;
+            e2e)
+                echo "==> [Suite: E2E] Installing system environment..."
+                run_as_devuser ./bootstrap.sh
+                echo "==> [Suite: E2E] Running end-to-end tests..."
+                run_as_devuser XDG_CONFIG_HOME=/home/devuser/dev_stack/roles/nvim/files nvim --headless -c "PlenaryBustedDirectory tests/e2e/nvim"
+                ;;
             *)
-                echo "Error: Unknown test suite: $SUITE (supported: unit, smoke)" >&2
+                echo "Error: Unknown test suite: $SUITE (supported: unit, smoke, e2e)" >&2
                 exit 1
                 ;;
         esac
