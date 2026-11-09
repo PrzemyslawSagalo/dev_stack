@@ -1,4 +1,21 @@
 describe("neovim core options", function()
+	local tracked_bufs = {}
+
+	local function create_test_buf()
+		local buf = vim.api.nvim_create_buf(true, false)
+		table.insert(tracked_bufs, buf)
+		return buf
+	end
+
+	after_each(function()
+		for _, buf in ipairs(tracked_bufs) do
+			if vim.api.nvim_buf_is_valid(buf) then
+				vim.api.nvim_buf_delete(buf, { force = true })
+			end
+		end
+		tracked_bufs = {}
+	end)
+
 	describe("standard options", function()
 		it("sets swapfile to false", function()
 			assert.is_false(vim.opt.swapfile:get())
@@ -18,33 +35,14 @@ describe("neovim core options", function()
 	end)
 
 	describe("undofile persistence", function()
-		local persistent_file
-
-		before_each(function()
-			persistent_file = vim.fn.stdpath("cache")
+		it("persists undo history across buffer reloads for persistent files", function()
+			local persistent_file = vim.fn.stdpath("cache")
 				.. "/test_persistent_"
 				.. vim.fn.fnamemodify(vim.fn.tempname(), ":t")
 				.. ".txt"
-		end)
 
-		after_each(function()
-			vim.cmd("silent! %bdelete!")
-			if vim.fn.filereadable(persistent_file) == 1 then
-				vim.fn.delete(persistent_file)
-			end
-			local undofiles = vim.fn.glob(
-				vim.fn.stdpath("state") .. "/undo/*" .. vim.fn.fnamemodify(persistent_file, ":t") .. "*",
-				false,
-				true
-			)
-			for _, uf in ipairs(undofiles) do
-				vim.fn.delete(uf)
-			end
-		end)
-
-		it("persists undo history across buffer reloads for persistent files", function()
 			-- Step A: Create initial file content
-			local buf1 = vim.api.nvim_create_buf(true, false)
+			local buf1 = create_test_buf()
 			vim.api.nvim_set_current_buf(buf1)
 			vim.cmd("silent! edit! " .. vim.fn.fnameescape(persistent_file))
 			vim.api.nvim_buf_set_lines(0, 0, -1, false, { "initial version line 1", "initial version line 2" })
@@ -54,11 +52,11 @@ describe("neovim core options", function()
 			vim.api.nvim_buf_set_lines(0, -1, -1, false, { "appended modification" })
 			vim.cmd("silent! write!")
 
-			-- Step C: Wipe buffer to simulate session exit
-			vim.cmd("silent! bdelete!")
+			-- Step C: Wipe buffer using native API to simulate session close
+			vim.api.nvim_buf_delete(buf1, { force = true })
 
 			-- Step D: Open file again and invoke undo
-			local buf2 = vim.api.nvim_create_buf(true, false)
+			local buf2 = create_test_buf()
 			vim.api.nvim_set_current_buf(buf2)
 			vim.cmd("silent! edit! " .. vim.fn.fnameescape(persistent_file))
 
@@ -72,86 +70,71 @@ describe("neovim core options", function()
 			assert.are.same(2, #lines_after_undo)
 			assert.are.same("initial version line 1", lines_after_undo[1])
 			assert.are.same("initial version line 2", lines_after_undo[2])
+
+			vim.api.nvim_buf_delete(buf2, { force = true })
 		end)
 	end)
 
 	describe("undofile ephemeral filter", function()
-		local ephemeral_file
-
-		after_each(function()
-			vim.cmd("silent! %bdelete!")
-			if ephemeral_file and vim.fn.filereadable(ephemeral_file) == 1 then
-				vim.fn.delete(ephemeral_file)
-			end
-			if ephemeral_file then
-				local undofiles = vim.fn.glob(
-					vim.fn.stdpath("state") .. "/undo/*" .. vim.fn.fnamemodify(ephemeral_file, ":t") .. "*",
-					false,
-					true
-				)
-				for _, uf in ipairs(undofiles) do
-					vim.fn.delete(uf)
-				end
-			end
-			ephemeral_file = nil
-		end)
-
 		it("disables undofile for gitcommit filetype", function()
-			local buf = vim.api.nvim_create_buf(true, false)
+			local buf = create_test_buf()
 			vim.api.nvim_set_current_buf(buf)
-			vim.bo.filetype = "gitcommit"
-			assert.is_false(vim.bo.undofile)
+			vim.bo[buf].undofile = true
+			assert.is_true(vim.bo[buf].undofile)
+
+			vim.bo[buf].filetype = "gitcommit"
+			assert.is_false(vim.bo[buf].undofile)
 		end)
 
 		it("disables undofile for gitrebase filetype", function()
-			local buf = vim.api.nvim_create_buf(true, false)
+			local buf = create_test_buf()
 			vim.api.nvim_set_current_buf(buf)
-			vim.bo.filetype = "gitrebase"
-			assert.is_false(vim.bo.undofile)
+			vim.bo[buf].undofile = true
+			assert.is_true(vim.bo[buf].undofile)
+
+			vim.bo[buf].filetype = "gitrebase"
+			assert.is_false(vim.bo[buf].undofile)
 		end)
 
-		it("disables undofile on BufWritePre for /tmp/* files", function()
-			ephemeral_file = "/tmp/test_ephemeral_" .. vim.fn.fnamemodify(vim.fn.tempname(), ":t") .. ".txt"
-			local buf = vim.api.nvim_create_buf(true, false)
+		local function assert_ephemeral_write_disables_undo(file_path)
+			local buf = create_test_buf()
 			vim.api.nvim_set_current_buf(buf)
-			vim.cmd("silent! edit! " .. vim.fn.fnameescape(ephemeral_file))
+			vim.cmd("silent! edit! " .. vim.fn.fnameescape(file_path))
 			assert.is_true(vim.bo.undofile)
+
 			vim.api.nvim_buf_set_lines(0, 0, -1, false, { "ephemeral content" })
 			vim.cmd("silent! write!")
 			assert.is_false(vim.bo.undofile)
+
+			-- Cleanly wipe buffer from memory
+			vim.api.nvim_buf_delete(buf, { force = true })
+
+			-- Verify no undo file was created on disk
 			local undofiles = vim.fn.glob(
-				vim.fn.stdpath("state") .. "/undo/*" .. vim.fn.fnamemodify(ephemeral_file, ":t") .. "*",
+				vim.fn.stdpath("state") .. "/undo/*" .. vim.fn.fnamemodify(file_path, ":t") .. "*",
 				false,
 				true
 			)
 			assert.are.same(0, #undofiles)
+		end
+
+		it("disables undofile on BufWritePre for /tmp/* files", function()
+			local tmp_path = "/tmp/test_ephemeral_" .. vim.fn.fnamemodify(vim.fn.tempname(), ":t") .. ".txt"
+			assert_ephemeral_write_disables_undo(tmp_path)
 		end)
 
 		it("disables undofile on BufWritePre for *.tmp files", function()
-			ephemeral_file = vim.fn.stdpath("cache")
+			local tmp_file = vim.fn.stdpath("cache")
 				.. "/test_ephemeral_"
 				.. vim.fn.fnamemodify(vim.fn.tempname(), ":t")
 				.. ".tmp"
-			local buf = vim.api.nvim_create_buf(true, false)
-			vim.api.nvim_set_current_buf(buf)
-			vim.cmd("silent! edit! " .. vim.fn.fnameescape(ephemeral_file))
-			assert.is_true(vim.bo.undofile)
-			vim.api.nvim_buf_set_lines(0, 0, -1, false, { "ephemeral content" })
-			vim.cmd("silent! write!")
-			assert.is_false(vim.bo.undofile)
-			local undofiles = vim.fn.glob(
-				vim.fn.stdpath("state") .. "/undo/*" .. vim.fn.fnamemodify(ephemeral_file, ":t") .. "*",
-				false,
-				true
-			)
-			assert.are.same(0, #undofiles)
+			assert_ephemeral_write_disables_undo(tmp_file)
 		end)
 	end)
 
 	describe("help command", function()
 		after_each(function()
 			vim.cmd("silent! helpclose")
-			vim.cmd("silent! %bdelete!")
 		end)
 
 		it("opens :help autoread with buftype=help without error", function()
