@@ -58,7 +58,7 @@ jobs:
         run: ./tests/run.sh unit "${{ matrix.distro }}"
 
   test_smoke:
-    name: tests/test_smoke (${{ matrix.distro }})
+    name: tests/smoke (${{ matrix.distro }})
     needs:
       - lint
       - test_unit

@@ -68,7 +68,7 @@ docker run --rm -t \
             echo "==> [Smoke Test: Verification] Running bats smoke tests..."
             sudo -u devuser bash -l -c "
                 cd ~/dev_stack
-                bats tests/test_smoke/smoke.bats
+                bats tests/smoke/smoke.bats
             "
         else
             echo "==> [Unit Test: Verification] Running bats unit tests..."

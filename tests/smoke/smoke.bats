@@ -214,6 +214,11 @@ setup() {
     [ "$status" -eq 0 ]
 }
 
+@test "Neovim plugins are pre-installed headlessly in lazy directory" {
+    [ -d "$HOME/.local/share/nvim/lazy" ]
+    [ -d "$HOME/.local/share/nvim/lazy/plenary.nvim" ]
+}
+
 @test "Neovim headless behavioral test suite passes cleanly" {
     local repo_root
     repo_root="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
