@@ -1,17 +1,17 @@
-.PHONY: help setup lint test-nvim test-unit-ubuntu test-unit-amazonlinux test-unit test-smoke-ubuntu test-smoke-amazonlinux test-smoke test
+.PHONY: help setup lint test-e2e test-unit-ubuntu test-unit-amazonlinux test-unit test-smoke-ubuntu test-smoke-amazonlinux test-smoke test
 
 help:
 	@echo "Available commands:"
 	@echo "  make setup                     - Installs the environment (requires Ansible)"
 	@echo "  make lint                      - Runs pre-commit checks (ansible-lint, shellcheck, shfmt, stylua, luacheck)"
-	@echo "  make test-nvim                 - Runs Neovim headless behavioral test suite"
+	@echo "  make test-e2e                  - Runs end-to-end behavioral test suite"
 	@echo "  make test-unit-ubuntu          - Runs unit tests in Ubuntu container"
 	@echo "  make test-unit-amazonlinux     - Runs unit tests in Amazon Linux container"
 	@echo "  make test-unit                 - Runs unit tests for all supported distributions"
 	@echo "  make test-smoke-ubuntu         - Runs smoke installation test in Ubuntu container"
 	@echo "  make test-smoke-amazonlinux    - Runs smoke installation test in Amazon Linux container"
 	@echo "  make test-smoke                - Runs smoke tests for all supported distributions"
-	@echo "  make test                      - Runs unit, smoke, and Neovim behavioral tests"
+	@echo "  make test                      - Runs e2e, unit, and smoke tests"
 
 setup:
 	ansible-playbook -i localhost, -c local setup.yml
@@ -19,7 +19,7 @@ setup:
 lint:
 	pre-commit run --all-files
 
-test-nvim:
+test-e2e:
 	XDG_CONFIG_HOME=$(CURDIR)/roles/nvim/files nvim --headless -c "PlenaryBustedDirectory tests/e2e/nvim"
 
 test-unit-ubuntu:
@@ -38,4 +38,4 @@ test-smoke-amazonlinux:
 
 test-smoke: test-smoke-ubuntu test-smoke-amazonlinux
 
-test: test-nvim test-unit test-smoke
+test: test-e2e test-unit test-smoke
