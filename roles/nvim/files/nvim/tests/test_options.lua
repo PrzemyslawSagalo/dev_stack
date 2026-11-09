@@ -50,7 +50,8 @@ function M.run()
 	end
 
 	-- Also clean up associated undo file if created in undodir
-	local undofiles = vim.fn.glob(vim.fn.stdpath("state") .. "/undo/*" .. vim.fn.fnamemodify(tmp, ":t") .. "*", false, true)
+	local undofiles =
+		vim.fn.glob(vim.fn.stdpath("state") .. "/undo/*" .. vim.fn.fnamemodify(tmp, ":t") .. "*", false, true)
 	for _, uf in ipairs(undofiles) do
 		vim.fn.delete(uf)
 	end
