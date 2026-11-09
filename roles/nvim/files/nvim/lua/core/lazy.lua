@@ -11,18 +11,6 @@ if os.getenv("NVIM_SMOKE_TEST") == "1" then
 			end
 		end
 	end
-
-	local plenary_dirs = {
-		vim.fn.stdpath("data") .. "/lazy/plenary.nvim",
-		vim.fn.expand("~/.local/share/nvim/lazy/plenary.nvim"),
-	}
-	for _, p in ipairs(plenary_dirs) do
-		if vim.fn.isdirectory(p) == 1 then
-			vim.opt.rtp:append(p)
-			vim.cmd("runtime plugin/plenary.vim")
-			break
-		end
-	end
 	return
 end
 
