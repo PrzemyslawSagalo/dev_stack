@@ -1,5 +1,3 @@
-local python_utils = require("utils.python_utils")
-
 return {
 	{
 		"nvim-neotest/neotest",
@@ -18,7 +16,6 @@ return {
 				adapters = {
 					require("neotest-python")({
 						runner = "pytest",
-						python = python_utils.python_interpreter_path(),
 						dap = { justMyCode = false },
 					}),
 				},
