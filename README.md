@@ -4,11 +4,11 @@
   <p><em>"Where disparate technologies constructively interfere into a unified developer flow."</em></p>
   <br>
 
-  [![CI](https://img.shields.io/github/actions/workflow/status/PrzemyslawSagalo/dev_stack/ci.yml?branch=main&label=CI&style=flat-square&labelColor=161b22)](https://github.com/PrzemyslawSagalo/dev_stack/actions/workflows/ci.yml)
-  [![CodeQL](https://img.shields.io/github/actions/workflow/status/PrzemyslawSagalo/dev_stack/github-code-scanning%2Fcodeql?branch=main&label=CodeQL&style=flat-square&labelColor=161b22)](https://github.com/PrzemyslawSagalo/dev_stack/actions/workflows/github-code-scanning/codeql)
+  [![CI](https://img.shields.io/github/actions/workflow/status/PrzemyslawSagalo/dev_stack/ci.yml?branch=main&label=CI&logo=githubactions&logoColor=white&style=flat-square&labelColor=161b22)](https://github.com/PrzemyslawSagalo/dev_stack/actions/workflows/ci.yml)
+  [![CodeQL](https://img.shields.io/github/actions/workflow/status/PrzemyslawSagalo/dev_stack/github-code-scanning%2Fcodeql?branch=main&label=CodeQL&logo=github&logoColor=white&style=flat-square&labelColor=161b22)](https://github.com/PrzemyslawSagalo/dev_stack/security/code-scanning)
   [![Pre-commit](https://img.shields.io/badge/pre--commit-passing-brightgreen?logo=pre-commit&logoColor=white&style=flat-square&labelColor=161b22)](https://pre-commit.com/)
   [![Conventional Commits](https://img.shields.io/badge/commits-conventional-FE5196?logo=conventionalcommits&logoColor=white&style=flat-square&labelColor=161b22)](https://conventionalcommits.org)
-  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=flat-square&labelColor=161b22)](LICENSE)
+  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?logo=opensourceinitiative&logoColor=white&style=flat-square&labelColor=161b22)](LICENSE)
   <br>
   [![OS: Ubuntu & AL2023](https://img.shields.io/badge/OS-Ubuntu%2024.04%20%7C%20AL2023-E95420?logo=linux&logoColor=white&style=flat-square&labelColor=161b22)](https://github.com/PrzemyslawSagalo/dev_stack)
   [![Ansible: 2.10+](https://img.shields.io/badge/Ansible-2.10%2B-EE0000?logo=ansible&logoColor=white&style=flat-square&labelColor=161b22)](https://docs.ansible.com/)
