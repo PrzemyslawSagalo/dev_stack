@@ -22,8 +22,9 @@
 
 - name: Add GitHub CLI repo (Amazon Linux)
   ansible.builtin.get_url:
-    url: https://cli.github.com/packages/rpm/gh-cli.repo
+    url: "{{ system_default_pkg_metadata.gh_cli_repo.url }}"
     dest: /etc/yum.repos.d/gh-cli.repo
+    checksum: "{{ system_default_pkg_metadata.gh_cli_repo.checksum }}"
     mode: "0644"
   register: system_gh_repo_download
   until: system_gh_repo_download is success

@@ -50,8 +50,9 @@
   block:
     - name: Download pyenv installer
       ansible.builtin.get_url:
-        url: https://pyenv.run
+        url: "{{ system_default_pkg_metadata.pyenv.url }}"
         dest: /tmp/pyenv_install.sh
+        checksum: "{{ system_default_pkg_metadata.pyenv.checksum }}"
         mode: "0755"
       register: system_pyenv_download
       until: system_pyenv_download is success

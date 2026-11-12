@@ -36,6 +36,7 @@
       ansible.builtin.get_url:
         url: "{{ system_default_pkg_metadata.tmux.url }}"
         dest: /tmp/tmux.tar.gz
+        checksum: "{{ system_default_pkg_metadata.tmux.checksum }}"
         mode: "0644"
       register: system_tmux_download
       until: system_tmux_download is success

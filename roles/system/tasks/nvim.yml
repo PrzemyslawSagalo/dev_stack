@@ -42,7 +42,12 @@
       ansible.builtin.get_url:
         url: "{{ system_default_pkg_metadata.nvm.url }}"
         dest: /tmp/nvm-install.sh
+        checksum: "{{ system_default_pkg_metadata.nvm.checksum }}"
         mode: "0755"
+      register: system_nvm_download
+      until: system_nvm_download is success
+      retries: 3
+      delay: 5
 
     - name: Run nvm install script
       ansible.builtin.command:
@@ -97,7 +102,12 @@
       ansible.builtin.get_url:
         url: "{{ system_default_pkg_metadata.tree_sitter.url }}"
         dest: /tmp/tree-sitter.gz
+        checksum: "{{ system_default_pkg_metadata.tree_sitter.checksum }}"
         mode: "0644"
+      register: system_tree_sitter_download
+      until: system_tree_sitter_download is success
+      retries: 3
+      delay: 5
 
     - name: Decompress tree-sitter CLI binary
       ansible.builtin.command:
@@ -167,5 +177,10 @@
   ansible.builtin.get_url:
     url: "{{ system_default_pkg_metadata.luacheck.url }}"
     dest: /usr/local/bin/luacheck
+    checksum: "{{ system_default_pkg_metadata.luacheck.checksum }}"
     mode: "0755"
+  register: system_luacheck_download
+  until: system_luacheck_download is success
+  retries: 3
+  delay: 5
   when: not system_luacheck_bin.stat.exists

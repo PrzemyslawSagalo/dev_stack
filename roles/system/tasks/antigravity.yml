@@ -9,8 +9,9 @@
   block:
     - name: Download Antigravity CLI install script
       ansible.builtin.get_url:
-        url: https://antigravity.google/cli/install.sh
+        url: "{{ system_default_pkg_metadata.antigravity.url }}"
         dest: /tmp/install_agy.sh
+        checksum: "{{ system_default_pkg_metadata.antigravity.checksum }}"
         mode: "0700"
       register: system_agy_download
       until: system_agy_download is success

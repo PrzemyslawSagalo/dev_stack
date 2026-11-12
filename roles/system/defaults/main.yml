@@ -9,6 +9,7 @@ system_arch:
   ripgrep: "{{ 'aarch64-unknown-linux-gnu' if system_is_arm64 else 'x86_64-unknown-linux-musl' }}"
 
 system_default_pkg_versions:
+  aws: "2.40.1"
   copilot: "1.0.105"
   docker_compose: "2.36.0"
   go: "1.24.1"
@@ -18,6 +19,8 @@ system_default_pkg_versions:
   node: "23"
   nvim: "0.12.6"
   nvm: "0.40.3"
+  pyenv:
+    git_repo_commit_hash: "bdd89156f0e591558ca901c5984387dd993157f9"
   python:
     default: "3.13.2"
     installed:
@@ -30,13 +33,24 @@ system_default_pkg_versions:
   try: "v0.2.1"
 
 system_default_pkg_metadata:
+  antigravity:
+    url: "https://antigravity.google/cli/install.sh"
+    checksum: "sha256:62966c07365423bd4dc209355060744058fb30d60f5323e2d360e39de64e5042"
   aws:
-    url: "https://awscli.amazonaws.com/awscli-exe-linux-{{ system_arch.uname }}.zip"
+    url: "https://awscli.amazonaws.com/awscli-exe-linux-{{ system_arch.uname }}-{{ system_default_pkg_versions.aws }}.zip"
+    checksum: >-
+      {{ 'sha256:ce999da382eac247be6bd000af1ee16f23a2d25e5906e7fd9a83e54c1ecf37c1'
+      if system_arch.is_arm64
+      else 'sha256:fddb097a8ea197dc9beed9e4426ef99aded612a52df64581e079b6e8817e1d24' }}
   copilot:
     url: >-
       https://registry.npmjs.org/@github/copilot-linux-{{
       system_arch.x64 }}/-/copilot-linux-{{
       system_arch.x64 }}-{{ system_default_pkg_versions.copilot }}.tgz
+    checksum: >-
+      {{ 'sha256:fb9efcf18a43633f24ba44fe7415c9d5fcb41957a9e9e8c0abd35c107eeac057'
+      if system_arch.is_arm64
+      else 'sha256:aa65846d4c0c6b83e8eb0726fef3de5f38a13b3f17bffeb7674882e79f4ec2d3' }}
   docker_compose:
     url: >-
       https://github.com/docker/compose/releases/download/v{{
@@ -44,6 +58,9 @@ system_default_pkg_metadata:
     checksum: >-
       sha256:https://github.com/docker/compose/releases/download/v{{
       system_default_pkg_versions.docker_compose }}/docker-compose-linux-{{ system_arch.uname }}.sha256
+  gh_cli_repo:
+    url: "https://cli.github.com/packages/rpm/gh-cli.repo"
+    checksum: "sha256:29481151c94b18968d47dc5987c7ccc9c663a94fb819cc1cc9385b5d2f5d3a93"
   go:
     url: "https://go.dev/dl/go{{ system_default_pkg_versions.go }}.linux-{{ system_arch.deb }}.tar.gz"
     checksum: "sha256:https://dl.google.com/go/go{{ system_default_pkg_versions.go }}.linux-{{ system_arch.deb }}.tar.gz.sha256"
@@ -61,13 +78,18 @@ system_default_pkg_metadata:
       system_default_pkg_versions.lazygit }}/checksums.txt
   luacheck:
     url: "https://github.com/lunarmodules/luacheck/releases/download/v{{ system_default_pkg_versions.luacheck }}/luacheck"
+    checksum: "sha256:47b478eff5e126a0d49c049027f5535183300b8658257414e3be1a2a52599266"
   nvm:
     url: "https://raw.githubusercontent.com/nvm-sh/nvm/v{{ system_default_pkg_versions.nvm }}/install.sh"
+    checksum: "sha256:2d8359a64a3cb07c02389ad88ceecd43f2fa469c06104f92f98df5b6f315275f"
   oc:
     url: >-
       https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-linux{{
       '-arm64' if system_arch.is_arm64 else '' }}.tar.gz
     checksum: "sha256:https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/sha256sum.txt"
+  pyenv:
+    url: "https://raw.githubusercontent.com/pyenv/pyenv-installer/{{ system_default_pkg_versions.pyenv.git_repo_commit_hash }}/bin/pyenv-installer"
+    checksum: "sha256:2bf587665219d2ed3e262fc2c3d9e6843b48f64435bc489d936f03e68b5f610d"
   ripgrep:
     url: >-
       https://github.com/BurntSushi/ripgrep/releases/download/{{
@@ -77,12 +99,20 @@ system_default_pkg_metadata:
       sha256:https://github.com/BurntSushi/ripgrep/releases/download/{{
       system_default_pkg_versions.ripgrep }}/ripgrep-{{
       system_default_pkg_versions.ripgrep }}-{{ system_arch.ripgrep }}.tar.gz.sha256
+  sdkman:
+    url: "https://get.sdkman.io"
+    checksum: "sha256:d2ad12c3702fa42967e48114f01ebd266f0c901a53fa8fd739c9b6a007cc91d0"
   tmux:
     url: "https://github.com/tmux/tmux/releases/download/{{ system_default_pkg_versions.tmux }}/tmux-{{ system_default_pkg_versions.tmux }}.tar.gz"
+    checksum: "sha256:e79c699c7e949dccd0a4a125e17b8d1261e311b16979dbc8eb34542f3966d82e"
   tree_sitter:
     url: >-
       https://github.com/tree-sitter/tree-sitter/releases/download/v{{
       system_default_pkg_versions.tree_sitter }}/tree-sitter-linux-{{ system_arch.x64 }}.gz
+    checksum: >-
+      {{ 'sha256:9335ab8b5f5f25e6146da955ca3586f3e1db75a249a82b5857627ebc262a961d'
+      if system_arch.is_arm64
+      else 'sha256:a3ef0ff0b0ec96a7782ad02a8393d455177e29800fee257b1e74c19bbb7c2452' }}
   try:
     url: "https://raw.githubusercontent.com/binpash/try/{{ system_default_pkg_versions.try }}/try"
     checksum: "sha256:0a36febe39d6dcd4cf1c8fb95b2e47149b513a0016d2539daf31c7a11a74f478"
