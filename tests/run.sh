@@ -77,8 +77,8 @@ docker run --rm -t \
             e2e)
                 echo "==> [Suite: E2E] Installing system environment..."
                 run_as_devuser ./bootstrap.sh
-                echo "==> [Suite: E2E] Running end-to-end tests..."
-                run_as_devuser env XDG_CONFIG_HOME=/home/devuser/dev_stack/roles/nvim/files nvim --headless -c "PlenaryBustedDirectory tests/e2e/nvim"
+                echo "==> [Suite: E2E] Running Neovim end-to-end tests..."
+                run_as_devuser nvim --headless -c "PlenaryBustedDirectory tests/e2e/nvim {init = vim.fn.stdpath(\"config\") .. \"/init.lua\", sequential = true}"
                 ;;
             *)
                 echo "Error: Unknown test suite: $SUITE (supported: unit, smoke, e2e)" >&2
