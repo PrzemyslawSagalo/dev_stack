@@ -11,6 +11,7 @@
       ansible.builtin.get_url:
         url: "{{ system_default_pkg_metadata.copilot.url }}"
         dest: /tmp/copilot.tgz
+        checksum: "{{ system_default_pkg_metadata.copilot.checksum }}"
         mode: "0644"
       register: system_copilot_download
       until: system_copilot_download is success

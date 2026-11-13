@@ -1,3 +1,5 @@
+local languages = require("config.languages")
+
 return {
 	{
 		"williamboman/mason.nvim",
@@ -42,22 +44,16 @@ return {
 				on_attach = on_attach,
 			}
 
-			local servers = { "marksman", "bashls", "clangd", "lua_ls", "ruff" }
-
 			-- Configure and enable servers using modern Neovim 0.11+ / 0.12+ API
-			if vim.lsp and vim.lsp.enable and vim.lsp.config then
-				vim.lsp.config("*", default_server_config)
-				for _, server in ipairs(servers) do
-					vim.lsp.config(server, default_server_config)
-					vim.lsp.enable(server)
-				end
-			else
-				local lspconfig = require("lspconfig")
-				lspconfig.util.default_config =
-					vim.tbl_deep_extend("force", lspconfig.util.default_config, default_server_config)
-				for _, server in ipairs(servers) do
-					lspconfig[server].setup(default_server_config)
-				end
+			vim.lsp.config("*", default_server_config)
+			for _, server in ipairs(languages.lsp) do
+				local server_config = vim.tbl_deep_extend(
+					"force",
+					default_server_config,
+					(languages.lsp_configs and languages.lsp_configs[server]) or {}
+				)
+				vim.lsp.config(server, server_config)
+				vim.lsp.enable(server)
 			end
 
 			vim.diagnostic.config({
@@ -84,7 +80,7 @@ return {
 		},
 		config = function()
 			require("mason-lspconfig").setup({
-				ensure_installed = { "marksman", "bashls", "clangd", "lua_ls", "ruff" },
+				ensure_installed = languages.lsp,
 				automatic_installation = true,
 			})
 		end,

@@ -1,0 +1,233 @@
+---
+argument_specs:
+  main:
+    short_description: System package installation and configuration role
+    description:
+      - Installs base development tools, runtimes, and packages with strict checksum verification.
+    options:
+      system_default_pkg_metadata:
+        type: dict
+        required: true
+        description: Centralized package download URLs and SHA256 checksums.
+        options:
+          antigravity:
+            type: dict
+            required: true
+            description: Package metadata for Antigravity CLI.
+            options:
+              url:
+                type: str
+                required: true
+                description: Download URL for Antigravity CLI installer script.
+              checksum:
+                type: str
+                required: true
+                description: SHA256 checksum for Antigravity CLI installer script.
+          aws:
+            type: dict
+            required: true
+            description: Package metadata for AWS CLI.
+            options:
+              url:
+                type: str
+                required: true
+                description: Download URL for AWS CLI zip archive.
+              checksum:
+                type: str
+                required: true
+                description: SHA256 checksum for AWS CLI zip archive.
+          copilot:
+            type: dict
+            required: true
+            description: Package metadata for GitHub Copilot CLI.
+            options:
+              url:
+                type: str
+                required: true
+                description: Download URL for GitHub Copilot CLI tarball.
+              checksum:
+                type: str
+                required: true
+                description: SHA256 checksum for GitHub Copilot CLI tarball.
+          docker_compose:
+            type: dict
+            required: true
+            description: Package metadata for Docker Compose plugin.
+            options:
+              url:
+                type: str
+                required: true
+                description: Download URL for Docker Compose plugin binary.
+              checksum:
+                type: str
+                required: true
+                description: SHA256 checksum for Docker Compose plugin binary.
+          gh_cli_repo:
+            type: dict
+            required: true
+            description: Package metadata for GitHub CLI repository definition.
+            options:
+              url:
+                type: str
+                required: true
+                description: Download URL for GitHub CLI repository file.
+              checksum:
+                type: str
+                required: true
+                description: SHA256 checksum for GitHub CLI repository file.
+          go:
+            type: dict
+            required: true
+            description: Package metadata for Go programming language.
+            options:
+              url:
+                type: str
+                required: true
+                description: Download URL for Go binary archive.
+              checksum:
+                type: str
+                required: true
+                description: SHA256 checksum for Go binary archive.
+          helm:
+            type: dict
+            required: true
+            description: Package metadata for Helm package manager.
+            options:
+              url:
+                type: str
+                required: true
+                description: Download URL for Helm binary tarball.
+              checksum:
+                type: str
+                required: true
+                description: SHA256 checksum for Helm binary tarball.
+          lazygit:
+            type: dict
+            required: true
+            description: Package metadata for Lazygit terminal UI.
+            options:
+              url:
+                type: str
+                required: true
+                description: Download URL for Lazygit binary tarball.
+              checksum:
+                type: str
+                required: true
+                description: SHA256 checksum for Lazygit binary tarball.
+          luacheck:
+            type: dict
+            required: true
+            description: Package metadata for Luacheck linter.
+            options:
+              url:
+                type: str
+                required: true
+                description: Download URL for Luacheck binary.
+              checksum:
+                type: str
+                required: true
+                description: SHA256 checksum for Luacheck binary.
+          nvm:
+            type: dict
+            required: true
+            description: Package metadata for Node Version Manager (nvm).
+            options:
+              url:
+                type: str
+                required: true
+                description: Download URL for nvm installer script.
+              checksum:
+                type: str
+                required: true
+                description: SHA256 checksum for nvm installer script.
+          oc:
+            type: dict
+            required: true
+            description: Package metadata for OpenShift CLI client.
+            options:
+              url:
+                type: str
+                required: true
+                description: Download URL for OpenShift CLI tarball.
+              checksum:
+                type: str
+                required: true
+                description: SHA256 checksum for OpenShift CLI tarball.
+          pyenv:
+            type: dict
+            required: true
+            description: Package metadata for pyenv Python version manager.
+            options:
+              url:
+                type: str
+                required: true
+                description: Download URL for pyenv installer script.
+              checksum:
+                type: str
+                required: true
+                description: SHA256 checksum for pyenv installer script.
+          ripgrep:
+            type: dict
+            required: true
+            description: Package metadata for ripgrep search tool.
+            options:
+              url:
+                type: str
+                required: true
+                description: Download URL for ripgrep binary tarball.
+              checksum:
+                type: str
+                required: true
+                description: SHA256 checksum for ripgrep binary tarball.
+          sdkman:
+            type: dict
+            required: true
+            description: Package metadata for SDKMAN software development kit manager.
+            options:
+              url:
+                type: str
+                required: true
+                description: Download URL for SDKMAN installer script.
+              checksum:
+                type: str
+                required: true
+                description: SHA256 checksum for SDKMAN installer script.
+          tmux:
+            type: dict
+            required: true
+            description: Package metadata for tmux terminal multiplexer.
+            options:
+              url:
+                type: str
+                required: true
+                description: Download URL for tmux source tarball.
+              checksum:
+                type: str
+                required: true
+                description: SHA256 checksum for tmux source tarball.
+          tree_sitter:
+            type: dict
+            required: true
+            description: Package metadata for Tree-sitter parser generator CLI.
+            options:
+              url:
+                type: str
+                required: true
+                description: Download URL for Tree-sitter CLI binary.
+              checksum:
+                type: str
+                required: true
+                description: SHA256 checksum for Tree-sitter CLI binary.
+          try:
+            type: dict
+            required: true
+            description: Package metadata for try CLI wrapper.
+            options:
+              url:
+                type: str
+                required: true
+                description: Download URL for try shell script.
+              checksum:
+                type: str
+                required: true
+                description: SHA256 checksum for try shell script.

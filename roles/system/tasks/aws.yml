@@ -11,6 +11,7 @@
       ansible.builtin.get_url:
         url: "{{ system_default_pkg_metadata.aws.url }}"
         dest: "/tmp/awscliv2.zip"
+        checksum: "{{ system_default_pkg_metadata.aws.checksum }}"
         mode: "0644"
       register: system_aws_cli_download
       until: system_aws_cli_download is success

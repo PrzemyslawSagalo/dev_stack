@@ -54,10 +54,22 @@
     mode: preserve
     directory_mode: "0755"
 
-- name: Pre-install Neovim plugins headlessly
-  ansible.builtin.command:
-    cmd: nvim --headless "+Lazy! restore" +qa
+- name: Pre-install Neovim plugins and tools headlessly
   environment:
     HOME: "{{ ansible_env.HOME }}"
-  register: nvim_lazy_restore
-  changed_when: "'Installed' in nvim_lazy_restore.stdout or 'clone' in nvim_lazy_restore.stdout"
+  block:
+    - name: Pre-install Neovim plugins headlessly
+      ansible.builtin.command:
+        cmd: bash -lc 'nvim --headless "+Lazy! restore" +qa'
+      register: nvim_lazy_restore
+      changed_when: "'Installed' in nvim_lazy_restore.stdout or 'clone' in nvim_lazy_restore.stdout"
+
+    - name: Pre-install Mason tools headlessly
+      ansible.builtin.command:
+        cmd: bash -lc 'nvim --headless -c "lua require(\"config.bootstrap\").sync(\"mason\")" +qa'
+      changed_when: false
+
+    - name: Pre-install Treesitter parsers headlessly
+      ansible.builtin.command:
+        cmd: bash -lc 'nvim --headless -c "lua require(\"config.bootstrap\").sync(\"treesitter\")" +qa'
+      changed_when: false
