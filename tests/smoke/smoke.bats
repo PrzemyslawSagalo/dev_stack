@@ -209,6 +209,12 @@ setup() {
     [ "$status" -eq 0 ]
     run grep -q "terminal-features ',xterm-256color:RGB'" "$HOME/.tmux.conf"
     [ "$status" -eq 0 ]
+    run grep -qx "set -g allow-passthrough on" "$HOME/.tmux.conf"
+    [ "$status" -eq 0 ]
+    run grep -Fq "bind-key -T copy-mode-vi MouseDragEnd1Pane send-keys -X copy-selection-no-clear" "$HOME/.tmux.conf"
+    [ "$status" -eq 0 ]
+    run grep -Fq "bind-key -T copy-mode-vi MouseDown1Pane select-pane \; send-keys -X clear-selection" "$HOME/.tmux.conf"
+    [ "$status" -eq 0 ]
 }
 
 @test "Neovim initializes OSC 52 clipboard provider and unnamedplus" {

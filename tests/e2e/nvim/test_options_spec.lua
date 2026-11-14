@@ -62,6 +62,198 @@ describe("neovim core options", function()
 		end)
 	end)
 
+	describe("clipboard configuration", function()
+		local vim_options_path = vim.fn.stdpath("config") .. "/lua/core/vim_options.lua"
+		if vim.fn.filereadable(vim_options_path) == 0 then
+			vim_options_path = "roles/nvim/files/nvim/lua/core/vim_options.lua"
+		end
+
+		local orig_tmux = vim.env.TMUX
+		local orig_ssh = vim.env.SSH_TTY
+
+		after_each(function()
+			vim.env.TMUX = orig_tmux
+			vim.env.SSH_TTY = orig_ssh
+			dofile(vim_options_path)
+		end)
+
+		it("configures OSC 52 clipboard and unnamedplus", function()
+			assert.are.same("OSC 52", vim.g.clipboard.name)
+			local clip_opts = vim.opt.clipboard:get()
+			assert.is_true(vim.tbl_contains(clip_opts, "unnamedplus"))
+			assert.is_function(vim.g.clipboard.copy["+"])
+			assert.is_function(vim.g.clipboard.copy["*"])
+			assert.is_function(vim.g.clipboard.paste["+"])
+			assert.is_function(vim.g.clipboard.paste["*"])
+		end)
+
+		it("returns empty register before any yank in remote mode without hanging", function()
+			vim.env.TMUX = "/tmp/tmux-1000/default,999,0"
+			vim.env.SSH_TTY = nil
+			dofile(vim_options_path)
+
+			assert.are.same({ {}, "v" }, vim.g.clipboard.paste["+"]())
+			assert.are.same({ {}, "v" }, vim.g.clipboard.paste["*"]())
+
+			vim.env.TMUX = nil
+			vim.env.SSH_TTY = "/dev/pts/9"
+			dofile(vim_options_path)
+
+			assert.are.same({ {}, "v" }, vim.g.clipboard.paste["+"]())
+			assert.are.same({ {}, "v" }, vim.g.clipboard.paste["*"]())
+		end)
+
+		it("performs linewise, charwise, and blockwise yank/paste round trips when TMUX is set", function()
+			vim.env.TMUX = "/tmp/tmux-1000/default,999,0"
+			vim.env.SSH_TTY = nil
+			dofile(vim_options_path)
+
+			-- 1. Linewise yank/paste: verify exact lines without extra trailing blank line
+			local b1 = create_test_buf()
+			vim.api.nvim_set_current_buf(b1)
+			vim.api.nvim_buf_set_lines(b1, 0, -1, false, { "tmux linewise line", "second line" })
+			vim.api.nvim_win_set_cursor(0, { 1, 0 })
+			vim.cmd('normal! "+yy')
+
+			local b2 = create_test_buf()
+			vim.api.nvim_set_current_buf(b2)
+			vim.api.nvim_buf_set_lines(b2, 0, -1, false, { "target line" })
+			vim.cmd('normal! "+p')
+			assert.are.same({ "target line", "tmux linewise line" }, vim.api.nvim_buf_get_lines(b2, 0, -1, false))
+
+			-- 2. Charwise yank/paste
+			local b3 = create_test_buf()
+			vim.api.nvim_set_current_buf(b3)
+			vim.api.nvim_buf_set_lines(b3, 0, -1, false, { "alpha beta gamma" })
+			vim.api.nvim_win_set_cursor(0, { 1, 6 })
+			vim.cmd('normal! "+yiw')
+
+			local b4 = create_test_buf()
+			vim.api.nvim_set_current_buf(b4)
+			vim.api.nvim_buf_set_lines(b4, 0, -1, false, { "first second" })
+			vim.api.nvim_win_set_cursor(0, { 1, 5 })
+			vim.cmd("normal! p")
+			assert.are.same({ "first betasecond" }, vim.api.nvim_buf_get_lines(b4, 0, -1, false))
+
+			-- 3. Blockwise yank/paste
+			local b5 = create_test_buf()
+			vim.api.nvim_set_current_buf(b5)
+			vim.api.nvim_buf_set_lines(b5, 0, -1, false, { "ABCDEF", "123456" })
+			vim.api.nvim_win_set_cursor(0, { 1, 1 })
+			local keys = vim.api.nvim_replace_termcodes('<C-v>jl"+y', true, false, true)
+			vim.api.nvim_feedkeys(keys, "nx", false)
+
+			local b6 = create_test_buf()
+			vim.api.nvim_set_current_buf(b6)
+			vim.api.nvim_buf_set_lines(b6, 0, -1, false, { "XXXX", "YYYY" })
+			vim.api.nvim_win_set_cursor(0, { 1, 1 })
+			vim.cmd('normal! "+p')
+			assert.are.same({ "XXBCXX", "YY23YY" }, vim.api.nvim_buf_get_lines(b6, 0, -1, false))
+		end)
+
+		it("performs linewise, charwise, and blockwise yank/paste round trips when SSH_TTY is set", function()
+			vim.env.TMUX = nil
+			vim.env.SSH_TTY = "/dev/pts/9"
+			dofile(vim_options_path)
+
+			-- 1. Linewise yank/paste: verify exact lines without extra trailing blank line
+			local b1 = create_test_buf()
+			vim.api.nvim_set_current_buf(b1)
+			vim.api.nvim_buf_set_lines(b1, 0, -1, false, { "ssh linewise line", "second line" })
+			vim.api.nvim_win_set_cursor(0, { 1, 0 })
+			vim.cmd('normal! "+yy')
+
+			local b2 = create_test_buf()
+			vim.api.nvim_set_current_buf(b2)
+			vim.api.nvim_buf_set_lines(b2, 0, -1, false, { "target line" })
+			vim.cmd('normal! "+p')
+			assert.are.same({ "target line", "ssh linewise line" }, vim.api.nvim_buf_get_lines(b2, 0, -1, false))
+
+			-- 2. Charwise yank/paste
+			local b3 = create_test_buf()
+			vim.api.nvim_set_current_buf(b3)
+			vim.api.nvim_buf_set_lines(b3, 0, -1, false, { "alpha beta gamma" })
+			vim.api.nvim_win_set_cursor(0, { 1, 6 })
+			vim.cmd('normal! "+yiw')
+
+			local b4 = create_test_buf()
+			vim.api.nvim_set_current_buf(b4)
+			vim.api.nvim_buf_set_lines(b4, 0, -1, false, { "first second" })
+			vim.api.nvim_win_set_cursor(0, { 1, 5 })
+			vim.cmd("normal! p")
+			assert.are.same({ "first betasecond" }, vim.api.nvim_buf_get_lines(b4, 0, -1, false))
+
+			-- 3. Blockwise yank/paste
+			local b5 = create_test_buf()
+			vim.api.nvim_set_current_buf(b5)
+			vim.api.nvim_buf_set_lines(b5, 0, -1, false, { "ABCDEF", "123456" })
+			vim.api.nvim_win_set_cursor(0, { 1, 1 })
+			local keys = vim.api.nvim_replace_termcodes('<C-v>jl"+y', true, false, true)
+			vim.api.nvim_feedkeys(keys, "nx", false)
+
+			local b6 = create_test_buf()
+			vim.api.nvim_set_current_buf(b6)
+			vim.api.nvim_buf_set_lines(b6, 0, -1, false, { "XXXX", "YYYY" })
+			vim.api.nvim_win_set_cursor(0, { 1, 1 })
+			vim.cmd('normal! "+p')
+			assert.are.same({ "XXBCXX", "YY23YY" }, vim.api.nvim_buf_get_lines(b6, 0, -1, false))
+		end)
+
+		it("executes real yank and paste in child nvim process under TMUX without hanging", function()
+			local lua_cmd = table.concat({
+				"local ok, err = pcall(function()",
+				"  local b1 = vim.api.nvim_create_buf(true, false)",
+				"  vim.api.nvim_set_current_buf(b1)",
+				'  vim.api.nvim_buf_set_lines(b1, 0, -1, false, { "child_tmux_payload", "second line" })',
+				"  vim.api.nvim_win_set_cursor(0, { 1, 0 })",
+				'  vim.cmd([[normal! "+yy]])',
+				"  local b2 = vim.api.nvim_create_buf(true, false)",
+				"  vim.api.nvim_set_current_buf(b2)",
+				'  vim.api.nvim_buf_set_lines(b2, 0, -1, false, { "target" })',
+				'  vim.cmd([[normal! "+p]])',
+				"  local lines = vim.api.nvim_buf_get_lines(b2, 0, -1, false)",
+				'  assert(lines[1] == "target", "Expected target on line 1")',
+				'  assert(lines[2] == "child_tmux_payload", "Expected child_tmux_payload on line 2")',
+				'  assert(#lines == 2, "Expected 2 lines, got " .. #lines)',
+				"end)",
+				"if not ok then",
+				'  io.stderr:write("Child assertion failure: " .. tostring(err) .. "\\n")',
+				'  vim.cmd("cquit 1")',
+				"end",
+				'vim.cmd("qall!")',
+			}, "\n")
+
+			local child = vim.system({
+				"nvim",
+				"--headless",
+				"-u",
+				vim.fn.stdpath("config") .. "/init.lua",
+				"-c",
+				"lua " .. lua_cmd,
+			}, {
+				env = {
+					TMUX = "/tmp/tmux-1000/default,1,0",
+					SSH_TTY = "",
+					HOME = vim.env.HOME,
+					PATH = vim.env.PATH,
+				},
+				text = true,
+			}):wait(5000)
+
+			assert.are.same(0, child.code, "Child process failed: " .. (child.stderr or ""))
+		end)
+
+		it("configures OSC 52 paste handler when neither TMUX nor SSH_TTY is set", function()
+			vim.env.TMUX = nil
+			vim.env.SSH_TTY = nil
+			dofile(vim_options_path)
+
+			assert.are.same("OSC 52", vim.g.clipboard.name)
+			assert.is_function(vim.g.clipboard.paste["+"])
+			assert.is_function(vim.g.clipboard.paste["*"])
+		end)
+	end)
+
 	describe("undofile persistence", function()
 		it("persists undo history across buffer reloads for persistent files", function()
 			local persistent_file = track_file(

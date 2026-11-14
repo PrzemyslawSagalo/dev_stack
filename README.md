@@ -75,6 +75,16 @@ ansible-playbook setup.yml
 
 ---
 
+## Remote Clipboard (OSC 52)
+
+- **macOS (iTerm2)**: Enable **Settings -> General -> Selection -> "Applications in terminal may access clipboard"** (disabled by default). Note that macOS built-in `Terminal.app` does not support OSC 52. Security tip: use a separate iTerm2 profile with clipboard access disabled when connecting to untrusted servers.
+- **Windows (PowerShell in Windows Terminal)**: Run PowerShell inside **Windows Terminal** (supports OSC 52 natively; legacy `conhost.exe` does not) and paste from the local clipboard with `Ctrl+Shift+V`.
+- **Usage (`tmux` & `nvim` over SSH)**:
+  - `tmux`: Releasing a mouse drag copies to your local clipboard via OSC 52 and keeps the selection highlighted until the next click (`Cmd+V` / `Ctrl+Shift+V` to paste locally).
+  - `nvim`: `y`/`yy` sends to your local clipboard via OSC 52, while `p` pastes from Neovim's internal cache (write-only OSC 52 avoids SSH/tmux paste hangs); hold `Shift` while dragging to copy directly via `tmux`.
+
+---
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
