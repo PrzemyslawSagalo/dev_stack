@@ -96,3 +96,9 @@
     src: git/.gitconfig
     dest: "{{ ansible_env.HOME }}/.gitconfig"
     mode: "0644"
+
+- name: Deploy .gitignore_global
+  ansible.builtin.copy:
+    src: git/.gitignore_global
+    dest: "{{ ansible_env.HOME }}/.gitignore_global"
+    mode: "0644"
