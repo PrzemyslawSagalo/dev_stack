@@ -231,3 +231,16 @@ argument_specs:
                 type: str
                 required: true
                 description: SHA256 checksum for try shell script.
+          uv:
+            type: dict
+            required: true
+            description: Package metadata for uv Python package and project manager.
+            options:
+              url:
+                type: str
+                required: true
+                description: Download URL for uv binary tarball.
+              checksum:
+                type: str
+                required: true
+                description: SHA256 checksum for uv binary tarball.

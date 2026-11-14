@@ -134,6 +134,8 @@ setup() {
     [ -f "$HOME/.gemini/config/mcp_config.json" ]
     [ "$(readlink -f "$HOME/.gemini/config/mcp_config.json")" = "$HOME/.copilot/mcp-config.json" ]
     [ "$(stat -c "%a" "$HOME/.copilot/mcp-config.json")" = "600" ]
+    jq -e '.mcpServers.atlassian.command == "uvx"' "$HOME/.copilot/mcp-config.json"
+    jq -e '.mcpServers.atlassian.args[0] | startswith("mcp-atlassian==")' "$HOME/.copilot/mcp-config.json"
     [ -L "$HOME/.gemini/config/GEMINI.md" ]
     [ -f "$HOME/.gemini/config/GEMINI.md" ]
     [ -L "$HOME/.gemini/config/AGENTS.md" ]
@@ -195,6 +197,10 @@ setup() {
     [[ "$output" == *"version="* ]]
     run grep -qx "alias lg='lazygit'" "$HOME/.bash_aliases"
     [ "$status" -eq 0 ]
+}
+
+@test "uv and uvx binaries are installed and available in PATH" {
+    command -v uv && command -v uvx
 }
 
 @test "Tmux configuration enables mouse mode, OSC 52 clipboard pass-through, and True Color RGB" {

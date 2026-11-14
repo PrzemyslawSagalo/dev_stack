@@ -31,6 +31,7 @@ system_default_pkg_versions:
   tmux: "3.8"
   tree_sitter: "0.22.6"
   try: "v0.2.1"
+  uv: "0.13.8"
 
 system_default_pkg_metadata:
   antigravity:
@@ -116,3 +117,12 @@ system_default_pkg_metadata:
   try:
     url: "https://raw.githubusercontent.com/binpash/try/{{ system_default_pkg_versions.try }}/try"
     checksum: "sha256:0a36febe39d6dcd4cf1c8fb95b2e47149b513a0016d2539daf31c7a11a74f478"
+  uv:
+    url: >-
+      https://github.com/astral-sh/uv/releases/download/{{
+      system_default_pkg_versions.uv }}/uv-{{
+      system_arch.uname }}-unknown-linux-gnu.tar.gz
+    checksum: >-
+      {{ 'sha256:74f2f5c6024d397481db228db8fc25eed420db192243f88438c118e7e013e585'
+      if system_arch.is_arm64
+      else 'sha256:5acfd9177cfecf0bf87578f059728215ccc884388988f55f7a65041b57387d91' }}
