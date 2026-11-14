@@ -244,3 +244,16 @@ argument_specs:
                 type: str
                 required: true
                 description: SHA256 checksum for uv binary tarball.
+          yq:
+            type: dict
+            required: true
+            description: Package metadata for yq YAML processor.
+            options:
+              url:
+                type: str
+                required: true
+                description: Download URL for yq binary.
+              checksum:
+                type: str
+                required: true
+                description: SHA256 checksum for yq binary.

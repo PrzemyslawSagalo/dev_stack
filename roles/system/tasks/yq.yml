@@ -1,0 +1,22 @@
+---
+- name: Check if yq binary exists
+  ansible.builtin.stat:
+    path: /usr/local/bin/yq
+  register: system_yq_bin
+
+- name: Download yq binary
+  ansible.builtin.get_url:
+    url: "{{ system_default_pkg_metadata.yq.url }}"
+    dest: /usr/local/bin/yq
+    checksum: "{{ system_default_pkg_metadata.yq.checksum }}"
+    mode: "0755"
+  register: system_yq_download
+  until: system_yq_download is success
+  retries: 3
+  delay: 5
+  when: not system_yq_bin.stat.exists
+
+- name: Ensure yq binary permissions are correct
+  ansible.builtin.file:
+    path: /usr/local/bin/yq
+    mode: "0755"

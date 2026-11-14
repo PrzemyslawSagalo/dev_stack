@@ -50,3 +50,8 @@
 
 - name: Import Antigravity CLI tasks
   ansible.builtin.import_tasks: antigravity.yml
+
+- name: Import yq tasks
+  ansible.builtin.import_tasks: yq.yml
+  tags:
+    - yq

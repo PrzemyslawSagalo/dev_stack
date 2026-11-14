@@ -203,6 +203,22 @@ setup() {
     command -v uv && command -v uvx
 }
 
+@test "yq is installed, runnable, and evaluates YAML queries" {
+    run command -v yq
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"yq"* ]]
+
+    run yq --version
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"yq (https://github.com/mikefarah/yq/)"* ]]
+
+    local repo_root
+    repo_root="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
+    run yq '.[0].name' "$repo_root/setup.yml"
+    [ "$status" -eq 0 ]
+    [ "$output" = "Setup Development Environment" ]
+}
+
 @test "Tmux configuration enables mouse mode, OSC 52 clipboard pass-through, and True Color RGB" {
     [ -f "$HOME/.tmux.conf" ]
     run grep -qx "set -g mouse on" "$HOME/.tmux.conf"
