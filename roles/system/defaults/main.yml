@@ -10,9 +10,12 @@ system_arch:
 
 system_default_pkg_versions:
   aws: "2.40.1"
+  bat: "0.26.1"
   copilot: "1.0.105"
   direnv: "2.38.2"
   docker_compose: "2.36.0"
+  fd: "10.5.2"
+  fzf: "0.75.0"
   go: "1.24.1"
   helm: "3.22.1"
   lazygit: "0.66.1"
@@ -34,6 +37,7 @@ system_default_pkg_versions:
   try: "v0.2.1"
   uv: "0.13.8"
   yq: "4.54.3"
+  zoxide: "0.10.0"
 
 system_default_pkg_metadata:
   antigravity:
@@ -45,6 +49,15 @@ system_default_pkg_metadata:
       {{ 'sha256:ce999da382eac247be6bd000af1ee16f23a2d25e5906e7fd9a83e54c1ecf37c1'
       if system_arch.is_arm64
       else 'sha256:fddb097a8ea197dc9beed9e4426ef99aded612a52df64581e079b6e8817e1d24' }}
+  bat:
+    url: >-
+      https://github.com/sharkdp/bat/releases/download/v{{
+      system_default_pkg_versions.bat }}/bat-v{{
+      system_default_pkg_versions.bat }}-{{ system_arch.uname }}-unknown-linux-musl.tar.gz
+    checksum: >-
+      {{ 'sha256:6369242c584065f195fb20cb36fbd7cb63ae690605bbe89868a7596b596c2c23'
+      if system_arch.is_arm64
+      else 'sha256:0dcd8ac79732c0d5b136f11f4ee00e581440e16a44eab5b3105b611bbf2cf191' }}
   copilot:
     url: >-
       https://registry.npmjs.org/@github/copilot-linux-{{
@@ -69,6 +82,24 @@ system_default_pkg_metadata:
     checksum: >-
       sha256:https://github.com/docker/compose/releases/download/v{{
       system_default_pkg_versions.docker_compose }}/docker-compose-linux-{{ system_arch.uname }}.sha256
+  fd:
+    url: >-
+      https://github.com/sharkdp/fd/releases/download/v{{
+      system_default_pkg_versions.fd }}/fd-v{{
+      system_default_pkg_versions.fd }}-{{ system_arch.uname }}-unknown-linux-musl.tar.gz
+    checksum: >-
+      {{ 'sha256:63ea52cb31586e6d98efa2f06d73d542f16c7d0c4af0f07b579aaf9714cf907a'
+      if system_arch.is_arm64
+      else 'sha256:7e2d07fa2b8807642aaec67b7e2972a9fbe4db26fcb340a7372392db42b26694' }}
+  fzf:
+    url: >-
+      https://github.com/junegunn/fzf/releases/download/v{{
+      system_default_pkg_versions.fzf }}/fzf-{{
+      system_default_pkg_versions.fzf }}-linux_{{ system_arch.deb }}.tar.gz
+    checksum: >-
+      {{ 'sha256:bd0717badb6a5620387e014bb94209aac4d9eab6ab77b5348eabb0833aeb4d59'
+      if system_arch.is_arm64
+      else 'sha256:0d6640f83582d991cf429754baad64b07e3a4e439a6019670f4b91da1314141c' }}
   gh_cli_repo:
     url: "https://cli.github.com/packages/rpm/gh-cli.repo"
     checksum: "sha256:29481151c94b18968d47dc5987c7ccc9c663a94fb819cc1cc9385b5d2f5d3a93"
@@ -144,3 +175,12 @@ system_default_pkg_metadata:
       {{ 'sha256:89f69310b61b68d1245065a1241d1fc843f7a36cd6103ffd77ad987613bd1b67'
       if system_arch.is_arm64
       else 'sha256:129534601871538efe0ba4c5e62a34fb1d5f469bcb975c4fddeb467d82974973' }}
+  zoxide:
+    url: >-
+      https://github.com/ajeetdsouza/zoxide/releases/download/v{{
+      system_default_pkg_versions.zoxide }}/zoxide-{{
+      system_default_pkg_versions.zoxide }}-{{ system_arch.uname }}-unknown-linux-musl.tar.gz
+    checksum: >-
+      {{ 'sha256:f1f16c5d6298d63dee467eedea1cdcd8490e43e493bea43acd416dc9033ef641'
+      if system_arch.is_arm64
+      else 'sha256:2d93385b99f3e82cf2701609a1bffcad863fbeb75aa3fe7eb6be4d29be68b1ae' }}

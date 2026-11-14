@@ -69,9 +69,22 @@ ansible-playbook setup.yml
 | **Runtimes & Compilers**<br>[`roles/system`](roles/system) | Multi-version Python (3.11–3.13 via `pyenv`), C++ (GCC/Clang/CMake), Java (Corretto 21), Go, Node.js. | **Zero build failures**: Pre-compiles all C-extension headers (`ssl`, `sqlite3`, `lzma`) so engineers never waste hours diagnosing missing libraries or version conflicts. |
 | **Containers**<br>[`roles/system`](roles/system) | Docker CE engine + Docker Compose v2 with non-root group permissions. | **Immediate local execution**: Run containers without `sudo` privileges, guaranteeing dev/prod parity across workstations and cloud instances. |
 | **Cloud & Cluster CLI**<br>[`roles/system`](roles/system) | AWS CLI v2, GitHub CLI (`gh`), Helm, OpenShift (`oc`) with pinned checksums. | **Instant cloud access**: Verified, cryptographically checked binary toolchains installed out of the box without manual setup steps. |
-| **Terminal & Core CLI**<br>[`roles/system`](roles/system) | `tmux`, `ripgrep`, `lazygit`, `tree-sitter`, `jq`, `yq`, `htop`, `try`, `direnv`, `uv` / `uvx`, `agy` (Google Antigravity). | **Maximum engineer velocity**: Blazing-fast code navigation, Git management, and AI agent coordination directly in persistent terminal sessions. |
+| **Terminal & Core CLI**<br>[`roles/system`](roles/system) | `tmux`, `ripgrep`, `fzf`, `fd`, `zoxide`, `bat`, `lazygit`, `tree-sitter`, `jq`, `yq`, `htop`, `try`, `direnv`, `uv` / `uvx`, `agy` (Google Antigravity). | **Maximum engineer velocity**: Instant fuzzy file/history search, smart directory jumping, syntax-highlighted previews, Git management, and AI agent coordination directly in persistent terminal sessions. |
 | **Dotfiles & Shell**<br>[`roles/dotfiles`](roles/dotfiles) | Curated `.bash_aliases` (Git/venv helpers), vi-mode `.tmux.conf`, `~/.ssh/config`, `~/.gitconfig`. | **Zero muscle memory loss**: Identical shortcuts, navigation, and shell behavior across laptop, remote EC2 instances, and CI runners. |
 | **Editor (IDE)**<br>[`roles/nvim`](roles/nvim) | Hardened Neovim v0.12+ with LSP diagnostics, Treesitter, DAP debugging, and Copilot. | **Full headless IDE**: High-performance terminal editing and AI pair programming out of the box with zero manual plugin tinkering. |
+
+---
+
+## Fast Terminal Navigation (`fzf`, `fd`, `zoxide`, `bat`)
+
+Modern CLI navigation primitives are provisioned and configured out of the box with zero setup:
+
+| Tool | Universal Command & Aliases | Purpose & Key Shortcuts |
+| :--- | :--- | :--- |
+| **`fzf`** | `fzf` | Interactive fuzzy finder. Shell keybindings enabled: `Ctrl+R` (fuzzy command history search), `Ctrl+T` (fuzzy file discovery with `bat` preview), `Alt+C` (fuzzy directory change). |
+| **`fd`** | `fd`, `fdfind` | Ultra-fast, `.gitignore`-aware alternative to `find`. Powers `FZF_DEFAULT_COMMAND` and `FZF_CTRL_T_COMMAND`. |
+| **`zoxide`** | `zoxide`, `z`, `zi` | Smarter `cd` command tracking frequent directories. Jump instantly with `z <folder>` or interactive fuzzy jump with `zi`. |
+| **`bat`** | `bat`, `batcat` | Syntax-highlighting `cat` clone with line numbers and Git integration. Powers `fzf` file previews during `Ctrl+T` fuzzy search. |
 
 ---
 

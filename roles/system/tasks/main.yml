@@ -41,6 +41,9 @@
 - name: Import direnv tasks
   ansible.builtin.import_tasks: direnv.yml
 
+- name: Import CLI navigation tasks (fzf, fd, zoxide, bat)
+  ansible.builtin.import_tasks: navigation.yml
+
 - name: Import try tool tasks
   ansible.builtin.import_tasks: try.yml
 
