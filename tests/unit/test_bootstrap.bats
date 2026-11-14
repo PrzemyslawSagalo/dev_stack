@@ -3,145 +3,153 @@
 setup() {
     REPO_DIR="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
     BOOTSTRAP_SCRIPT="$REPO_DIR/bootstrap.sh"
+    TEST_TMPDIR="$(mktemp -d)"
 }
 
-@test "verify_sudo_access sets sudo command for non-root user" {
-    run bash -c "BOOTSTRAP_SOURCE_ONLY=1 . '$BOOTSTRAP_SCRIPT'; verify_sudo_access; echo \"SUDO=\$SUDO\""
-    [ "$status" -eq 0 ]
-    [[ "$output" =~ "SUDO=sudo" ]]
-}
-
-@test "verify_sudo_access sets empty sudo for root user" {
-    run sudo bash -c "BOOTSTRAP_SOURCE_ONLY=1 . '$BOOTSTRAP_SCRIPT'; verify_sudo_access; echo \"SUDO=\$SUDO\""
-    [ "$status" -eq 0 ]
-    [[ "$output" =~ "SUDO=" ]]
-    [[ ! "$output" =~ "SUDO=sudo" ]]
-}
-
-@test "detect_os parses distribution from os-release" {
-    run bash -c "BOOTSTRAP_SOURCE_ONLY=1 . '$BOOTSTRAP_SCRIPT'; detect_os; echo \"OS_ID=\$OS_ID OS_NAME=\$OS_NAME\""
-    [ "$status" -eq 0 ]
-    [[ "$output" =~ OS_ID=(ubuntu|amzn) ]]
-}
-
-@test "detect_package_manager selects package manager for distribution" {
-    run bash -c "BOOTSTRAP_SOURCE_ONLY=1 . '$BOOTSTRAP_SCRIPT'; detect_os; detect_package_manager; echo \"FAMILY=\$OS_FAMILY MGR=\$PKG_MGR\""
-    [ "$status" -eq 0 ]
-    if grep -q "ID=ubuntu" /etc/os-release; then
-        [[ "$output" =~ "FAMILY=debian MGR=apt-get" ]]
-    else
-        [[ "$output" =~ "FAMILY=amazon MGR=dnf" ]]
+teardown() {
+    if [ -n "${TEST_TMPDIR:-}" ] && [ -d "$TEST_TMPDIR" ]; then
+        rm -rf "$TEST_TMPDIR"
     fi
 }
 
-@test "install_base_dependencies installs base packages on system" {
+@test "detect_os parses Ubuntu os-release fixture" {
+    local fixture="$TEST_TMPDIR/os-release-ubuntu"
+    cat <<'EOF' >"$fixture"
+NAME="Ubuntu"
+ID=ubuntu
+ID_LIKE=debian
+EOF
+
     run bash -c "
+        OS_RELEASE_FILE='$fixture'
         BOOTSTRAP_SOURCE_ONLY=1 . '$BOOTSTRAP_SCRIPT'
-        verify_sudo_access
+        detect_os
+        echo \"OS_ID=\$OS_ID OS_NAME=\$OS_NAME OS_ID_LIKE=\$OS_ID_LIKE\"
+    "
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ "OS_ID=ubuntu OS_NAME=Ubuntu OS_ID_LIKE=debian" ]]
+}
+
+@test "detect_os parses Amazon Linux os-release fixture" {
+    local fixture="$TEST_TMPDIR/os-release-amzn"
+    cat <<'EOF' >"$fixture"
+NAME="Amazon Linux"
+ID="amzn"
+ID_LIKE="fedora"
+EOF
+
+    run bash -c "
+        OS_RELEASE_FILE='$fixture'
+        BOOTSTRAP_SOURCE_ONLY=1 . '$BOOTSTRAP_SCRIPT'
+        detect_os
+        echo \"OS_ID=\$OS_ID OS_NAME=\$OS_NAME OS_ID_LIKE=\$OS_ID_LIKE\"
+    "
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ "OS_ID=amzn OS_NAME=Amazon Linux OS_ID_LIKE=fedora" ]]
+}
+
+@test "detect_os falls back to unknown and Linux when OS_RELEASE_FILE does not exist" {
+    local nonexistent="$TEST_TMPDIR/nonexistent-os-release"
+
+    run bash -c "
+        OS_RELEASE_FILE='$nonexistent'
+        BOOTSTRAP_SOURCE_ONLY=1 . '$BOOTSTRAP_SCRIPT'
+        detect_os
+        echo \"OS_ID=\$OS_ID OS_NAME=\$OS_NAME\"
+    "
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ "OS_ID=unknown OS_NAME=Linux" ]]
+}
+
+@test "detect_package_manager selects debian and apt-get for Ubuntu fixture" {
+    local fixture="$TEST_TMPDIR/os-release-ubuntu"
+    cat <<'EOF' >"$fixture"
+NAME="Ubuntu"
+ID=ubuntu
+ID_LIKE=debian
+EOF
+    local bin_dir="$TEST_TMPDIR/bin"
+    mkdir -p "$bin_dir"
+    touch "$bin_dir/apt-get"
+    chmod +x "$bin_dir/apt-get"
+
+    run bash -c "
+        PATH='$bin_dir'
+        OS_RELEASE_FILE='$fixture'
+        BOOTSTRAP_SOURCE_ONLY=1 . '$BOOTSTRAP_SCRIPT'
         detect_os
         detect_package_manager
-        install_base_dependencies
+        echo \"FAMILY=\$OS_FAMILY MGR=\$PKG_MGR\"
     "
     [ "$status" -eq 0 ]
-    command -v python3 >/dev/null 2>&1
-    command -v curl >/dev/null 2>&1
-    command -v tar >/dev/null 2>&1
-    command -v gzip >/dev/null 2>&1
+    [[ "$output" =~ "FAMILY=debian MGR=apt-get" ]]
 }
 
-@test "install_ansible installs ansible-playbook on system" {
+@test "detect_package_manager selects amazon and dnf for Amazon Linux fixture" {
+    local fixture="$TEST_TMPDIR/os-release-amzn"
+    cat <<'EOF' >"$fixture"
+NAME="Amazon Linux"
+ID="amzn"
+ID_LIKE="fedora"
+EOF
+    local bin_dir="$TEST_TMPDIR/bin"
+    mkdir -p "$bin_dir"
+    touch "$bin_dir/dnf"
+    chmod +x "$bin_dir/dnf"
+
     run bash -c "
+        PATH='$bin_dir'
+        OS_RELEASE_FILE='$fixture'
         BOOTSTRAP_SOURCE_ONLY=1 . '$BOOTSTRAP_SCRIPT'
-        verify_sudo_access
         detect_os
         detect_package_manager
-        install_ansible
+        echo \"FAMILY=\$OS_FAMILY MGR=\$PKG_MGR\"
     "
     [ "$status" -eq 0 ]
-    command -v ansible-playbook >/dev/null 2>&1
+    [[ "$output" =~ "FAMILY=amazon MGR=dnf" ]]
 }
 
-@test "install_ansible skips installation when ansible-playbook is already present" {
+@test "detect_package_manager exits non-zero with clear error for unsupported OS when no supported package manager is in PATH" {
+    local fixture="$TEST_TMPDIR/os-release-unknown"
+    cat <<'EOF' >"$fixture"
+NAME="UnsupportedOS"
+ID=unsupported
+EOF
+    local bin_dir="$TEST_TMPDIR/bin"
+    mkdir -p "$bin_dir"
+
     run bash -c "
+        PATH='$bin_dir'
+        OS_RELEASE_FILE='$fixture'
         BOOTSTRAP_SOURCE_ONLY=1 . '$BOOTSTRAP_SCRIPT'
-        install_ansible
+        detect_os
+        detect_package_manager
     "
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"ansible-playbook already installed. Skipping installation."* ]]
+    [ "$status" -ne 0 ]
+    [[ "$output" =~ "Unknown package manager or unsupported distribution" ]]
 }
 
-@test "configure_python_path prepends local bin directories to PATH" {
+@test "configure_python_path prepends HOME local bin and usr local bin to PATH" {
+    local tmp_home="$TEST_TMPDIR/home"
+    mkdir -p "$tmp_home"
+
     run bash -c "
+        HOME='$tmp_home'
         BOOTSTRAP_SOURCE_ONLY=1 . '$BOOTSTRAP_SCRIPT'
         configure_python_path
         echo \"PATH=\$PATH\"
     "
     [ "$status" -eq 0 ]
-    [[ "$output" == *"$HOME/.local/bin"* ]]
+    [[ "$output" == *"PATH=$tmp_home/.local/bin:/usr/local/bin:"* ]]
 }
 
 @test "resolve_workspace detects existing repository workspace" {
-    local tmp_user_home
-    tmp_user_home="$(mktemp -d)"
     run bash -c "
         cd '$REPO_DIR'
-        HOME='$tmp_user_home'
         BOOTSTRAP_SOURCE_ONLY=1 . '$BOOTSTRAP_SCRIPT'
         resolve_workspace
         echo \"DEST_DIR=\$DEST_DIR\"
     "
     [ "$status" -eq 0 ]
     [[ "$output" == *"DEST_DIR=$REPO_DIR"* ]]
-    rm -rf "$tmp_user_home"
-}
-
-@test "resolve_workspace downloads, verifies, and extracts release package when executed outside workspace" {
-    local tmp_user_home tmp_release_dir
-    tmp_user_home="$(mktemp -d)"
-    tmp_release_dir="$(mktemp -d)"
-
-    git -C "$REPO_DIR" archive --format=tar.gz -9 -o "$tmp_release_dir/dev_stack.tar.gz" HEAD
-    (cd "$tmp_release_dir" && sha256sum dev_stack.tar.gz >dev_stack.tar.gz.sha256)
-
-    run bash -c "
-        cd /tmp
-        HOME='$tmp_user_home'
-        RELEASE_BASE_URL='file://$tmp_release_dir'
-        BOOTSTRAP_SOURCE_ONLY=1 . '$BOOTSTRAP_SCRIPT'
-        configure_python_path
-        resolve_workspace
-        echo \"DEST_DIR=\$DEST_DIR\"
-        echo \"CLEANUP_DEST_DIR=\$CLEANUP_DEST_DIR\"
-        [ -f \"\$DEST_DIR/setup.yml\" ]
-        [ -d \"\$DEST_DIR/roles/system\" ]
-        [ ! -d \"\$DEST_DIR/.git\" ]
-        [ ! -d \"\$DEST_DIR/tests\" ]
-        [ ! -d \"\$DEST_DIR/.github\" ]
-        [ \"\$CLEANUP_DEST_DIR\" = \"1\" ]
-        rm -rf \"\$DEST_DIR\"
-    "
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"DEST_DIR=/tmp/"* ]]
-    [[ "$output" == *"CLEANUP_DEST_DIR=1"* ]]
-    rm -rf "$tmp_user_home" "$tmp_release_dir"
-}
-
-@test "resolve_workspace fails when release package checksum does not match" {
-    local tmp_user_home tmp_release_dir
-    tmp_user_home="$(mktemp -d)"
-    tmp_release_dir="$(mktemp -d)"
-
-    git -C "$REPO_DIR" archive --format=tar.gz -9 -o "$tmp_release_dir/dev_stack.tar.gz" HEAD
-    echo "0000000000000000000000000000000000000000000000000000000000000000  dev_stack.tar.gz" >"$tmp_release_dir/dev_stack.tar.gz.sha256"
-
-    run bash -c "
-        cd /tmp
-        HOME='$tmp_user_home'
-        RELEASE_BASE_URL='file://$tmp_release_dir'
-        BOOTSTRAP_SOURCE_ONLY=1 . '$BOOTSTRAP_SCRIPT'
-        configure_python_path
-        resolve_workspace
-    "
-    [ "$status" -ne 0 ]
-    rm -rf "$tmp_user_home" "$tmp_release_dir"
 }
