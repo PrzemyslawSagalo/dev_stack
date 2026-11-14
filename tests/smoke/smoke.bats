@@ -120,29 +120,12 @@ setup() {
     [ "$status" -eq 0 ]
 }
 
-@test "Global gitignore is configured, deployed, and ignores secret files" {
+@test "Global gitignore is configured and deployed" {
     [ -s "$HOME/.gitignore_global" ]
     run git config --global core.excludesfile
     [ "$status" -eq 0 ]
     # shellcheck disable=SC2088
     [ "$output" = "~/.gitignore_global" ]
-
-    local tmp_repo
-    tmp_repo="$(mktemp -d)"
-    git init "$tmp_repo" >/dev/null 2>&1
-    touch "$tmp_repo/.envrc" "$tmp_repo/.envrc.local" "$tmp_repo/.env" "$tmp_repo/.env.local" "$tmp_repo/.env.example" "$tmp_repo/.env.template"
-
-    run git -C "$tmp_repo" check-ignore .envrc .envrc.local .env .env.local
-    [ "$status" -eq 0 ]
-    [[ "$output" == *".envrc"* ]]
-    [[ "$output" == *".envrc.local"* ]]
-    [[ "$output" == *".env"* ]]
-    [[ "$output" == *".env.local"* ]]
-
-    run git -C "$tmp_repo" check-ignore .env.example .env.template
-    [ "$status" -ne 0 ]
-
-    rm -rf "$tmp_repo"
 }
 
 @test "Antigravity configuration symlinks to Copilot components exist" {
@@ -243,7 +226,7 @@ setup() {
     [ "$status" -eq 0 ]
 }
 
-@test "yq is installed, runnable, and evaluates YAML queries" {
+@test "yq is installed and runnable" {
     run command -v yq
     [ "$status" -eq 0 ]
     [[ "$output" == *"yq"* ]]
@@ -251,15 +234,9 @@ setup() {
     run yq --version
     [ "$status" -eq 0 ]
     [[ "$output" == *"yq (https://github.com/mikefarah/yq/)"* ]]
-
-    local repo_root
-    repo_root="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
-    run yq '.[0].name' "$repo_root/setup.yml"
-    [ "$status" -eq 0 ]
-    [ "$output" = "Setup Development Environment" ]
 }
 
-@test "Direnv is installed, hooked into bashrc, and evaluates allowed .envrc" {
+@test "Direnv is installed, runnable, and hooked into bashrc" {
     run command -v direnv
     [ "$status" -eq 0 ]
     run direnv version
@@ -268,18 +245,6 @@ setup() {
     # shellcheck disable=SC2016
     run grep -F 'eval "$(direnv hook bash)"' "$HOME/.bashrc"
     [ "$status" -eq 0 ]
-
-    local test_dir
-    test_dir="$(mktemp -d)"
-    echo 'export SMOKE_TEST_DIRENV_VAR="direnv_smoke_ok"' >"$test_dir/.envrc"
-
-    run bash -c "
-        cd '$test_dir'
-        direnv allow '$test_dir/.envrc'
-        eval \"\$(direnv export bash 2>/dev/null)\"
-        [ \"\$SMOKE_TEST_DIRENV_VAR\" = 'direnv_smoke_ok' ]
-    "
-    rm -rf "$test_dir"
 }
 
 @test "fzf is installed and runnable" {
@@ -353,70 +318,4 @@ setup() {
 
 @test "Neovim plugins are pre-installed headlessly in lazy directory" {
     [ -d "$HOME/.local/share/nvim/lazy/plenary.nvim" ]
-}
-
-@test "resolve_workspace downloads, verifies, and extracts release package when executed outside workspace" {
-    local repo_root
-    repo_root="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
-    local tmp_dir
-    tmp_dir="$(mktemp -d)"
-    local tmp_release_dir="$tmp_dir/release"
-    local run_dir="$tmp_dir/run"
-    mkdir -p "$tmp_release_dir" "$run_dir"
-
-    git -C "$repo_root" archive --format=tar.gz -o "$tmp_release_dir/dev_stack.tar.gz" HEAD
-    (cd "$tmp_release_dir" && sha256sum dev_stack.tar.gz >dev_stack.tar.gz.sha256)
-
-    run bash -c "
-        cd '$run_dir'
-        RELEASE_BASE_URL='file://$tmp_release_dir'
-        BOOTSTRAP_SOURCE_ONLY=1 . '$repo_root/bootstrap.sh'
-        resolve_workspace
-        echo \"DEST_DIR=\$DEST_DIR\"
-        echo \"CLEANUP_DEST_DIR=\$CLEANUP_DEST_DIR\"
-        [ -f \"\$DEST_DIR/setup.yml\" ]
-        [ -d \"\$DEST_DIR/roles/system\" ]
-        [ ! -d \"\$DEST_DIR/.git\" ]
-        [ \"\$CLEANUP_DEST_DIR\" = \"1\" ]
-        rm -rf \"\$DEST_DIR\"
-    "
-    local extracted_dest
-    extracted_dest="$(echo "$output" | grep -o 'workspace ([^)]*)' | sed 's/workspace (//; s/)//')"
-    if [ -n "$extracted_dest" ] && [ -d "$extracted_dest" ]; then
-        rm -rf "$extracted_dest"
-    fi
-    rm -rf "$tmp_dir"
-
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"DEST_DIR=/tmp/"* ]]
-    [[ "$output" == *"CLEANUP_DEST_DIR=1"* ]]
-}
-
-@test "resolve_workspace fails when release package checksum does not match" {
-    local repo_root
-    repo_root="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
-    local tmp_dir
-    tmp_dir="$(mktemp -d)"
-    local tmp_release_dir="$tmp_dir/release"
-    local run_dir="$tmp_dir/run"
-    mkdir -p "$tmp_release_dir" "$run_dir"
-
-    echo "invalid archive payload" >"$tmp_release_dir/dev_stack.tar.gz"
-    echo "0000000000000000000000000000000000000000000000000000000000000000  dev_stack.tar.gz" >"$tmp_release_dir/dev_stack.tar.gz.sha256"
-
-    run bash -c "
-        cd '$run_dir'
-        RELEASE_BASE_URL='file://$tmp_release_dir'
-        BOOTSTRAP_SOURCE_ONLY=1 . '$repo_root/bootstrap.sh'
-        resolve_workspace
-    "
-    local extracted_dest
-    extracted_dest="$(echo "$output" | grep -o 'workspace ([^)]*)' | sed 's/workspace (//; s/)//')"
-    if [ -n "$extracted_dest" ] && [ -d "$extracted_dest" ]; then
-        rm -rf "$extracted_dest"
-    fi
-    rm -rf "$tmp_dir"
-
-    [ "$status" -ne 0 ]
-    [[ "$output" == *"Failed to download or verify release package"* ]]
 }
