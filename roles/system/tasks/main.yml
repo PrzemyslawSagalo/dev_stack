@@ -38,6 +38,9 @@
 - name: Import Lazygit tasks
   ansible.builtin.import_tasks: lazygit.yml
 
+- name: Import direnv tasks
+  ansible.builtin.import_tasks: direnv.yml
+
 - name: Import try tool tasks
   ansible.builtin.import_tasks: try.yml
 
