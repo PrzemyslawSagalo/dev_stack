@@ -225,3 +225,69 @@ setup() {
 @test "Neovim plugins are pre-installed headlessly in lazy directory" {
     [ -d "$HOME/.local/share/nvim/lazy/plenary.nvim" ]
 }
+
+@test "resolve_workspace downloads, verifies, and extracts release package when executed outside workspace" {
+    local repo_root
+    repo_root="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
+    local tmp_dir
+    tmp_dir="$(mktemp -d)"
+    local tmp_release_dir="$tmp_dir/release"
+    local run_dir="$tmp_dir/run"
+    mkdir -p "$tmp_release_dir" "$run_dir"
+
+    git -C "$repo_root" archive --format=tar.gz -o "$tmp_release_dir/dev_stack.tar.gz" HEAD
+    (cd "$tmp_release_dir" && sha256sum dev_stack.tar.gz >dev_stack.tar.gz.sha256)
+
+    run bash -c "
+        cd '$run_dir'
+        RELEASE_BASE_URL='file://$tmp_release_dir'
+        BOOTSTRAP_SOURCE_ONLY=1 . '$repo_root/bootstrap.sh'
+        resolve_workspace
+        echo \"DEST_DIR=\$DEST_DIR\"
+        echo \"CLEANUP_DEST_DIR=\$CLEANUP_DEST_DIR\"
+        [ -f \"\$DEST_DIR/setup.yml\" ]
+        [ -d \"\$DEST_DIR/roles/system\" ]
+        [ ! -d \"\$DEST_DIR/.git\" ]
+        [ \"\$CLEANUP_DEST_DIR\" = \"1\" ]
+        rm -rf \"\$DEST_DIR\"
+    "
+    local extracted_dest
+    extracted_dest="$(echo "$output" | grep -o 'workspace ([^)]*)' | sed 's/workspace (//; s/)//')"
+    if [ -n "$extracted_dest" ] && [ -d "$extracted_dest" ]; then
+        rm -rf "$extracted_dest"
+    fi
+    rm -rf "$tmp_dir"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"DEST_DIR=/tmp/"* ]]
+    [[ "$output" == *"CLEANUP_DEST_DIR=1"* ]]
+}
+
+@test "resolve_workspace fails when release package checksum does not match" {
+    local repo_root
+    repo_root="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
+    local tmp_dir
+    tmp_dir="$(mktemp -d)"
+    local tmp_release_dir="$tmp_dir/release"
+    local run_dir="$tmp_dir/run"
+    mkdir -p "$tmp_release_dir" "$run_dir"
+
+    echo "invalid archive payload" >"$tmp_release_dir/dev_stack.tar.gz"
+    echo "0000000000000000000000000000000000000000000000000000000000000000  dev_stack.tar.gz" >"$tmp_release_dir/dev_stack.tar.gz.sha256"
+
+    run bash -c "
+        cd '$run_dir'
+        RELEASE_BASE_URL='file://$tmp_release_dir'
+        BOOTSTRAP_SOURCE_ONLY=1 . '$repo_root/bootstrap.sh'
+        resolve_workspace
+    "
+    local extracted_dest
+    extracted_dest="$(echo "$output" | grep -o 'workspace ([^)]*)' | sed 's/workspace (//; s/)//')"
+    if [ -n "$extracted_dest" ] && [ -d "$extracted_dest" ]; then
+        rm -rf "$extracted_dest"
+    fi
+    rm -rf "$tmp_dir"
+
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"Failed to download or verify release package"* ]]
+}
