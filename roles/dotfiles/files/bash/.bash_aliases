@@ -12,6 +12,46 @@ alias gl='git log'
 alias geb='export cb=$(gcb)'
 alias lg='lazygit'
 
+gsquash() {
+    if [ "$#" -ne 1 ] || [ -z "$1" ]; then
+        echo "Usage: gsquash <commit-hash>" >&2
+        return 1
+    fi
+
+    if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        echo "Error: not inside a git work tree" >&2
+        return 1
+    fi
+
+    local target
+    target="$(git rev-parse --verify "${1}^{commit}" 2>/dev/null)" || {
+        echo "Error: invalid commit '$1'" >&2
+        return 1
+    }
+
+    if ! git merge-base --is-ancestor "$target" HEAD 2>/dev/null; then
+        echo "Error: commit '$1' is not an ancestor of HEAD" >&2
+        return 1
+    fi
+
+    if [ -n "$(git status --porcelain)" ]; then
+        echo "Error: working tree is not clean; commit or stash changes first" >&2
+        return 1
+    fi
+
+    if [ "$target" = "$(git rev-parse HEAD)" ]; then
+        echo "Nothing to squash: HEAD is already at target commit"
+        return 0
+    fi
+
+    if [ "$(git rev-list --merges --count "${target}..HEAD")" -gt 0 ]; then
+        echo "Error: merge commits exist between '$1' and HEAD; rebase onto main first" >&2
+        return 1
+    fi
+
+    git reset --soft "$target" && git commit --amend --no-edit
+}
+
 # Tmux
 alias tnwc='tmux new-window -c $(pwd)'
 
