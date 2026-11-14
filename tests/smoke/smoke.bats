@@ -291,7 +291,7 @@ setup() {
     [ "$status" -eq 0 ]
 }
 
-@test "Tmux configuration enables mouse mode, OSC 52 clipboard pass-through, and True Color RGB" {
+@test "Tmux configuration enables mouse mode, OSC 52 clipboard pass-through, True Color RGB, and aggressive-resize" {
     [ -f "$HOME/.tmux.conf" ]
     run grep -qx "set -g mouse on" "$HOME/.tmux.conf"
     [ "$status" -eq 0 ]
@@ -304,6 +304,8 @@ setup() {
     run grep -q "terminal-features ',xterm-256color:RGB'" "$HOME/.tmux.conf"
     [ "$status" -eq 0 ]
     run grep -qx "set -g allow-passthrough on" "$HOME/.tmux.conf"
+    [ "$status" -eq 0 ]
+    run grep -qx "set-window-option -g aggressive-resize on" "$HOME/.tmux.conf"
     [ "$status" -eq 0 ]
     run grep -Fq "bind-key -T copy-mode-vi MouseDragEnd1Pane send-keys -X copy-selection-no-clear" "$HOME/.tmux.conf"
     [ "$status" -eq 0 ]

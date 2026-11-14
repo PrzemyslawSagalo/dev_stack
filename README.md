@@ -93,6 +93,7 @@ Modern CLI navigation primitives are provisioned and configured out of the box w
 - **Usage (`tmux` & `nvim` over SSH)**:
   - `tmux`: Releasing a mouse drag copies to your local clipboard via OSC 52 and keeps the selection highlighted until the next click (`Cmd+V` / `Ctrl+Shift+V` to paste locally).
   - `nvim`: `y`/`yy` sends to your local clipboard via OSC 52, while `p` pastes from Neovim's internal cache (write-only OSC 52 avoids SSH/tmux paste hangs); hold `Shift` while dragging to copy directly via `tmux`.
+  - `tj [session]`: Attaches a second terminal/monitor to an active `tmux` session as a grouped session with independent window focus and automatic cleanup (`destroy-unattached on`). Combined with `aggressive-resize` and Neovim's `HyperFastAutoread`, this delivers a seamless two-monitor remote workflow without the mirrored/clipped view limitations of `nvim --remote-ui` or socket lifecycle management wrappers.
 
 ---
 
