@@ -114,3 +114,214 @@ setup() {
     [ "$status" -ne 0 ]
     [[ "$output" == *"Failed to download or verify release package"* ]]
 }
+
+@test "tj fails cleanly when inside TMUX, when no sessions exist, or when target is invalid" {
+    local repo_root
+    repo_root="$(cd "$(dirname "$BATS_TEST_FILENAME")/../../.." && pwd)"
+    local tmp_dir
+    tmp_dir="$(mktemp -d)"
+
+    # Case 1: Inside $TMUX
+    run bash -c "
+        source '$repo_root/roles/dotfiles/files/bash/.bash_aliases'
+        TMUX='dummy-session' tj
+    "
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"Error: already inside a tmux session"* ]]
+
+    # Case 2: No active tmux sessions in isolated socket
+    run bash -c "
+        unset TMUX
+        export TMUX_TMPDIR='$tmp_dir'
+        source '$repo_root/roles/dotfiles/files/bash/.bash_aliases'
+        tj
+    "
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"Error: no active tmux sessions found"* ]]
+
+    # Case 3: Target session does not exist
+    run bash -c "
+        unset TMUX
+        export TMUX_TMPDIR='$tmp_dir'
+        source '$repo_root/roles/dotfiles/files/bash/.bash_aliases'
+        tj non_existent_session
+    "
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"Error: tmux session 'non_existent_session' does not exist"* ]]
+
+    # Case 4: Multiple sessions exist without fzf
+    unset TMUX
+    local bin_dir
+    bin_dir="$(mktemp -d)"
+    ln -s "$(command -v tmux)" "$bin_dir/tmux"
+    ln -s "$(command -v grep)" "$bin_dir/grep"
+    TMUX_TMPDIR="$tmp_dir" tmux new-session -d -s sess-alpha
+    TMUX_TMPDIR="$tmp_dir" tmux new-session -d -s sess-beta
+    run bash -c "
+        unset TMUX
+        export TMUX_TMPDIR='$tmp_dir'
+        source '$repo_root/roles/dotfiles/files/bash/.bash_aliases'
+        export PATH='$bin_dir'
+        command -v tmux >/dev/null || exit 1
+        ! command -v fzf >/dev/null || exit 1
+        tj
+    "
+    TMUX_TMPDIR="$tmp_dir" tmux kill-session -t sess-alpha 2>/dev/null || true
+    TMUX_TMPDIR="$tmp_dir" tmux kill-session -t sess-beta 2>/dev/null || true
+    rm -rf "$tmp_dir" "$bin_dir"
+
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"Error: multiple sessions exist. Specify target session:"* ]]
+    [[ "$output" == *"sess-alpha"* ]]
+    [[ "$output" == *"sess-beta"* ]]
+}
+
+@test "tj creates grouped session sharing window group with destroy-unattached and aggressive-resize" {
+    local repo_root
+    repo_root="$(cd "$(dirname "$BATS_TEST_FILENAME")/../../.." && pwd)"
+    local tmp_dir
+    tmp_dir="$(mktemp -d)"
+    local tmux_conf="$repo_root/roles/dotfiles/files/tmux/.tmux.conf"
+
+    unset TMUX
+    TMUX_TMPDIR="$tmp_dir" tmux -f "$tmux_conf" new-session -d -s base-mon-test
+
+    run bash -c "
+        unset TMUX
+        export TMUX_TMPDIR='$tmp_dir'
+        export TERM=xterm-256color
+
+        script -qec \"bash -c 'source \\\"$repo_root/roles/dotfiles/files/bash/.bash_aliases\\\" && tj base-mon-test'\" /dev/null </dev/null >/dev/null 2>&1 &
+        CLIENT_PID=\$!
+
+        grouped=''
+        for _ in \$(seq 1 30); do
+            grouped=\$(tmux list-sessions -F '#{session_name}' 2>/dev/null | grep 'base-mon-test-mon-' || true)
+            if [ -n \"\$grouped\" ]; then
+                break
+            fi
+            sleep 0.1
+        done
+
+        [ -n \"\$grouped\" ]
+
+        base_group=\$(tmux display-message -p -t base-mon-test '#{session_group}')
+        grouped_group=\$(tmux display-message -p -t \"\$grouped\" '#{session_group}')
+        [ -n \"\$base_group\" ]
+        [ \"\$base_group\" = \"\$grouped_group\" ]
+
+        aggressive=\$(tmux show-window-options -g aggressive-resize | awk '{print \$2}')
+        [ \"\$aggressive\" = 'on' ]
+
+        destroy_opt=\$(tmux show-options -t \"\$grouped\" destroy-unattached | awk '{print \$2}')
+        [ \"\$destroy_opt\" = 'on' ]
+
+        tmux detach-client -s \"\$grouped\" 2>/dev/null || true
+        wait \$CLIENT_PID 2>/dev/null || true
+
+        sleep 0.2
+        if tmux has-session -t \"\$grouped\" 2>/dev/null; then
+            echo 'Error: grouped session was not destroyed on detach'
+            exit 1
+        fi
+
+        tmux kill-session -t base-mon-test 2>/dev/null || true
+    "
+
+    rm -rf "$tmp_dir"
+    [ "$status" -eq 0 ]
+}
+
+@test "tj automatically selects target session when exactly one tmux session exists" {
+    local repo_root
+    repo_root="$(cd "$(dirname "$BATS_TEST_FILENAME")/../../.." && pwd)"
+    local tmp_dir
+    tmp_dir="$(mktemp -d)"
+    local tmux_conf="$repo_root/roles/dotfiles/files/tmux/.tmux.conf"
+
+    unset TMUX
+    TMUX_TMPDIR="$tmp_dir" tmux -f "$tmux_conf" new-session -d -s auto-mon-test
+
+    run bash -c "
+        unset TMUX
+        export TMUX_TMPDIR='$tmp_dir'
+        export TERM=xterm-256color
+
+        script -qec \"bash -c 'source \\\"$repo_root/roles/dotfiles/files/bash/.bash_aliases\\\" && tj'\" /dev/null </dev/null >/dev/null 2>&1 &
+        CLIENT_PID=\$!
+
+        grouped=''
+        for _ in \$(seq 1 30); do
+            grouped=\$(tmux list-sessions -F '#{session_name}' 2>/dev/null | grep 'auto-mon-test-mon-' || true)
+            if [ -n \"\$grouped\" ]; then
+                break
+            fi
+            sleep 0.1
+        done
+
+        [ -n \"\$grouped\" ]
+
+        base_group=\$(tmux display-message -p -t auto-mon-test '#{session_group}')
+        grouped_group=\$(tmux display-message -p -t \"\$grouped\" '#{session_group}')
+        [ -n \"\$base_group\" ]
+        [ \"\$base_group\" = \"\$grouped_group\" ]
+
+        tmux detach-client -s \"\$grouped\" 2>/dev/null || true
+        wait \$CLIENT_PID 2>/dev/null || true
+
+        sleep 0.2
+        tmux kill-session -t auto-mon-test 2>/dev/null || true
+    "
+
+    rm -rf "$tmp_dir"
+    [ "$status" -eq 0 ]
+}
+
+@test "tj applies aggressive-resize on to session windows even without .tmux.conf" {
+    local repo_root
+    repo_root="$(cd "$(dirname "$BATS_TEST_FILENAME")/../../.." && pwd)"
+    local tmp_dir
+    tmp_dir="$(mktemp -d)"
+
+    unset TMUX
+    TMUX_TMPDIR="$tmp_dir" tmux -f /dev/null new-session -d -s legacy-mon-test
+    TMUX_TMPDIR="$tmp_dir" tmux new-window -t legacy-mon-test
+
+    run bash -c "
+        unset TMUX
+        export TMUX_TMPDIR='$tmp_dir'
+        export TERM=xterm-256color
+
+        script -qec \"bash -c 'source \\\"$repo_root/roles/dotfiles/files/bash/.bash_aliases\\\" && tj legacy-mon-test'\" /dev/null </dev/null >/dev/null 2>&1 &
+        CLIENT_PID=\$!
+
+        grouped=''
+        for _ in \$(seq 1 30); do
+            grouped=\$(tmux list-sessions -F '#{session_name}' 2>/dev/null | grep 'legacy-mon-test-mon-' || true)
+            if [ -n \"\$grouped\" ]; then
+                break
+            fi
+            sleep 0.1
+        done
+
+        [ -n \"\$grouped\" ]
+
+        win_count=0
+        while IFS= read -r win_id; do
+            [ -n \"\$win_id\" ] || continue
+            win_count=\$((win_count + 1))
+            opt=\$(tmux show-window-options -t \"\$win_id\" aggressive-resize | awk '{print \$2}')
+            [ \"\$opt\" = 'on' ] || exit 1
+        done < <(tmux list-windows -t \"\$grouped\" -F '#{window_id}')
+        [ \"\$win_count\" -eq 2 ]
+
+        tmux detach-client -s \"\$grouped\" 2>/dev/null || true
+        wait \$CLIENT_PID 2>/dev/null || true
+
+        sleep 0.2
+        tmux kill-session -t legacy-mon-test 2>/dev/null || true
+    "
+
+    rm -rf "$tmp_dir"
+    [ "$status" -eq 0 ]
+}
