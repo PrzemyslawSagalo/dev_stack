@@ -1,0 +1,172 @@
+---
+- name: Check if fzf binary is installed
+  ansible.builtin.stat:
+    path: /usr/local/bin/fzf
+  register: system_fzf_bin
+
+- name: Download and install fzf
+  when: not system_fzf_bin.stat.exists
+  block:
+    - name: Download fzf tarball
+      ansible.builtin.get_url:
+        url: "{{ system_default_pkg_metadata.fzf.url }}"
+        dest: /tmp/fzf.tar.gz
+        checksum: "{{ system_default_pkg_metadata.fzf.checksum }}"
+        mode: "0644"
+      register: system_fzf_download
+      until: system_fzf_download is success
+      retries: 3
+      delay: 5
+
+    - name: Extract fzf binary to /usr/local/bin
+      ansible.builtin.unarchive:
+        src: /tmp/fzf.tar.gz
+        dest: /usr/local/bin
+        remote_src: true
+        extra_opts:
+          - fzf
+        mode: "0755"
+
+    - name: Remove fzf temporary tarball
+      ansible.builtin.file:
+        path: /tmp/fzf.tar.gz
+        state: absent
+
+- name: Ensure fzf binary is executable
+  ansible.builtin.file:
+    path: /usr/local/bin/fzf
+    mode: "0755"
+
+- name: Check if fd binary is installed
+  ansible.builtin.stat:
+    path: /usr/local/bin/fd
+  register: system_fd_bin
+
+- name: Download and install fd
+  when: not system_fd_bin.stat.exists
+  block:
+    - name: Download fd tarball
+      ansible.builtin.get_url:
+        url: "{{ system_default_pkg_metadata.fd.url }}"
+        dest: /tmp/fd.tar.gz
+        checksum: "{{ system_default_pkg_metadata.fd.checksum }}"
+        mode: "0644"
+      register: system_fd_download
+      until: system_fd_download is success
+      retries: 3
+      delay: 5
+
+    - name: Extract fd binary to /usr/local/bin
+      ansible.builtin.unarchive:
+        src: /tmp/fd.tar.gz
+        dest: /usr/local/bin
+        remote_src: true
+        extra_opts:
+          - --strip-components=1
+          - --wildcards
+          - "*/fd"
+        mode: "0755"
+
+    - name: Remove fd temporary tarball
+      ansible.builtin.file:
+        path: /tmp/fd.tar.gz
+        state: absent
+
+- name: Ensure fd binary is executable
+  ansible.builtin.file:
+    path: /usr/local/bin/fd
+    mode: "0755"
+
+- name: Ensure fd symlink exists for fdfind compatibility
+  ansible.builtin.file:
+    src: /usr/local/bin/fd
+    dest: /usr/local/bin/fdfind
+    state: link
+    mode: "0755"
+    force: true
+
+- name: Check if zoxide binary is installed
+  ansible.builtin.stat:
+    path: /usr/local/bin/zoxide
+  register: system_zoxide_bin
+
+- name: Download and install zoxide
+  when: not system_zoxide_bin.stat.exists
+  block:
+    - name: Download zoxide tarball
+      ansible.builtin.get_url:
+        url: "{{ system_default_pkg_metadata.zoxide.url }}"
+        dest: /tmp/zoxide.tar.gz
+        checksum: "{{ system_default_pkg_metadata.zoxide.checksum }}"
+        mode: "0644"
+      register: system_zoxide_download
+      until: system_zoxide_download is success
+      retries: 3
+      delay: 5
+
+    - name: Extract zoxide binary to /usr/local/bin
+      ansible.builtin.unarchive:
+        src: /tmp/zoxide.tar.gz
+        dest: /usr/local/bin
+        remote_src: true
+        extra_opts:
+          - zoxide
+        mode: "0755"
+
+    - name: Remove zoxide temporary tarball
+      ansible.builtin.file:
+        path: /tmp/zoxide.tar.gz
+        state: absent
+
+- name: Ensure zoxide binary is executable
+  ansible.builtin.file:
+    path: /usr/local/bin/zoxide
+    mode: "0755"
+
+- name: Check if bat binary is installed
+  ansible.builtin.stat:
+    path: /usr/local/bin/bat
+  register: system_bat_bin
+
+- name: Download and install bat
+  when: not system_bat_bin.stat.exists
+  block:
+    - name: Download bat tarball
+      ansible.builtin.get_url:
+        url: "{{ system_default_pkg_metadata.bat.url }}"
+        dest: /tmp/bat.tar.gz
+        checksum: "{{ system_default_pkg_metadata.bat.checksum }}"
+        mode: "0644"
+      register: system_bat_download
+      until: system_bat_download is success
+      retries: 3
+      delay: 5
+
+    - name: Extract bat binary to /usr/local/bin
+      ansible.builtin.unarchive:
+        src: /tmp/bat.tar.gz
+        dest: /usr/local/bin
+        remote_src: true
+        extra_opts:
+          - --strip-components=1
+          - --wildcards
+          - "*/bat"
+        mode: "0755"
+
+    - name: Remove bat temporary tarball
+      ansible.builtin.file:
+        path: /tmp/bat.tar.gz
+        state: absent
+
+- name: Ensure bat binary is executable
+  ansible.builtin.file:
+    path: /usr/local/bin/bat
+    mode: "0755"
+
+- name: Ensure bat symlink exists for batcat compatibility
+  ansible.builtin.file:
+    src: /usr/local/bin/bat
+    dest: /usr/local/bin/batcat
+    state: link
+    mode: "0755"
+    force: true

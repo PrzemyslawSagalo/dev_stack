@@ -240,6 +240,49 @@ setup() {
         [ \"\$SMOKE_TEST_DIRENV_VAR\" = 'direnv_smoke_ok' ]
     "
     rm -rf "$test_dir"
+}
+
+@test "fzf is installed and runnable" {
+    run fzf --version
+    [ "$status" -eq 0 ]
+    [ -n "$output" ]
+}
+
+@test "fd and fdfind are installed and runnable" {
+    run fd --version
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ "fd" ]]
+    run fdfind --version
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ "fd" ]]
+}
+
+@test "zoxide is installed and runnable" {
+    run zoxide --version
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ "zoxide" ]]
+}
+
+@test "bat and batcat are installed and runnable" {
+    run bat --version
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ "bat" ]]
+    run batcat --version
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ "bat" ]]
+}
+
+@test "Bash init configures navigation tools, keybindings, and is sourced in bashrc" {
+    [ -s "$HOME/.config/bash/init.sh" ]
+    run grep -q "fzf --bash" "$HOME/.config/bash/init.sh"
+    [ "$status" -eq 0 ]
+    run grep -q "zoxide init bash" "$HOME/.config/bash/init.sh"
+    [ "$status" -eq 0 ]
+    run grep -q "FZF_DEFAULT_COMMAND" "$HOME/.config/bash/init.sh"
+    [ "$status" -eq 0 ]
+    run grep -q "FZF_CTRL_T_OPTS" "$HOME/.config/bash/init.sh"
+    [ "$status" -eq 0 ]
+    run grep -q "if \[ -f ~/.config/bash/init.sh \]; then . ~/.config/bash/init.sh; fi" "$HOME/.bashrc"
     [ "$status" -eq 0 ]
 }
 

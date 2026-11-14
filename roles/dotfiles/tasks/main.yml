@@ -13,6 +13,26 @@
     create: true
     mode: "0644"
 
+- name: Ensure ~/.config/bash directory exists
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/.config/bash"
+    state: directory
+    mode: "0755"
+
+- name: Deploy bash/init.sh
+  ansible.builtin.copy:
+    src: bash/init.sh
+    dest: "{{ ansible_env.HOME }}/.config/bash/init.sh"
+    mode: "0644"
+
+- name: Ensure ~/.config/bash/init.sh is sourced in ~/.bashrc
+  ansible.builtin.lineinfile:
+    path: "{{ ansible_env.HOME }}/.bashrc"
+    line: "if [ -f ~/.config/bash/init.sh ]; then . ~/.config/bash/init.sh; fi"
+    state: present
+    create: true
+    mode: "0644"
+
 - name: Deploy .tmux.conf
   ansible.builtin.copy:
     src: tmux/.tmux.conf
