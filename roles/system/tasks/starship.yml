@@ -1,0 +1,49 @@
+---
+- name: Check if Starship binary is installed
+  ansible.builtin.stat:
+    path: /usr/local/bin/starship
+  register: system_starship_bin
+
+- name: Download and install Starship
+  when: not system_starship_bin.stat.exists
+  block:
+    - name: Create temporary directory for Starship extraction
+      ansible.builtin.tempfile:
+        state: directory
+        prefix: starship_install_
+      register: system_starship_tempdir
+
+    - name: Download Starship archive
+      ansible.builtin.get_url:
+        url: "{{ system_default_pkg_metadata.starship.url }}"
+        dest: "{{ system_starship_tempdir.path }}/starship.tar.gz"
+        checksum: "{{ system_default_pkg_metadata.starship.checksum }}"
+        mode: "0644"
+      register: system_starship_download
+      until: system_starship_download is success
+      retries: 3
+      delay: 5
+
+    - name: Extract Starship archive
+      ansible.builtin.unarchive:
+        src: "{{ system_starship_tempdir.path }}/starship.tar.gz"
+        dest: "{{ system_starship_tempdir.path }}"
+        remote_src: true
+
+    - name: Install Starship binary to /usr/local/bin
+      ansible.builtin.copy:
+        src: "{{ system_starship_tempdir.path }}/starship"
+        dest: /usr/local/bin/starship
+        remote_src: true
+        mode: "0755"
+  always:
+    - name: Clean up Starship temporary extraction directory
+      ansible.builtin.file:
+        path: "{{ system_starship_tempdir.path }}"
+        state: absent
+      when: system_starship_tempdir.path is defined
+
+- name: Ensure Starship binary is executable
+  ansible.builtin.file:
+    path: /usr/local/bin/starship
+    mode: "0755"

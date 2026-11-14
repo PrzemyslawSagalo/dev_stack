@@ -13,6 +13,18 @@
     create: true
     mode: "0644"
 
+- name: Ensure ~/.config directory exists
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/.config"
+    state: directory
+    mode: "0755"
+
+- name: Deploy starship.toml configuration
+  ansible.builtin.copy:
+    src: starship/starship.toml
+    dest: "{{ ansible_env.HOME }}/.config/starship.toml"
+    mode: "0644"
+
 - name: Ensure ~/.config/bash directory exists
   ansible.builtin.file:
     path: "{{ ansible_env.HOME }}/.config/bash"
