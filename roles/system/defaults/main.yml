@@ -32,6 +32,7 @@ system_default_pkg_versions:
   tree_sitter: "0.22.6"
   try: "v0.2.1"
   uv: "0.13.8"
+  yq: "4.54.3"
 
 system_default_pkg_metadata:
   antigravity:
@@ -126,3 +127,11 @@ system_default_pkg_metadata:
       {{ 'sha256:74f2f5c6024d397481db228db8fc25eed420db192243f88438c118e7e013e585'
       if system_arch.is_arm64
       else 'sha256:5acfd9177cfecf0bf87578f059728215ccc884388988f55f7a65041b57387d91' }}
+  yq:
+    url: >-
+      https://github.com/mikefarah/yq/releases/download/v{{
+      system_default_pkg_versions.yq }}/yq_linux_{{ system_arch.deb }}
+    checksum: >-
+      {{ 'sha256:89f69310b61b68d1245065a1241d1fc843f7a36cd6103ffd77ad987613bd1b67'
+      if system_arch.is_arm64
+      else 'sha256:129534601871538efe0ba4c5e62a34fb1d5f469bcb975c4fddeb467d82974973' }}
