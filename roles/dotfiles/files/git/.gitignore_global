@@ -1,0 +1,13 @@
+# Direnv environment files
+.envrc
+.envrc.*
+
+# Environment and secret files
+.env
+.env.*
+
+# Allow environment templates and examples
+!.env.example
+!.env.*.example
+!.env.template
+!.env.*.template

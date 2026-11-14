@@ -120,6 +120,31 @@ setup() {
     [ "$status" -eq 0 ]
 }
 
+@test "Global gitignore is configured, deployed, and ignores secret files" {
+    [ -s "$HOME/.gitignore_global" ]
+    run git config --global core.excludesfile
+    [ "$status" -eq 0 ]
+    # shellcheck disable=SC2088
+    [ "$output" = "~/.gitignore_global" ]
+
+    local tmp_repo
+    tmp_repo="$(mktemp -d)"
+    git init "$tmp_repo" >/dev/null 2>&1
+    touch "$tmp_repo/.envrc" "$tmp_repo/.envrc.local" "$tmp_repo/.env" "$tmp_repo/.env.local" "$tmp_repo/.env.example" "$tmp_repo/.env.template"
+
+    run git -C "$tmp_repo" check-ignore .envrc .envrc.local .env .env.local
+    [ "$status" -eq 0 ]
+    [[ "$output" == *".envrc"* ]]
+    [[ "$output" == *".envrc.local"* ]]
+    [[ "$output" == *".env"* ]]
+    [[ "$output" == *".env.local"* ]]
+
+    run git -C "$tmp_repo" check-ignore .env.example .env.template
+    [ "$status" -ne 0 ]
+
+    rm -rf "$tmp_repo"
+}
+
 @test "Antigravity configuration symlinks to Copilot components exist" {
     [ -f "$HOME/.copilot/mcp-config.json" ]
     [ -L "$HOME/.gemini/config/skills" ]
