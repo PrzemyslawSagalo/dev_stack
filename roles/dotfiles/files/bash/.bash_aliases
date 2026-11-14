@@ -29,16 +29,6 @@ alias se='set -a && source .env && set +a'
 alias nv='nvim .'
 
 # GitHub Copilot
-copilot() {
-    command copilot \
-        --allow-tool="shell(ls)" \
-        --allow-tool="shell(grep)" \
-        --allow-tool="shell(cat)" \
-        --allow-tool="shell(find)" \
-        --allow-tool="shell(git:status)" \
-        "$@"
-}
-
 alias cop='copilot'
 
 # Google Anty Gravity
