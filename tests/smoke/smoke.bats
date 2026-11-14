@@ -228,6 +228,21 @@ setup() {
     command -v uv && command -v uvx
 }
 
+@test "Starship prompt is installed, runnable, and configured in Bash" {
+    run command -v starship
+    [ "$status" -eq 0 ]
+
+    run starship --version
+    [ "$status" -eq 0 ]
+    [[ "$output" =~ "starship" ]]
+
+    [ -s "$HOME/.config/starship.toml" ]
+
+    # shellcheck disable=SC2016
+    run grep -F 'eval "$(starship init bash)"' "$HOME/.config/bash/init.sh"
+    [ "$status" -eq 0 ]
+}
+
 @test "yq is installed, runnable, and evaluates YAML queries" {
     run command -v yq
     [ "$status" -eq 0 ]

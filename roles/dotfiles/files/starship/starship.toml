@@ -1,0 +1,40 @@
+# Starship prompt configuration
+# https://starship.rs/config/
+
+format = """\
+$directory\
+$git_branch\
+$git_commit\
+$git_status\
+$python\
+$line_break\
+$character"""
+
+# Timeout for commands executed by starship (in milliseconds)
+command_timeout = 500
+
+[directory]
+truncation_length = 3
+truncate_to_repo = true
+
+[git_branch]
+format = "on [$symbol$branch]($style) "
+
+[git_status]
+format = '([\[$all_status$ahead_behind\]]($style) )'
+
+[git_commit]
+only_detached = false
+tag_disabled = false
+tag_symbol = "🏷️ "
+format = '([$tag]($style) )'
+
+[python]
+symbol = "🐍 "
+format = 'via [${symbol}${pyenv_prefix}(${version} )(\($virtualenv\) )]($style)'
+style = "yellow bold"
+pyenv_version_name = false
+
+[character]
+success_symbol = "[❯](bold green)"
+error_symbol = "[❯](bold red)"

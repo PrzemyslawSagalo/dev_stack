@@ -244,6 +244,19 @@ argument_specs:
                 type: str
                 required: true
                 description: SHA256 checksum for SDKMAN installer script.
+          starship:
+            type: dict
+            required: true
+            description: Package metadata for Starship prompt.
+            options:
+              url:
+                type: str
+                required: true
+                description: Download URL for Starship binary archive.
+              checksum:
+                type: str
+                required: true
+                description: SHA256 checksum for Starship binary archive.
           tmux:
             type: dict
             required: true

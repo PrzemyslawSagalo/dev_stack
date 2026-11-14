@@ -32,6 +32,7 @@ system_default_pkg_versions:
       - "3.12.9"
       - "3.11.11"
   ripgrep: "14.1.1"
+  starship: "1.27.0"
   tmux: "3.8"
   tree_sitter: "0.22.6"
   try: "v0.2.1"
@@ -144,6 +145,15 @@ system_default_pkg_metadata:
   sdkman:
     url: "https://get.sdkman.io"
     checksum: "sha256:d2ad12c3702fa42967e48114f01ebd266f0c901a53fa8fd739c9b6a007cc91d0"
+  starship:
+    url: >-
+      https://github.com/starship/starship/releases/download/v{{
+      system_default_pkg_versions.starship }}/starship-{{
+      system_arch.uname }}-unknown-linux-musl.tar.gz
+    checksum: >-
+      {{ 'sha256:341f5cbf24699fa0b27ec88965ad25f862ea09e15d35a543fd6ffdff1d2aa00d'
+      if system_arch.is_arm64
+      else 'sha256:10c8eb4cb3b761d9bf59ea828444c2dab36c900b7d69a69e08814b286969df89' }}
   tmux:
     url: "https://github.com/tmux/tmux/releases/download/{{ system_default_pkg_versions.tmux }}/tmux-{{ system_default_pkg_versions.tmux }}.tar.gz"
     checksum: "sha256:e79c699c7e949dccd0a4a125e17b8d1261e311b16979dbc8eb34542f3966d82e"
