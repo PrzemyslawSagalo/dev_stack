@@ -1,0 +1,68 @@
+---
+- name: Check if uv binary is installed
+  ansible.builtin.stat:
+    path: /usr/local/bin/uv
+  register: system_uv_bin
+
+- name: Check if uvx binary is installed
+  ansible.builtin.stat:
+    path: /usr/local/bin/uvx
+  register: system_uvx_bin
+
+- name: Download and install uv and uvx
+  when: not system_uv_bin.stat.exists or not system_uvx_bin.stat.exists
+  block:
+    - name: Create temporary directory for uv extraction
+      ansible.builtin.tempfile:
+        state: directory
+        prefix: uv_install_
+      register: system_uv_tempdir
+
+    - name: Download uv archive
+      ansible.builtin.get_url:
+        url: "{{ system_default_pkg_metadata.uv.url }}"
+        dest: "{{ system_uv_tempdir.path }}/uv.tar.gz"
+        checksum: "{{ system_default_pkg_metadata.uv.checksum }}"
+        mode: "0644"
+      register: system_uv_download
+      until: system_uv_download is success
+      retries: 3
+      delay: 5
+
+    - name: Extract uv archive
+      ansible.builtin.unarchive:
+        src: "{{ system_uv_tempdir.path }}/uv.tar.gz"
+        dest: "{{ system_uv_tempdir.path }}"
+        remote_src: true
+        extra_opts:
+          - --strip-components=1
+
+    - name: Install uv binary to /usr/local/bin
+      ansible.builtin.copy:
+        src: "{{ system_uv_tempdir.path }}/uv"
+        dest: /usr/local/bin/uv
+        remote_src: true
+        mode: "0755"
+
+    - name: Install uvx binary to /usr/local/bin
+      ansible.builtin.copy:
+        src: "{{ system_uv_tempdir.path }}/uvx"
+        dest: /usr/local/bin/uvx
+        remote_src: true
+        mode: "0755"
+  always:
+    - name: Clean up temporary extraction directory
+      ansible.builtin.file:
+        path: "{{ system_uv_tempdir.path }}"
+        state: absent
+      when: system_uv_tempdir.path is defined
+
+- name: Ensure uv binary is executable
+  ansible.builtin.file:
+    path: /usr/local/bin/uv
+    mode: "0755"
+
+- name: Ensure uvx binary is executable
+  ansible.builtin.file:
+    path: /usr/local/bin/uvx
+    mode: "0755"

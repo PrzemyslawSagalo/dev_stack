@@ -69,7 +69,7 @@ ansible-playbook setup.yml
 | **Runtimes & Compilers**<br>[`roles/system`](roles/system) | Multi-version Python (3.11–3.13 via `pyenv`), C++ (GCC/Clang/CMake), Java (Corretto 21), Go, Node.js. | **Zero build failures**: Pre-compiles all C-extension headers (`ssl`, `sqlite3`, `lzma`) so engineers never waste hours diagnosing missing libraries or version conflicts. |
 | **Containers**<br>[`roles/system`](roles/system) | Docker CE engine + Docker Compose v2 with non-root group permissions. | **Immediate local execution**: Run containers without `sudo` privileges, guaranteeing dev/prod parity across workstations and cloud instances. |
 | **Cloud & Cluster CLI**<br>[`roles/system`](roles/system) | AWS CLI v2, GitHub CLI (`gh`), Helm, OpenShift (`oc`) with pinned checksums. | **Instant cloud access**: Verified, cryptographically checked binary toolchains installed out of the box without manual setup steps. |
-| **Terminal & Core CLI**<br>[`roles/system`](roles/system) | `tmux`, `ripgrep`, `lazygit`, `tree-sitter`, `jq`, `htop`, `try`, `agy` (Google Antigravity). | **Maximum engineer velocity**: Blazing-fast code navigation, Git management, and AI agent coordination directly in persistent terminal sessions. |
+| **Terminal & Core CLI**<br>[`roles/system`](roles/system) | `tmux`, `ripgrep`, `lazygit`, `tree-sitter`, `jq`, `htop`, `try`, `uv` / `uvx`, `agy` (Google Antigravity). | **Maximum engineer velocity**: Blazing-fast code navigation, Git management, and AI agent coordination directly in persistent terminal sessions. |
 | **Dotfiles & Shell**<br>[`roles/dotfiles`](roles/dotfiles) | Curated `.bash_aliases` (Git/venv helpers), vi-mode `.tmux.conf`, `~/.ssh/config`, `~/.gitconfig`. | **Zero muscle memory loss**: Identical shortcuts, navigation, and shell behavior across laptop, remote EC2 instances, and CI runners. |
 | **Editor (IDE)**<br>[`roles/nvim`](roles/nvim) | Hardened Neovim v0.12+ with LSP diagnostics, Treesitter, DAP debugging, and Copilot. | **Full headless IDE**: High-performance terminal editing and AI pair programming out of the box with zero manual plugin tinkering. |
 
@@ -82,6 +82,29 @@ ansible-playbook setup.yml
 - **Usage (`tmux` & `nvim` over SSH)**:
   - `tmux`: Releasing a mouse drag copies to your local clipboard via OSC 52 and keeps the selection highlighted until the next click (`Cmd+V` / `Ctrl+Shift+V` to paste locally).
   - `nvim`: `y`/`yy` sends to your local clipboard via OSC 52, while `p` pastes from Neovim's internal cache (write-only OSC 52 avoids SSH/tmux paste hangs); hold `Shift` while dragging to copy directly via `tmux`.
+
+---
+
+## Atlassian MCP Integration (Jira & Confluence)
+
+`dev_stack` configures out-of-the-box Model Context Protocol (MCP) support for Atlassian Jira and Confluence in [`roles/dotfiles/files/copilot/mcp-config.json`](roles/dotfiles/files/copilot/mcp-config.json) (mirrored to `~/.copilot/mcp-config.json` and `~/.gemini/config/mcp_config.json`).
+
+### Execution Engine (`uv` & `uvx`)
+
+The integration uses Astral's [`uv`](https://github.com/astral-sh/uv) and `uvx` toolchain installed at `/usr/local/bin` to execute pinned `mcp-atlassian==0.24.4` ephemerally without manual global package management.
+
+### Required Environment Variables
+
+Set the following environment variables in your environment (e.g., in `~/.bashrc` or exported before starting Copilot CLI / Antigravity) to enable communication with your Jira and Confluence instances:
+
+| Environment Variable | Description | Example |
+| :--- | :--- | :--- |
+| `JIRA_URL` | Base URL of your Jira instance | `https://your-domain.atlassian.net` |
+| `JIRA_USERNAME` | Jira account username or email address | `user@example.com` |
+| `JIRA_API_TOKEN` | Jira Cloud API token | `<api-token>` |
+| `CONFLUENCE_URL` | Base URL of your Confluence instance | `https://your-domain.atlassian.net/wiki` |
+| `CONFLUENCE_USERNAME` | Confluence account username or email address | `user@example.com` |
+| `CONFLUENCE_API_TOKEN` | Confluence Cloud API token | `<api-token>` |
 
 ---
 
