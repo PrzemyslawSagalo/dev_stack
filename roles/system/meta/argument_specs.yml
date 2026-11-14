@@ -36,6 +36,19 @@ argument_specs:
                 type: str
                 required: true
                 description: SHA256 checksum for AWS CLI zip archive.
+          bat:
+            type: dict
+            required: true
+            description: Package metadata for bat syntax-highlighting pager.
+            options:
+              url:
+                type: str
+                required: true
+                description: Download URL for bat binary tarball.
+              checksum:
+                type: str
+                required: true
+                description: SHA256 checksum for bat binary tarball.
           copilot:
             type: dict
             required: true
@@ -75,6 +88,32 @@ argument_specs:
                 type: str
                 required: true
                 description: SHA256 checksum for Docker Compose plugin binary.
+          fd:
+            type: dict
+            required: true
+            description: Package metadata for fd search tool.
+            options:
+              url:
+                type: str
+                required: true
+                description: Download URL for fd binary tarball.
+              checksum:
+                type: str
+                required: true
+                description: SHA256 checksum for fd binary tarball.
+          fzf:
+            type: dict
+            required: true
+            description: Package metadata for fzf fuzzy finder.
+            options:
+              url:
+                type: str
+                required: true
+                description: Download URL for fzf binary tarball.
+              checksum:
+                type: str
+                required: true
+                description: SHA256 checksum for fzf binary tarball.
           gh_cli_repo:
             type: dict
             required: true
@@ -270,3 +309,16 @@ argument_specs:
                 type: str
                 required: true
                 description: SHA256 checksum for yq binary.
+          zoxide:
+            type: dict
+            required: true
+            description: Package metadata for zoxide smarter cd command.
+            options:
+              url:
+                type: str
+                required: true
+                description: Download URL for zoxide binary tarball.
+              checksum:
+                type: str
+                required: true
+                description: SHA256 checksum for zoxide binary tarball.
