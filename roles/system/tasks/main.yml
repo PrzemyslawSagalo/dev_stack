@@ -51,6 +51,11 @@
   ansible.builtin.import_tasks: uv.yml
   tags: uv
 
+- name: Import Starship prompt tasks
+  ansible.builtin.import_tasks: starship.yml
+  tags:
+    - starship
+
 - name: Import GitHub Copilot CLI tasks
   ansible.builtin.import_tasks: copilot.yml
 

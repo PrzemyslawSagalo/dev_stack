@@ -60,18 +60,16 @@ ansible-playbook setup.yml
 
 ---
 
-## What It Does & Why (Business Value)
+## What It Does & Why
 
-`dev_stack` eliminates workstation setup friction by provisioning an identical, container-tested development environment in a single command:
-
-| Capability | What It Provisions (What) | Business & Developer Value (Why) |
+| Area | What | Why |
 | :--- | :--- | :--- |
-| **Runtimes & Compilers**<br>[`roles/system`](roles/system) | Multi-version Python (3.11–3.13 via `pyenv`), C++ (GCC/Clang/CMake), Java (Corretto 21), Go, Node.js. | **Zero build failures**: Pre-compiles all C-extension headers (`ssl`, `sqlite3`, `lzma`) so engineers never waste hours diagnosing missing libraries or version conflicts. |
-| **Containers**<br>[`roles/system`](roles/system) | Docker CE engine + Docker Compose v2 with non-root group permissions. | **Immediate local execution**: Run containers without `sudo` privileges, guaranteeing dev/prod parity across workstations and cloud instances. |
-| **Cloud & Cluster CLI**<br>[`roles/system`](roles/system) | AWS CLI v2, GitHub CLI (`gh`), Helm, OpenShift (`oc`) with pinned checksums. | **Instant cloud access**: Verified, cryptographically checked binary toolchains installed out of the box without manual setup steps. |
-| **Terminal & Core CLI**<br>[`roles/system`](roles/system) | `tmux`, `ripgrep`, `fzf`, `fd`, `zoxide`, `bat`, `lazygit`, `tree-sitter`, `jq`, `yq`, `htop`, `try`, `direnv`, `uv` / `uvx`, `agy` (Google Antigravity). | **Maximum engineer velocity**: Instant fuzzy file/history search, smart directory jumping, syntax-highlighted previews, Git management, and AI agent coordination directly in persistent terminal sessions. |
-| **Dotfiles & Shell**<br>[`roles/dotfiles`](roles/dotfiles) | Curated `.bash_aliases` (Git/venv helpers), vi-mode `.tmux.conf`, `~/.ssh/config`, `~/.gitconfig`, global gitignore (`~/.gitignore_global`). | **Zero muscle memory loss & secret leak prevention**: Identical shortcuts, navigation, and shell behavior across laptop, remote EC2 instances, and CI runners, with workstation-wide protection against committing `.envrc` and `.env` secret files. |
-| **Editor (IDE)**<br>[`roles/nvim`](roles/nvim) | Hardened Neovim v0.12+ with LSP diagnostics, Treesitter, DAP debugging, and Copilot. | **Full headless IDE**: High-performance terminal editing and AI pair programming out of the box with zero manual plugin tinkering. |
+| **Runtimes & Compilers**<br>[`roles/system`](roles/system) | Multi-version Python, C++, Java, Go, and Node.js. | Eliminates dependency conflicts by pre-compiling headers. |
+| **Containers**<br>[`roles/system`](roles/system) | Docker CE and Docker Compose v2. | Enables rootless container execution for dev/prod parity. |
+| **Cloud & Cluster CLI**<br>[`roles/system`](roles/system) | AWS CLI v2, GitHub CLI (`gh`), Helm, and OpenShift (`oc`). | Provides verified, cryptographically checked cloud toolchains. |
+| **Terminal & Core CLI**<br>[`roles/system`](roles/system) | `tmux`, `ripgrep`, `fzf`, `fd`, `zoxide`, `bat`, `lazygit`, `tree-sitter`, `jq`, `yq`, `htop`, `try`, `direnv`, `uv` / `uvx`, `starship`, `agy`. | Accelerates navigation, Git workflows, and terminal productivity. |
+| **Dotfiles & Shell**<br>[`roles/dotfiles`](roles/dotfiles) | `starship.toml`, `.bash_aliases`, `~/.config/bash/init.sh`, `.tmux.conf`, `~/.ssh/config`, `~/.gitconfig`, `~/.gitignore_global`. | Ensures consistent shell behavior and prevents secret leaks. |
+| **Editor (IDE)**<br>[`roles/nvim`](roles/nvim) | Neovim v0.12+ with LSP, Treesitter, DAP, and Copilot. | Delivers a high-performance editing and AI pair programming setup. |
 
 ---
 
