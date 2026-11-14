@@ -69,7 +69,7 @@ ansible-playbook setup.yml
 | **Runtimes & Compilers**<br>[`roles/system`](roles/system) | Multi-version Python (3.11–3.13 via `pyenv`), C++ (GCC/Clang/CMake), Java (Corretto 21), Go, Node.js. | **Zero build failures**: Pre-compiles all C-extension headers (`ssl`, `sqlite3`, `lzma`) so engineers never waste hours diagnosing missing libraries or version conflicts. |
 | **Containers**<br>[`roles/system`](roles/system) | Docker CE engine + Docker Compose v2 with non-root group permissions. | **Immediate local execution**: Run containers without `sudo` privileges, guaranteeing dev/prod parity across workstations and cloud instances. |
 | **Cloud & Cluster CLI**<br>[`roles/system`](roles/system) | AWS CLI v2, GitHub CLI (`gh`), Helm, OpenShift (`oc`) with pinned checksums. | **Instant cloud access**: Verified, cryptographically checked binary toolchains installed out of the box without manual setup steps. |
-| **Terminal & Core CLI**<br>[`roles/system`](roles/system) | `tmux`, `ripgrep`, `lazygit`, `tree-sitter`, `jq`, `yq`, `htop`, `try`, `uv` / `uvx`, `agy` (Google Antigravity). | **Maximum engineer velocity**: Blazing-fast code navigation, Git management, and AI agent coordination directly in persistent terminal sessions. |
+| **Terminal & Core CLI**<br>[`roles/system`](roles/system) | `tmux`, `ripgrep`, `lazygit`, `tree-sitter`, `jq`, `yq`, `htop`, `try`, `direnv`, `uv` / `uvx`, `agy` (Google Antigravity). | **Maximum engineer velocity**: Blazing-fast code navigation, Git management, and AI agent coordination directly in persistent terminal sessions. |
 | **Dotfiles & Shell**<br>[`roles/dotfiles`](roles/dotfiles) | Curated `.bash_aliases` (Git/venv helpers), vi-mode `.tmux.conf`, `~/.ssh/config`, `~/.gitconfig`. | **Zero muscle memory loss**: Identical shortcuts, navigation, and shell behavior across laptop, remote EC2 instances, and CI runners. |
 | **Editor (IDE)**<br>[`roles/nvim`](roles/nvim) | Hardened Neovim v0.12+ with LSP diagnostics, Treesitter, DAP debugging, and Copilot. | **Full headless IDE**: High-performance terminal editing and AI pair programming out of the box with zero manual plugin tinkering. |
 
@@ -82,6 +82,54 @@ ansible-playbook setup.yml
 - **Usage (`tmux` & `nvim` over SSH)**:
   - `tmux`: Releasing a mouse drag copies to your local clipboard via OSC 52 and keeps the selection highlighted until the next click (`Cmd+V` / `Ctrl+Shift+V` to paste locally).
   - `nvim`: `y`/`yy` sends to your local clipboard via OSC 52, while `p` pastes from Neovim's internal cache (write-only OSC 52 avoids SSH/tmux paste hangs); hold `Shift` while dragging to copy directly via `tmux`.
+
+---
+
+## Project Environment Management (`direnv`)
+
+`direnv` automatically loads and unloads environment variables when navigating into and out of project directories, eliminating manual `source .env`, export scripts, or accidental credential leaks.
+
+### Security Model (`direnv allow`)
+
+`direnv` checks authorization before loading any `.envrc` or `.env` file to prevent arbitrary code execution when cloning untrusted repositories:
+
+- **First time entering a project directory**: `direnv` prompts that the `.envrc` is blocked.
+- **Authorize loading**: Run `direnv allow` to grant execution permissions.
+- **Revoke authorization**: Run `direnv deny` / `direnv block` if needed.
+- **File modifications**: Any subsequent edit to `.envrc` requires re-authorization via `direnv allow`.
+
+### Common `.envrc` Patterns
+
+Create a `.envrc` file at your project root:
+
+#### 1. Per-Project AWS & Cloud Context
+```bash
+# Pin AWS profile and region for this repository
+export AWS_PROFILE=prod-analytics
+export AWS_DEFAULT_REGION=eu-west-1
+```
+
+#### 2. Kubernetes Context & Namespace
+```bash
+# Set dedicated kubeconfig or namespace
+export KUBECONFIG="$PWD/.kube/config"
+export KUBE_NAMESPACE=dev-backend
+```
+
+#### 3. Automatic Python Virtual Environment
+```bash
+# Automatically activate local virtual environment
+layout python3
+# Or load existing venv
+source_env_if_exists .venv/bin/activate
+```
+
+#### 4. Model Context Protocol (MCP) & API Tokens
+```bash
+# Load API tokens for MCP servers (e.g., Jira / Confluence)
+export JIRA_INSTANCE_URL="https://yourcompany.atlassian.net"
+export JIRA_API_TOKEN="your-secure-token"
+```
 
 ---
 

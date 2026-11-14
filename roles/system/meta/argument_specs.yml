@@ -49,6 +49,19 @@ argument_specs:
                 type: str
                 required: true
                 description: SHA256 checksum for GitHub Copilot CLI tarball.
+          direnv:
+            type: dict
+            required: true
+            description: Package metadata for direnv environment switcher.
+            options:
+              url:
+                type: str
+                required: true
+                description: Download URL for direnv binary.
+              checksum:
+                type: str
+                required: true
+                description: SHA256 checksum for direnv binary.
           docker_compose:
             type: dict
             required: true

@@ -1,0 +1,31 @@
+---
+- name: Check if direnv binary exists
+  ansible.builtin.stat:
+    path: /usr/local/bin/direnv
+  register: system_direnv_bin
+
+- name: Download direnv binary
+  ansible.builtin.get_url:
+    url: "{{ system_default_pkg_metadata.direnv.url }}"
+    dest: /usr/local/bin/direnv
+    checksum: "{{ system_default_pkg_metadata.direnv.checksum }}"
+    mode: "0755"
+  register: system_direnv_download
+  until: system_direnv_download is success
+  retries: 3
+  delay: 5
+  when: not system_direnv_bin.stat.exists
+
+- name: Ensure direnv binary permissions are correct
+  ansible.builtin.file:
+    path: /usr/local/bin/direnv
+    mode: "0755"
+
+- name: Ensure direnv bash hook is configured in ~/.bashrc
+  ansible.builtin.lineinfile:
+    path: "{{ ansible_env.HOME }}/.bashrc"
+    line: 'eval "$(direnv hook bash)"'
+    state: present
+    create: true
+    mode: "0644"
+  become: false

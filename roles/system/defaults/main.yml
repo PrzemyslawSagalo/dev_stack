@@ -11,6 +11,7 @@ system_arch:
 system_default_pkg_versions:
   aws: "2.40.1"
   copilot: "1.0.105"
+  direnv: "2.38.2"
   docker_compose: "2.36.0"
   go: "1.24.1"
   helm: "3.22.1"
@@ -53,6 +54,14 @@ system_default_pkg_metadata:
       {{ 'sha256:fb9efcf18a43633f24ba44fe7415c9d5fcb41957a9e9e8c0abd35c107eeac057'
       if system_arch.is_arm64
       else 'sha256:aa65846d4c0c6b83e8eb0726fef3de5f38a13b3f17bffeb7674882e79f4ec2d3' }}
+  direnv:
+    url: >-
+      https://github.com/direnv/direnv/releases/download/v{{
+      system_default_pkg_versions.direnv }}/direnv.linux-{{ system_arch.deb }}
+    checksum: >-
+      {{ 'sha256:ec2a32dbe2f19dd085bd9315a1b4ea88b55ec288aa7eabe8723490baf466cb23'
+      if system_arch.is_arm64
+      else 'sha256:148820a187930d36ca6a204504e5cdb30d8396cd1a97e64c3b3f10d793c11247' }}
   docker_compose:
     url: >-
       https://github.com/docker/compose/releases/download/v{{

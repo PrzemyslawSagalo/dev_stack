@@ -219,6 +219,30 @@ setup() {
     [ "$output" = "Setup Development Environment" ]
 }
 
+@test "Direnv is installed, hooked into bashrc, and evaluates allowed .envrc" {
+    run command -v direnv
+    [ "$status" -eq 0 ]
+    run direnv version
+    [ "$status" -eq 0 ]
+    [ -n "$output" ]
+    # shellcheck disable=SC2016
+    run grep -F 'eval "$(direnv hook bash)"' "$HOME/.bashrc"
+    [ "$status" -eq 0 ]
+
+    local test_dir
+    test_dir="$(mktemp -d)"
+    echo 'export SMOKE_TEST_DIRENV_VAR="direnv_smoke_ok"' >"$test_dir/.envrc"
+
+    run bash -c "
+        cd '$test_dir'
+        direnv allow '$test_dir/.envrc'
+        eval \"\$(direnv export bash 2>/dev/null)\"
+        [ \"\$SMOKE_TEST_DIRENV_VAR\" = 'direnv_smoke_ok' ]
+    "
+    rm -rf "$test_dir"
+    [ "$status" -eq 0 ]
+}
+
 @test "Tmux configuration enables mouse mode, OSC 52 clipboard pass-through, and True Color RGB" {
     [ -f "$HOME/.tmux.conf" ]
     run grep -qx "set -g mouse on" "$HOME/.tmux.conf"
