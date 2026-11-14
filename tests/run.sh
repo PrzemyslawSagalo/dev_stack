@@ -77,6 +77,8 @@ docker run --rm -t \
             e2e)
                 echo "==> [Suite: E2E] Installing system environment..."
                 run_as_devuser ./bootstrap.sh
+                echo "==> [Suite: E2E] Running CLI end-to-end tests..."
+                run_as_devuser bats --print-output-on-failure tests/e2e/cli
                 echo "==> [Suite: E2E] Running Neovim end-to-end tests..."
                 run_as_devuser nvim --headless -c "PlenaryBustedDirectory tests/e2e/nvim {init = vim.fn.stdpath(\"config\") .. \"/init.lua\", sequential = true}"
                 ;;

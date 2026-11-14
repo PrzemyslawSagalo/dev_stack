@@ -22,7 +22,8 @@ All testing practices must align with professional software engineering principl
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | `tests/unit` | **Unit Tests** | **Bats-core** (`bats-core`) | `bats --print-output-on-failure tests/unit` | Fast, hermetic, zero system bootstrap | Mock external dependencies; test pure input/output logic |
 | `tests/smoke` | **Smoke Tests** | **Bats-core** (`bats-core`) | `bats --print-output-on-failure tests/smoke` | Post-bootstrap (`./bootstrap.sh` required) | Live environment verification (binaries, packages, symlinks) |
-| `tests/e2e/nvim` | **End-to-End Tests** | **Plenary Busted** (`plenary.nvim.busted`) | `nvim --headless -c "PlenaryBustedDirectory tests/e2e/nvim {init = vim.fn.stdpath(\"config\") .. \"/init.lua\", sequential = true}"` | Post-bootstrap live Neovim runtime | **Zero mocks**: Real plugins loaded and executed via live Neovim APIs |
+| `tests/e2e/cli` | **CLI End-to-End Tests** | **Bats-core** (`bats-core`) | `bats --print-output-on-failure tests/e2e/cli` | Post-bootstrap live CLI/shell environment | Behavioral validation of CLI tools and workflows (zero mocks) |
+| `tests/e2e/nvim` | **Neovim End-to-End Tests** | **Plenary Busted** (`plenary.nvim.busted`) | `nvim --headless -c "PlenaryBustedDirectory tests/e2e/nvim {init = vim.fn.stdpath(\"config\") .. \"/init.lua\", sequential = true}"` | Post-bootstrap live Neovim runtime | **Zero mocks**: Real plugins loaded and executed via live Neovim APIs |
 | **Python** *(when required)* | **Unit / Integration** | **pytest** + **assertpy** | `pytest tests/` | Virtual environment with required dependencies | Use `pytest` fixtures; deep data assertions with `assertpy` |
 
 ### 3.1. Unit Tests (`tests/unit`)
@@ -35,14 +36,19 @@ All testing practices must align with professional software engineering principl
 * **Execution**: Runs after `./bootstrap.sh` completes in clean container environments (Ubuntu, Amazon Linux).
 * **Tooling**: `bats-core` evaluating filesystem state, command availability (`command -v ...`), and user permissions.
 
-### 3.3. Neovim End-to-End Tests (`tests/e2e/nvim`)
+### 3.3. CLI End-to-End Tests (`tests/e2e/cli`)
+* **Purpose**: Verify real multi-step CLI commands, tool workflows, and shell integration behavior.
+* **Execution**: Runs after `./bootstrap.sh` completes in clean container environments (Ubuntu, Amazon Linux).
+* **Tooling**: Standard `bats-core` evaluating multi-step CLI flows (e.g., workspace extraction, direnv execution, YAML parsing with yq, global gitignore evaluation).
+
+### 3.4. Neovim End-to-End Tests (`tests/e2e/nvim`)
 * **Purpose**: Verify Neovim configurations, plugin setups, keymaps, and runtime behaviors.
 * **Framework**: Plenary Busted via native headless Neovim execution.
 * **Zero-Mock Policy**: Test against real plugins installed in Neovim runtime (`vim-bbye`, `copilot.vim`, `nvim-dap`, `nvim-dap-ui`, etc.). Verify real keymaps, split windows, and lifecycle hooks rather than mocking internal plugin tables.
 * **Direct Function Reference Testing**: When testing keymaps that bind directly to plugin or module functions (e.g., DAP, Telescope, LSP), direct function reference equality checking (`assert.are.equal(target_fn, map_info.callback)`) is the recommended standard. This verifies exact function identity in memory without needing to invoke or mock underlying runtime adapters, child processes, or external servers.
 * **Assertions**: Standard Busted assertion syntax: `assert.are.same(expected, actual)`, `assert.are.equal(expected, actual)`, `assert.is_true(...)`, `assert.is_not_nil(...)`.
 
-### 3.4. Python Protocol
+### 3.5. Python Protocol
 * Triggered only when Python tests are explicitly required.
 * Exclusively use `pytest` as runner and `assertpy` for fluent assertions.
 * Deeply verify populated data against real data or snapshots; avoid shallow checks (e.g., merely checking dataframe shapes).
@@ -54,7 +60,7 @@ All testing practices must align with professional software engineering principl
 
 1. **Native Directory Discovery**:
    * Always invoke frameworks against test directories:
-     * Bats: `bats tests/unit` and `bats tests/smoke`
+     * Bats: `bats tests/unit`, `bats tests/smoke`, and `bats tests/e2e/cli`
      * Plenary: `PlenaryBustedDirectory tests/e2e/nvim ...`
      * Pytest: `pytest tests/...`
    * Never introduce intermediate shell scripts or custom file iterators.
@@ -62,6 +68,7 @@ All testing practices must align with professional software engineering principl
 2. **Strict Separation of Concerns**:
    * Unit tests belong exclusively in `tests/unit/`. They must never depend on bootstrap state.
    * Smoke tests belong exclusively in `tests/smoke/`.
+   * CLI behavioral tests belong exclusively in `tests/e2e/cli/`.
    * Neovim behavioral and plugin tests belong in `tests/e2e/nvim/`.
    * Never mix unit tests into E2E suites or E2E tests into unit suites.
 
