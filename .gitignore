@@ -169,6 +169,7 @@ cython_debug/
 report.sarif
 report.md
 *.sarif
+sarif-results/
 
 # Neovim runtime and temporary files
 .managed_manifest.json

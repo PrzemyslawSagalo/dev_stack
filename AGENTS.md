@@ -84,5 +84,5 @@ All testing practices must align with professional software engineering principl
 4. **Git & Pull Request Standards**:
    * **Conventional Commits**: Commit messages must follow the Conventional Commits specification (e.g., `fix: ...`, `feat: ...`, `test: ...`).
    * **Atomic PRs**: Exactly 1 atomic commit per pull request. Use `git commit --amend` to update ongoing PR branches.
-   * **Push Policy**: Use `git push --force-with-lease` when updating feature branches.
+   * **Push Policy**: When updating feature branches, use `--force-with-lease` with `git push`.
    * **Zero Autonomous Merging**: Never merge pull requests autonomously. Always require explicit human authorization to merge.

@@ -39,6 +39,51 @@ jobs:
       - name: Run pre-commit checks
         run: pre-commit run --all-files
 
+  skillspector:
+    name: SkillSpector (${{ matrix.name }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: copilot-skills-mcp
+            path: roles/dotfiles/files/copilot
+          - name: agents-instructions
+            path: AGENTS.md
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Install SkillSpector
+        run: |
+          pip install --no-cache-dir "git+https://github.com/NVIDIA/SkillSpector.git@c7958a3268d9498644b22edb75d0f051bbc8cbfc" # v2.12.0
+
+      - name: Scan target with SkillSpector
+        env:
+          SCAN_PATH: ${{ matrix.path }}
+          REPORT_NAME: ${{ matrix.name }}
+        run: |
+          mkdir -p sarif-results
+          skillspector scan "$SCAN_PATH" \
+            --no-llm --fail-on-findings \
+            --format sarif --output "sarif-results/${REPORT_NAME}.sarif"
+
+      - name: Upload SARIF to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v4
+        if: always() && hashFiles(format('sarif-results/{0}.sarif', matrix.name)) != ''
+        with:
+          sarif_file: sarif-results/${{ matrix.name }}.sarif
+          category: skillspector-${{ matrix.name }}
+
   test_unit:
     name: tests/unit (${{ matrix.distro }})
     needs: lint

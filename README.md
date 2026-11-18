@@ -6,6 +6,7 @@
 
   [![CI](https://img.shields.io/github/actions/workflow/status/PrzemyslawSagalo/dev_stack/ci.yml?branch=main&label=CI&logo=githubactions&logoColor=white&style=flat-square&labelColor=161b22)](https://github.com/PrzemyslawSagalo/dev_stack/actions/workflows/ci.yml)
   [![CodeQL](https://img.shields.io/github/actions/workflow/status/PrzemyslawSagalo/dev_stack/github-code-scanning%2Fcodeql?branch=main&label=CodeQL&logo=github&logoColor=white&style=flat-square&labelColor=161b22)](https://github.com/PrzemyslawSagalo/dev_stack/security/code-scanning)
+  [![SkillSpector](https://img.shields.io/badge/SkillSpector-scanned-76B900?logo=nvidia&logoColor=white&style=flat-square&labelColor=161b22)](https://github.com/NVIDIA/SkillSpector)
   [![Pre-commit](https://img.shields.io/badge/pre--commit-passing-brightgreen?logo=pre-commit&logoColor=white&style=flat-square&labelColor=161b22)](https://pre-commit.com/)
   [![Conventional Commits](https://img.shields.io/badge/commits-conventional-FE5196?logo=conventionalcommits&logoColor=white&style=flat-square&labelColor=161b22)](https://conventionalcommits.org)
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?logo=opensourceinitiative&logoColor=white&style=flat-square&labelColor=161b22)](LICENSE)
@@ -68,7 +69,7 @@ ansible-playbook setup.yml
 | **Containers**<br>[`roles/system`](roles/system) | Docker CE and Docker Compose v2. | Enables rootless container execution for dev/prod parity. |
 | **Cloud & Cluster CLI**<br>[`roles/system`](roles/system) | AWS CLI v2, GitHub CLI (`gh`), Helm, and OpenShift (`oc`). | Provides verified, cryptographically checked cloud toolchains. |
 | **Terminal & Core CLI**<br>[`roles/system`](roles/system) | `tmux`, `ripgrep`, `fzf`, `fd`, `zoxide`, `bat`, `lazygit`, `tree-sitter`, `jq`, `yq`, `htop`, `try`, `direnv`, `uv` / `uvx`, `starship`, `agy`. | Accelerates navigation, Git workflows, and terminal productivity. |
-| **Dotfiles & Shell**<br>[`roles/dotfiles`](roles/dotfiles) | `starship.toml`, `.bash_aliases`, `~/.config/bash/init.sh`, `.tmux.conf`, `~/.ssh/config`, `~/.gitconfig`, `~/.gitignore_global`. | Ensures consistent shell behavior and prevents secret leaks. |
+| **Dotfiles & Shell**<br>[`roles/dotfiles`](roles/dotfiles) | `starship.toml`, `.bash_aliases`, `~/.config/bash/init.sh`, `.tmux.conf`, `~/.ssh/config`, `~/.gitconfig`, `~/.gitignore_global`, Copilot skills & MCP config. | Ensures consistent shell behavior, prevents secret leaks, and enforces SkillSpector CI scans. |
 | **Editor (IDE)**<br>[`roles/nvim`](roles/nvim) | Neovim v0.12+ with LSP, Treesitter, DAP, and Copilot. | Delivers a high-performance editing and AI pair programming setup. |
 
 ---
