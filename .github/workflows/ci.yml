@@ -40,13 +40,20 @@ jobs:
         run: pre-commit run --all-files
 
   skillspector:
-    name: SkillSpector Security Scan
+    name: SkillSpector (${{ matrix.name }})
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: copilot-skills-mcp
+            path: roles/dotfiles/files/copilot
+          - name: agents-instructions
+            path: AGENTS.md
     permissions:
       contents: read
       security-events: write
-      models: read
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -60,39 +67,22 @@ jobs:
         run: |
           pip install --no-cache-dir "git+https://github.com/NVIDIA/SkillSpector.git@c7958a3268d9498644b22edb75d0f051bbc8cbfc" # v2.12.0
 
-      - name: Scan AI skills & instructions
+      - name: Scan target with SkillSpector
         env:
-          IS_FORK_PR: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork }}
-          SKILLSPECTOR_PROVIDER: openai_compatible
-          SKILLSPECTOR_COMPAT_BASE_URL: https://models.inference.ai.azure.com
-          SKILLSPECTOR_COMPAT_API_KEY: ${{ secrets.GITHUB_TOKEN }}
-          SKILLSPECTOR_MODEL: gpt-4o
+          SCAN_PATH: ${{ matrix.path }}
+          REPORT_NAME: ${{ matrix.name }}
         run: |
-          llm_flag=""
-          if [ "${IS_FORK_PR}" = "true" ] || [ -z "${SKILLSPECTOR_COMPAT_API_KEY:-}" ]; then
-            llm_flag="--no-llm"
-          fi
           mkdir -p sarif-results
-          # shellcheck disable=SC2086
-          skillspector scan roles/dotfiles/files/copilot ${llm_flag} --fail-on-findings --format sarif --output sarif-results/copilot.sarif
-          # shellcheck disable=SC2086
-          skillspector scan AGENTS.md ${llm_flag} --fail-on-findings --format sarif --output sarif-results/agents.sarif
+          skillspector scan "$SCAN_PATH" \
+            --no-llm --fail-on-findings \
+            --format sarif --output "sarif-results/${REPORT_NAME}.sarif"
 
-      - name: Upload Copilot SARIF
+      - name: Upload SARIF to GitHub Code Scanning
         uses: github/codeql-action/upload-sarif@v4
-        if: always() && hashFiles('sarif-results/copilot.sarif') != ''
-        continue-on-error: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == true }}
+        if: always() && hashFiles(format('sarif-results/{0}.sarif', matrix.name)) != ''
         with:
-          sarif_file: sarif-results/copilot.sarif
-          category: skillspector-copilot
-
-      - name: Upload AGENTS.md SARIF
-        uses: github/codeql-action/upload-sarif@v4
-        if: always() && hashFiles('sarif-results/agents.sarif') != ''
-        continue-on-error: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == true }}
-        with:
-          sarif_file: sarif-results/agents.sarif
-          category: skillspector-agents
+          sarif_file: sarif-results/${{ matrix.name }}.sarif
+          category: skillspector-${{ matrix.name }}
 
   test_unit:
     name: tests/unit (${{ matrix.distro }})

@@ -11,3 +11,7 @@
 !.env.*.example
 !.env.template
 !.env.*.template
+
+# SkillSpector / SARIF scan outputs
+sarif-results/
+*.sarif
