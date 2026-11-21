@@ -1,14 +1,21 @@
-# General Project & Infrastructure Standards
+# Infrastructure Standards
 
-## Infrastructure Requirements (12-Factor Compliant)
+## Scope
 
-1. **Infrastructure Isolation:** 
-   All infrastructure scripts (Terraform, CloudFormation, Kubernetes manifests, etc.) MUST be contained within a dedicated `infrastructure/` directory.
+- Applies when organizing infrastructure-as-code, environment configuration, and secrets (unless a project mandates a framework-native layout such as Ansible `roles/` and `group_vars/`).
 
-2. **Environment Configuration:** 
-   Environment-specific configurations (e.g., `dev.yaml`, `prod.yaml`) MUST be stored alongside the infrastructure scripts within the `infrastructure/` directory.
+## Rules
 
-3. **Strict Secret Management:**
-   * Storing unencrypted credentials, sensitive tokens, or private auth keys inside configuration files (such as `prod.yaml`) or version-controlled files is prohibited.
-   * All sensitive secrets MUST be injected via the environment and locally stored in `.env` files.
-   * All `.env` files MUST be strictly added to the `.gitignore` to prevent committing them to version control.
+### Infrastructure Isolation
+
+- **Dedicated Directory:** Store infrastructure-as-code definitions (Terraform, CloudFormation, Kubernetes manifests) inside a dedicated `infrastructure/` directory.
+
+### Environment Configuration
+
+- **Environment Files:** Keep non-secret, environment-specific configurations (e.g., `dev.yaml`, `prod.yaml`) alongside infrastructure definitions in `infrastructure/`.
+
+### Strict Secret Management
+
+- **No Committed Secrets:** Never store unencrypted credentials, sensitive tokens, or private keys in `dev.yaml`, `prod.yaml`, or any version-controlled file.
+- **Environment Injection:** Inject all secrets via environment variables, stored locally in `.env` files during development.
+- **Gitignore Coverage:** Ensure `.env` and `.env.*` secret overrides (excluding `.env.example` and `.env.template`) are ignored in `.gitignore`.

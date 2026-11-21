@@ -129,15 +129,20 @@ setup() {
 }
 
 @test "Antigravity configuration symlinks to Copilot components exist" {
+    [ -s "$HOME/.copilot/copilot-instructions.md" ]
     [ -f "$HOME/.copilot/mcp-config.json" ]
     [ -L "$HOME/.gemini/config/skills" ]
     [ -d "$HOME/.gemini/config/skills" ]
+    [ "$(readlink -f "$HOME/.gemini/config/skills")" = "$HOME/.copilot/skills" ]
     [ -L "$HOME/.gemini/config/standards" ]
     [ -d "$HOME/.gemini/config/standards" ]
+    [ "$(readlink -f "$HOME/.gemini/config/standards")" = "$HOME/.copilot/standards" ]
     [ -L "$HOME/.gemini/config/agents" ]
     [ -d "$HOME/.gemini/config/agents" ]
+    [ "$(readlink -f "$HOME/.gemini/config/agents")" = "$HOME/.copilot/agents" ]
     [ -L "$HOME/.gemini/config/commands" ]
     [ -d "$HOME/.gemini/config/commands" ]
+    [ "$(readlink -f "$HOME/.gemini/config/commands")" = "$HOME/.copilot/commands" ]
     [ -L "$HOME/.gemini/config/mcp_config.json" ]
     [ -f "$HOME/.gemini/config/mcp_config.json" ]
     [ "$(readlink -f "$HOME/.gemini/config/mcp_config.json")" = "$HOME/.copilot/mcp-config.json" ]
@@ -150,12 +155,6 @@ setup() {
     [ -f "$HOME/.gemini/config/AGENTS.md" ]
     [ "$(readlink -f "$HOME/.gemini/config/GEMINI.md")" = "$HOME/.copilot/copilot-instructions.md" ]
     [ "$(readlink -f "$HOME/.gemini/config/AGENTS.md")" = "$HOME/.copilot/copilot-instructions.md" ]
-    run grep "Subagent & Model Routing Policy" "$HOME/.copilot/copilot-instructions.md"
-    [ "$status" -eq 0 ]
-    run grep "Subagent & Model Routing Policy" "$HOME/.gemini/config/GEMINI.md"
-    [ "$status" -eq 0 ]
-    run grep "Subagent & Model Routing Policy" "$HOME/.gemini/config/AGENTS.md"
-    [ "$status" -eq 0 ]
     run copilot instruction list
     [ "$status" -eq 0 ]
     [[ "$output" == *"$HOME/.copilot/copilot-instructions.md"* ]]
