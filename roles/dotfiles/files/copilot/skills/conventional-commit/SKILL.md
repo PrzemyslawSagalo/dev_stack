@@ -1,76 +1,67 @@
 ---
-description: Prompt and workflow for generating conventional commit messages using a structured XML format. Guides users to create standardized, descriptive commit messages in line with the Conventional Commits specification, including instructions, examples, and validation.
-metadata:
-    github-path: skills/conventional-commit
-    github-ref: refs/heads/main
-    github-repo: https://github.com/github/awesome-copilot
-    github-tree-sha: 2dd6528ab4c12198e4805ea62739f7c51d0dd51d
 name: conventional-commit
+description: Drafts ready-to-use Conventional Commit messages from staged or unstaged git diffs without staging files or running git commit.
+argument-hint: "[<scope-or-issue-ref>]"
 ---
-### Instructions
 
-```xml
-	<description>This file contains a prompt template for generating conventional commit messages. It provides instructions, examples, and formatting guidelines to help users write standardized, descriptive commit messages in accordance with the Conventional Commits specification.</description>
-```
+# Conventional Commit
 
-### Workflow
+## Trigger
 
-**Follow these steps:**
+- Runs when drafting a Conventional Commit message from staged or unstaged repository changes.
 
-1. Run `git status` to review changed files.
-2. Run `git diff` or `git diff --cached` to inspect changes.
-3. Stage your changes with `git add <file>`.
-4. Construct your commit message using the following XML structure.
-5. After generating your commit message, present the generated command for the user to run or confirm before executing:
+## Inputs
 
-```bash
-git commit -m "type(scope): description"
-```
+- `<scope-or-issue-ref>` (optional): Scope noun or issue reference (e.g., `dotfiles`, `#143`) to incorporate when appropriate.
 
-6. Just execute this prompt and Copilot will handle the commit for you in the terminal.
+## Workflow
 
-### Commit Message Structure
+- **Inspect Diff:** Read staged changes with `git diff --cached`; if nothing is staged, fall back to `git diff`.
+- **Draft Message:** Format the message per Conventional Commits v1.0.0:
+  ```text
+  <type>[optional (<scope>)][optional !]: <description>
 
-```xml
-<commit-message>
-	<type>feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert</type>
-	<scope>()</scope>
-	<description>A short, imperative summary of the change</description>
-	<body>(optional: more detailed explanation)</body>
-	<footer>(optional: e.g. BREAKING CHANGE: details, or issue references)</footer>
-</commit-message>
-```
+  [optional body]
+
+  [optional footer(s)]
+  ```
+
+### Allowed Types
+
+- `feat`: A new feature
+- `fix`: A bug fix
+- `docs`: Documentation-only changes
+- `style`: Formatting or whitespace changes with no behavior change
+- `refactor`: Code change that neither fixes a bug nor adds a feature
+- `perf`: Performance improvement
+- `test`: Adding or updating tests
+- `build`: Build system or external dependency changes
+- `ci`: CI configuration and workflow changes
+- `chore`: Routine maintenance tasks
+- `revert`: Reverts a previous commit
+
+### Guidelines
+
+- **Scope:** Optional lowercase noun naming the affected module or area (e.g., `parser`, `ui`, `dotfiles`).
+- **Description:** Required concise imperative summary in lowercase without a trailing period (e.g., `add array parsing`).
+- **Breaking Changes:** Append `!` after type/scope and/or include a `BREAKING CHANGE: <details>` footer.
+- **Body & Footers:** Separate subject, body, and footers with a blank line; place breaking changes or issue references (e.g., `Closes #123`) in footers.
 
 ### Examples
 
-```xml
-<examples>
-	<example>feat(parser): add ability to parse arrays</example>
-	<example>fix(ui): correct button alignment</example>
-	<example>docs: update README with usage instructions</example>
-	<example>refactor: improve performance of data processing</example>
-	<example>chore: update dependencies</example>
-	<example>feat!: send email on registration (BREAKING CHANGE: email service required)</example>
-</examples>
+```text
+feat(parser): add ability to parse arrays
 ```
 
-### Validation
+```text
+feat(auth)!: require API token for CLI requests
 
-```xml
-<validation>
-	<type>Must be one of the allowed types. See <reference>https://www.conventionalcommits.org/en/v1.0.0/#specification</reference></type>
-	<scope>Optional, but recommended for clarity.</scope>
-	<description>Required. Use the imperative mood (e.g., "add", not "added").</description>
-	<body>Optional. Use for additional context.</body>
-	<footer>Use for breaking changes or issue references.</footer>
-</validation>
+BREAKING CHANGE: unauthenticated requests are no longer accepted.
+
+Closes #42
 ```
 
-### Final Step
+## Constraints
 
-```xml
-<final-step>
-	<cmd>git commit -m "type(scope): description"</cmd>
-	<note>Replace with your constructed message. Include body and footer if needed.</note>
-</final-step>
-```
+- **Read-Only Git Inspection:** Never run `git add` or `git commit` (including `--amend`); return the drafted text for the user or caller to apply.
+- **Message-Only Reply:** Return only the ready-to-use Conventional Commit message text with no surrounding commentary or shell commands.
