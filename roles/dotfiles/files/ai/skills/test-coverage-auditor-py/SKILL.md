@@ -77,7 +77,7 @@ Python Coverage Exception Report
 
 Detailed Action Plan
 ====================
-*(List remediation steps ONLY for modules marked `[TODO]`)*
+*(List remediation steps ONLY for modules marked `[TODO]`; `<test-cases-needed>` must reference standard `pytest` (`tmp_path`, `monkeypatch`, `capsys`) and `assertpy` patterns and must not recommend custom assertion or fixture helpers)*
 
 - **src/pkg-name/file.py**: <test-cases-needed>
 ```

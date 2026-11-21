@@ -51,39 +51,59 @@
     dest: "{{ ansible_env.HOME }}/.tmux.conf"
     mode: "0644"
 
-- name: Deploy .copilot directory
+- name: Ensure AI CLI directories exist
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - .copilot
+    - .gemini/config
+    - .config/opencode
+
+- name: Deploy ~/.config/ai directory
   ansible.builtin.copy:
-    src: copilot/
-    dest: "{{ ansible_env.HOME }}/.copilot/"
+    src: ai/
+    dest: "{{ ansible_env.HOME }}/.config/ai/"
     mode: "0644"
     directory_mode: "0755"
 
-- name: Enforce secure permissions on ~/.copilot/mcp-config.json
+- name: Enforce secure permissions on ~/.config/ai/mcp-config.json
   ansible.builtin.file:
-    path: "{{ ansible_env.HOME }}/.copilot/mcp-config.json"
+    path: "{{ ansible_env.HOME }}/.config/ai/mcp-config.json"
     mode: "0600"
     state: file
 
-- name: Ensure ~/.gemini/config directory exists
+- name: Symlink shared AI configuration to Copilot, Antigravity, and OpenCode
   ansible.builtin.file:
-    path: "{{ ansible_env.HOME }}/.gemini/config"
-    state: directory
-    mode: "0755"
-
-- name: Symlink Copilot components to Antigravity config
-  ansible.builtin.file:
-    src: "{{ ansible_env.HOME }}/.copilot/{{ item.src }}"
-    dest: "{{ ansible_env.HOME }}/.gemini/config/{{ item.dest }}"
+    src: "{{ ansible_env.HOME }}/.config/ai/{{ item.src }}"
+    dest: "{{ ansible_env.HOME }}/{{ item.dest }}"
     state: link
     force: true
   loop:
-    - { src: skills, dest: skills }
-    - { src: standards, dest: standards }
-    - { src: agents, dest: agents }
-    - { src: commands, dest: commands }
-    - { src: mcp-config.json, dest: mcp_config.json }
-    - { src: copilot-instructions.md, dest: GEMINI.md }
-    - { src: copilot-instructions.md, dest: AGENTS.md }
+    # GitHub Copilot CLI
+    - { src: skills, dest: .copilot/skills }
+    - { src: standards, dest: .copilot/standards }
+    - { src: agents, dest: .copilot/agents }
+    - { src: commands, dest: .copilot/commands }
+    - { src: mcp-config.json, dest: .copilot/mcp-config.json }
+    - { src: AGENTS.md, dest: .copilot/copilot-instructions.md }
+    # Google Antigravity
+    - { src: skills, dest: .gemini/config/skills }
+    - { src: standards, dest: .gemini/config/standards }
+    - { src: agents, dest: .gemini/config/agents }
+    - { src: commands, dest: .gemini/config/commands }
+    - { src: mcp-config.json, dest: .gemini/config/mcp_config.json }
+    - { src: AGENTS.md, dest: .gemini/config/GEMINI.md }
+    - { src: AGENTS.md, dest: .gemini/config/AGENTS.md }
+    # OpenCode
+    - { src: skills, dest: .config/opencode/skills }
+    - { src: standards, dest: .config/opencode/standards }
+    - { src: agents, dest: .config/opencode/agents }
+    - { src: commands, dest: .config/opencode/commands }
+    - { src: AGENTS.md, dest: .config/opencode/AGENTS.md }
+  loop_control:
+    label: "{{ item.dest }} -> ~/.config/ai/{{ item.src }}"
 
 - name: Configure Maister plugin for Copilot and Antigravity
   ansible.builtin.import_tasks: maister.yml

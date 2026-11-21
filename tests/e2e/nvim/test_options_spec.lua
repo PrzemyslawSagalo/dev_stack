@@ -14,17 +14,6 @@ describe("neovim core options", function()
 		return path
 	end
 
-	local function remove_if_exists(path)
-		if vim.uv.fs_stat(path) then
-			local ok, err = os.remove(path)
-			if not ok then
-				vim.api.nvim_err_writeln(
-					"Warning: failed to remove test file " .. path .. ": " .. (err or "unknown error")
-				)
-			end
-		end
-	end
-
 	after_each(function()
 		for _, buf in ipairs(tracked_bufs) do
 			if vim.api.nvim_buf_is_valid(buf) then
@@ -34,12 +23,8 @@ describe("neovim core options", function()
 		tracked_bufs = {}
 
 		for _, file_path in ipairs(tracked_files) do
-			remove_if_exists(file_path)
-			local undo_pattern = vim.fn.stdpath("state") .. "/undo/*" .. vim.fn.fnamemodify(file_path, ":t") .. "*"
-			local undofiles = vim.fn.glob(undo_pattern, false, true)
-			for _, undo_path in ipairs(undofiles) do
-				remove_if_exists(undo_path)
-			end
+			vim.fs.rm(file_path, { recursive = true, force = true })
+			vim.fs.rm(vim.fn.undofile(file_path), { force = true })
 		end
 		tracked_files = {}
 	end)
@@ -329,12 +314,7 @@ describe("neovim core options", function()
 			vim.api.nvim_buf_delete(buf, { force = true })
 
 			-- Verify no undo file was created on disk
-			local undofiles = vim.fn.glob(
-				vim.fn.stdpath("state") .. "/undo/*" .. vim.fn.fnamemodify(file_path, ":t") .. "*",
-				false,
-				true
-			)
-			assert.are.same(0, #undofiles)
+			assert.is_nil(vim.uv.fs_stat(vim.fn.undofile(file_path)))
 		end
 
 		it("disables undofile on BufWritePre for /tmp/* files", function()
@@ -413,7 +393,7 @@ describe("neovim core options", function()
 			assert.are.same("gitcommit", vim.bo[buf].filetype)
 			assert.is_false(vim.bo[buf].undofile)
 			vim.api.nvim_buf_delete(buf, { force = true })
-			pcall(vim.fn.delete, test_dir, "rf")
+			vim.fs.rm(test_dir, { recursive = true, force = true })
 		end)
 	end)
 
@@ -496,7 +476,7 @@ describe("neovim core options", function()
 
 			after_each(function()
 				if test_dir then
-					pcall(vim.fn.delete, test_dir, "rf")
+					vim.fs.rm(test_dir, { recursive = true, force = true })
 				end
 			end)
 
@@ -560,14 +540,12 @@ describe("neovim core options", function()
 				local diags = vim.diagnostic.get(buf, { namespace = ns })
 				assert.is_true(#diags > 0)
 
-				local found_actionlint = false
-				for _, d in ipairs(diags) do
-					if d.source and string.find(d.source, "actionlint") then
-						found_actionlint = true
-						break
-					end
-				end
-				assert.is_true(found_actionlint, "Expected diagnostic produced by actionlint")
+				assert.is_true(
+					vim.iter(diags):any(function(d)
+						return d.source and string.find(d.source, "actionlint", 1, true) ~= nil
+					end),
+					"Expected diagnostic produced by actionlint"
+				)
 			end)
 
 			it("produces zero actionlint diagnostics for non-workflow yaml files", function()
@@ -606,7 +584,7 @@ describe("neovim core options", function()
 
 		after_each(function()
 			if test_dir then
-				pcall(vim.fn.delete, test_dir, "rf")
+				vim.fs.rm(test_dir, { recursive = true, force = true })
 			end
 		end)
 

@@ -54,6 +54,13 @@ docker run --rm -t \
         /tmp/bats-core/install.sh /usr/local
         rm -rf /tmp/bats-core
 
+        echo "==> [Setup: Bats] Installing bats libraries..."
+        mkdir -p /usr/lib/bats
+        for lib in bats-support bats-assert bats-file; do
+            git clone --depth 1 "https://github.com/bats-core/${lib}.git" "/usr/lib/bats/${lib}"
+            rm -rf "/usr/lib/bats/${lib}/.git"
+        done
+
         echo "==> [Setup: Workspace] Preparing workspace for devuser..."
         rm -rf /home/devuser/dev_stack
         cp -a /dev_stack /home/devuser/dev_stack

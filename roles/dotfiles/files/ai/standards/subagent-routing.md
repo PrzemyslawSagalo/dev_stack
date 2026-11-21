@@ -21,5 +21,7 @@
 
 ### Subagent Quality Gate & Rigorous Review
 
-- **Review Criteria:** Audit every subagent diff, test, script, and config against Clean Code, separation of concerns, idempotency, and project standards.
-- **Rejection Criteria:** Reject and require rework whenever a subagent introduces architectural flaws, test-runner inception (nesting suites inside runners), brittle regexes, duplicate logic, orphaned files, or substandard hacks.
+- **Delegation Brief Requirement:** Every subagent delegation brief must specify the required ecosystem libraries/built-ins for the target stack (per `standards/code-quality.md` and project `AGENTS.md`) and explicitly forbid custom assertion, temp-file, or shell wrappers.
+- **Pre-Review Function Scan:** Before accepting any diff, scan added `function`/`def`/Lua `local function` definitions and shell conditionals (`[ "$status" ... ]`, `[[ "$output" ... ]]`, `mktemp`, `readlink`, `stat`) to confirm no custom helper reimplements a framework or ecosystem library built-in.
+- **Review Criteria:** Audit every subagent diff, test, script, and config against Clean Code, separation of concerns, idempotency, off-the-shelf library usage, and project standards.
+- **Rejection Criteria:** Reject and require rework whenever a subagent introduces custom assertion/temp/cleanup helpers, raw shell status/output/symlink checks where `bats-assert`/`bats-file` apply, architectural flaws, test-runner inception (nesting suites inside runners), brittle regexes, duplicate logic, orphaned files, or substandard hacks.

@@ -47,8 +47,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: copilot-skills-mcp
-            path: roles/dotfiles/files/copilot
+          - name: ai-skills-mcp
+            path: roles/dotfiles/files/ai
           - name: agents-instructions
             path: AGENTS.md
     permissions:

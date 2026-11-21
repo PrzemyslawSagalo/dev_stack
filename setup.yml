@@ -6,6 +6,9 @@
     ansible_python_interpreter: /usr/bin/python3
 
   roles:
+    - role: cleanup
+      become: false
+      tags: cleanup
     - role: system
       become: true
     - role: dotfiles

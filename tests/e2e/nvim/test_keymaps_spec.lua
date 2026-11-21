@@ -2,9 +2,7 @@
 
 describe("safe buffer close keymap (:Bdelete via vim-bbye)", function()
 	after_each(function()
-		while #vim.api.nvim_tabpage_list_wins(0) > 1 do
-			vim.cmd("silent! close!")
-		end
+		vim.cmd("silent! only!")
 	end)
 
 	it("maps <leader>q in normal mode to :Bdelete<CR>", function()
@@ -43,9 +41,7 @@ describe("safe buffer close keymap (:Bdelete via vim-bbye)", function()
 		assert.are.same(0, vim.fn.buflisted(buf1))
 
 		-- Reset back to single window
-		while #vim.api.nvim_tabpage_list_wins(0) > 1 do
-			vim.cmd("silent! close!")
-		end
+		vim.cmd("silent! only!")
 		pcall(vim.api.nvim_buf_delete, buf1, { force = true })
 		pcall(vim.api.nvim_buf_delete, buf2, { force = true })
 	end)
@@ -80,7 +76,7 @@ describe("copilot keymaps and collision protection", function()
 		local map_accept = vim.fn.maparg("<M-\\>", "i", false, true)
 		assert.is_not_nil(map_accept)
 		assert.are.same(1, map_accept.expr)
-		assert.truthy(string.find(map_accept.rhs, "copilot#Accept", 1, true))
+		assert.matches("copilot#Accept", map_accept.rhs, 1, true)
 
 		-- <M-]>: rhs is <Plug>(copilot-next)
 		local map_next = vim.fn.maparg("<M-]>", "i", false, true)
@@ -104,7 +100,7 @@ describe("copilot keymaps and collision protection", function()
 			local map_info = vim.fn.maparg(key, "i", false, true)
 			local rhs = map_info and map_info.rhs or ""
 			local desc = map_info and map_info.desc or ""
-			assert.falsy(string.find(rhs, "copilot", 1, true), "Key " .. key .. " is mapped to Copilot rhs: " .. rhs)
+			assert.has_no.match("copilot", rhs, 1, true, "Key " .. key .. " is mapped to Copilot rhs: " .. rhs)
 			assert.falsy(string.find(desc, "Copilot", 1, true), "Key " .. key .. " has Copilot desc: " .. desc)
 		end
 	end)
@@ -113,9 +109,7 @@ end)
 describe("dap runtime keymaps & lifecycle (zero-mock real plugins)", function()
 	after_each(function()
 		require("dapui").close()
-		while #vim.api.nvim_tabpage_list_wins(0) > 1 do
-			vim.cmd("silent! close!")
-		end
+		vim.cmd("silent! only!")
 	end)
 
 	it("registers all DAP normal mode keymaps in Neovim", function()

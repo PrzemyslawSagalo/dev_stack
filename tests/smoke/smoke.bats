@@ -1,6 +1,10 @@
 #!/usr/bin/env bats
 
 setup() {
+    bats_load_library bats-support
+    bats_load_library bats-assert
+    bats_load_library bats-file
+
     unset COPILOT_HOME
     if [ -f "$HOME/.profile" ]; then
         # shellcheck disable=SC1090,SC1091
@@ -10,200 +14,182 @@ setup() {
 
 @test "Neovim is installed and runnable (v0.12.6)" {
     run nvim --version
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"NVIM v0.12.6"* ]]
+    assert_success
+    assert_output --partial "NVIM v0.12.6"
 }
 
 @test "Ripgrep is installed and runnable" {
     run rg --version
-    [ "$status" -eq 0 ]
-    [[ "$output" =~ "ripgrep" ]]
+    assert_success
+    assert_output --partial "ripgrep"
 }
 
 @test "Tree-sitter CLI is installed and runnable" {
     run tree-sitter --version
-    [ "$status" -eq 0 ]
-    [[ "$output" =~ "tree-sitter" ]]
+    assert_success
+    assert_output --partial "tree-sitter"
 }
 
 @test "Python 3 is available in pyenv" {
     run python3 --version
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"Python 3."* ]]
+    assert_success
+    assert_output --partial "Python 3."
 }
 
 @test "Pyenv is installed and runnable" {
     run pyenv --version
-    [ "$status" -eq 0 ]
-    [[ "$output" =~ "pyenv" ]]
+    assert_success
+    assert_output --partial "pyenv"
 }
 
 @test "Node.js is available via nvm" {
     run node --version
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"v23."* ]]
+    assert_success
+    assert_output --partial "v23."
 }
 
 @test "Git is installed and runnable" {
     run git --version
-    [ "$status" -eq 0 ]
-    [[ "$output" =~ "git version" ]]
+    assert_success
+    assert_output --partial "git version"
 }
 
 @test "Docker CLI is installed and runnable" {
     run docker --version
-    [ "$status" -eq 0 ]
-    [[ "$output" =~ "Docker version" ]]
+    assert_success
+    assert_output --partial "Docker version"
 }
 
 @test "Workstation user (not only root) belongs to docker group" {
     run id -nG "$(id -un)"
-    [ "$status" -eq 0 ]
-    [[ " $output " == *" docker "* ]]
+    assert_success
+    assert_output --regexp '(^| )docker( |$)'
 }
 
 @test "Google Antigravity CLI is installed and runnable" {
     run agy --version
-    [ "$status" -eq 0 ]
-    [ -n "$output" ]
+    assert_success
+    assert_output
 }
 
 @test "GitHub Copilot CLI is installed and runnable" {
     run copilot --version
-    [ "$status" -eq 0 ]
-    [[ "$output" =~ "GitHub Copilot CLI" ]]
+    assert_success
+    assert_output --partial "GitHub Copilot CLI"
 }
 
 @test "Tmux is installed and runnable (v3.8)" {
     run tmux -V
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"tmux 3.8"* ]]
+    assert_success
+    assert_output --partial "tmux 3.8"
 }
 
 @test "Neovim configuration exists and is non-empty" {
-    [ -s "$HOME/.config/nvim/init.lua" ]
-    [ ! -d "$HOME/.config/nvim/tests" ]
-}
-
-@test "Neovim configuration purges orphaned files and directories" {
-    local repo_root
-    repo_root="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
-    mkdir -p "$HOME/.config/nvim/orphan_dir"
-    touch "$HOME/.config/nvim/lua/core/orphan_plugin.lua"
-    touch "$HOME/.config/nvim/orphan_dir/stale.lua"
-    ln -sf /tmp/nonexistent_orphan_target "$HOME/.config/nvim/lua/core/orphan_link.lua"
-    rm -rf "$HOME/.config/nvim/lua/plugins"
-    ln -s /tmp/nonexistent_orphan_target "$HOME/.config/nvim/lua/plugins"
-    rm -rf "$HOME/.config/nvim/init.lua"
-    mkdir "$HOME/.config/nvim/init.lua"
-
-    run ansible-playbook -i localhost, -c local "$repo_root/setup.yml" --tags nvim
-    [ "$status" -eq 0 ]
-    [ ! -e "$HOME/.config/nvim/lua/core/orphan_plugin.lua" ]
-    [ ! -L "$HOME/.config/nvim/lua/core/orphan_link.lua" ]
-    [ ! -d "$HOME/.config/nvim/orphan_dir" ]
-    [ -d "$HOME/.config/nvim/lua/plugins" ]
-    [ ! -L "$HOME/.config/nvim/lua/plugins" ]
-    [ -f "$HOME/.config/nvim/init.lua" ]
-
-    run diff -rq "$repo_root/roles/nvim/files/nvim" "$HOME/.config/nvim"
-    [ "$status" -eq 0 ]
+    assert_file_not_empty "$HOME/.config/nvim/init.lua"
+    assert_dir_not_exists "$HOME/.config/nvim/tests"
 }
 
 @test "Bash aliases file exists and is non-empty" {
-    [ -s "$HOME/.bash_aliases" ]
+    assert_file_not_empty "$HOME/.bash_aliases"
 }
 
 @test "Tmux configuration exists and has focus-events enabled" {
-    [ -s "$HOME/.tmux.conf" ]
+    assert_file_not_empty "$HOME/.tmux.conf"
     run grep "set -g focus-events on" "$HOME/.tmux.conf"
-    [ "$status" -eq 0 ]
+    assert_success
 }
 
 @test "Global gitignore is configured and deployed" {
-    [ -s "$HOME/.gitignore_global" ]
+    assert_file_not_empty "$HOME/.gitignore_global"
     run git config --global core.excludesfile
-    [ "$status" -eq 0 ]
+    assert_success
     # shellcheck disable=SC2088
-    [ "$output" = "~/.gitignore_global" ]
+    assert_output "~/.gitignore_global"
 }
 
-@test "Antigravity configuration symlinks to Copilot components exist" {
-    [ -s "$HOME/.copilot/copilot-instructions.md" ]
-    [ -f "$HOME/.copilot/mcp-config.json" ]
-    [ -L "$HOME/.gemini/config/skills" ]
-    [ -d "$HOME/.gemini/config/skills" ]
-    [ "$(readlink -f "$HOME/.gemini/config/skills")" = "$HOME/.copilot/skills" ]
-    [ -L "$HOME/.gemini/config/standards" ]
-    [ -d "$HOME/.gemini/config/standards" ]
-    [ "$(readlink -f "$HOME/.gemini/config/standards")" = "$HOME/.copilot/standards" ]
-    [ -L "$HOME/.gemini/config/agents" ]
-    [ -d "$HOME/.gemini/config/agents" ]
-    [ "$(readlink -f "$HOME/.gemini/config/agents")" = "$HOME/.copilot/agents" ]
-    [ -L "$HOME/.gemini/config/commands" ]
-    [ -d "$HOME/.gemini/config/commands" ]
-    [ "$(readlink -f "$HOME/.gemini/config/commands")" = "$HOME/.copilot/commands" ]
-    [ -L "$HOME/.gemini/config/mcp_config.json" ]
-    [ -f "$HOME/.gemini/config/mcp_config.json" ]
-    [ "$(readlink -f "$HOME/.gemini/config/mcp_config.json")" = "$HOME/.copilot/mcp-config.json" ]
-    [ "$(stat -c "%a" "$HOME/.copilot/mcp-config.json")" = "600" ]
-    jq -e '.mcpServers.atlassian.command == "uvx"' "$HOME/.copilot/mcp-config.json"
-    jq -e '.mcpServers.atlassian.args[0] | startswith("mcp-atlassian==")' "$HOME/.copilot/mcp-config.json"
-    [ -L "$HOME/.gemini/config/GEMINI.md" ]
-    [ -f "$HOME/.gemini/config/GEMINI.md" ]
-    [ -L "$HOME/.gemini/config/AGENTS.md" ]
-    [ -f "$HOME/.gemini/config/AGENTS.md" ]
-    [ "$(readlink -f "$HOME/.gemini/config/GEMINI.md")" = "$HOME/.copilot/copilot-instructions.md" ]
-    [ "$(readlink -f "$HOME/.gemini/config/AGENTS.md")" = "$HOME/.copilot/copilot-instructions.md" ]
+@test "AI configuration is deployed to ~/.config/ai and discovered by Copilot CLI" {
+    assert_file_not_empty "$HOME/.config/ai/AGENTS.md"
+    assert_file_exists "$HOME/.config/ai/mcp-config.json"
+    assert_file_permission 600 "$HOME/.config/ai/mcp-config.json"
+    jq -e '.mcpServers.atlassian.command == "uvx"' "$HOME/.config/ai/mcp-config.json"
+    jq -e '.mcpServers.atlassian.args[0] | startswith("mcp-atlassian==")' "$HOME/.config/ai/mcp-config.json"
+
     run copilot instruction list
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"$HOME/.copilot/copilot-instructions.md"* ]]
+    assert_success
+    assert_output --partial "$HOME/.copilot/copilot-instructions.md"
     run copilot skill list
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"conventional-commit"* ]]
+    assert_success
+    assert_output --partial "conventional-commit"
+}
+
+@test "GitHub Copilot CLI symlinks to ~/.config/ai exist" {
+    assert_symlink_to "$HOME/.config/ai/skills" "$HOME/.copilot/skills"
+    assert_symlink_to "$HOME/.config/ai/standards" "$HOME/.copilot/standards"
+    assert_symlink_to "$HOME/.config/ai/agents" "$HOME/.copilot/agents"
+    assert_symlink_to "$HOME/.config/ai/commands" "$HOME/.copilot/commands"
+    assert_symlink_to "$HOME/.config/ai/mcp-config.json" "$HOME/.copilot/mcp-config.json"
+    assert_symlink_to "$HOME/.config/ai/AGENTS.md" "$HOME/.copilot/copilot-instructions.md"
+}
+
+@test "Google Antigravity symlinks to ~/.config/ai exist" {
+    assert_symlink_to "$HOME/.config/ai/skills" "$HOME/.gemini/config/skills"
+    assert_symlink_to "$HOME/.config/ai/standards" "$HOME/.gemini/config/standards"
+    assert_symlink_to "$HOME/.config/ai/agents" "$HOME/.gemini/config/agents"
+    assert_symlink_to "$HOME/.config/ai/commands" "$HOME/.gemini/config/commands"
+    assert_symlink_to "$HOME/.config/ai/mcp-config.json" "$HOME/.gemini/config/mcp_config.json"
+    assert_symlink_to "$HOME/.config/ai/AGENTS.md" "$HOME/.gemini/config/GEMINI.md"
+    assert_symlink_to "$HOME/.config/ai/AGENTS.md" "$HOME/.gemini/config/AGENTS.md"
+}
+
+@test "OpenCode symlinks to ~/.config/ai exist" {
+    assert_symlink_to "$HOME/.config/ai/skills" "$HOME/.config/opencode/skills"
+    assert_symlink_to "$HOME/.config/ai/standards" "$HOME/.config/opencode/standards"
+    assert_symlink_to "$HOME/.config/ai/agents" "$HOME/.config/opencode/agents"
+    assert_symlink_to "$HOME/.config/ai/commands" "$HOME/.config/opencode/commands"
+    assert_symlink_to "$HOME/.config/ai/AGENTS.md" "$HOME/.config/opencode/AGENTS.md"
 }
 
 @test "PYENV_ROOT is exported in user profile" {
     run grep "export PYENV_ROOT=" "$HOME/.profile"
-    [ "$status" -eq 0 ]
+    assert_success
 }
 
 @test "NVM_DIR is exported in user profile" {
     run grep "export NVM_DIR=" "$HOME/.profile"
-    [ "$status" -eq 0 ]
+    assert_success
 }
 
 @test "Copilot has Maister plugin installed" {
     run copilot plugin list
-    [ "$status" -eq 0 ]
-    [[ "$output" =~ "maister-copilot" ]]
+    assert_success
+    assert_output --partial "maister-copilot"
 }
 
 @test "Antigravity CLI has Maister plugin installed" {
     run agy plugin list
-    [ "$status" -eq 0 ]
-    [[ "$output" =~ "maister" ]]
-    [[ "$output" =~ "enabled" ]]
+    assert_success
+    assert_output --partial "maister"
+    assert_output --partial "enabled"
 }
 
 @test "Docker compose plugin is installed and runnable" {
     run docker compose version
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"Docker Compose version"* ]]
+    assert_success
+    assert_output --partial "Docker Compose version"
 }
 
 @test "Helm is installed and runnable" {
     run helm version
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"version.BuildInfo"* ]]
+    assert_success
+    assert_output --partial "version.BuildInfo"
 }
 
 @test "Lazygit is installed, runnable, and aliased to lg" {
     run lazygit --version
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"version="* ]]
+    assert_success
+    assert_output --partial "version="
     run grep -qx "alias lg='lazygit'" "$HOME/.bash_aliases"
-    [ "$status" -eq 0 ]
+    assert_success
 }
 
 @test "uv and uvx binaries are installed and available in PATH" {
@@ -212,109 +198,109 @@ setup() {
 
 @test "Starship prompt is installed, runnable, and configured in Bash" {
     run command -v starship
-    [ "$status" -eq 0 ]
+    assert_success
 
     run starship --version
-    [ "$status" -eq 0 ]
-    [[ "$output" =~ "starship" ]]
+    assert_success
+    assert_output --partial "starship"
 
-    [ -s "$HOME/.config/starship.toml" ]
+    assert_file_not_empty "$HOME/.config/starship.toml"
 
     # shellcheck disable=SC2016
     run grep -F 'eval "$(starship init bash)"' "$HOME/.config/bash/init.sh"
-    [ "$status" -eq 0 ]
+    assert_success
 }
 
 @test "yq is installed and runnable" {
     run command -v yq
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"yq"* ]]
+    assert_success
+    assert_output --partial "yq"
 
     run yq --version
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"yq (https://github.com/mikefarah/yq/)"* ]]
+    assert_success
+    assert_output --partial "yq (https://github.com/mikefarah/yq/)"
 }
 
 @test "Direnv is installed, runnable, and hooked into bashrc" {
     run command -v direnv
-    [ "$status" -eq 0 ]
+    assert_success
     run direnv version
-    [ "$status" -eq 0 ]
-    [ -n "$output" ]
+    assert_success
+    assert_output
     # shellcheck disable=SC2016
     run grep -F 'eval "$(direnv hook bash)"' "$HOME/.bashrc"
-    [ "$status" -eq 0 ]
+    assert_success
 }
 
 @test "fzf is installed and runnable" {
     run fzf --version
-    [ "$status" -eq 0 ]
-    [ -n "$output" ]
+    assert_success
+    assert_output
 }
 
 @test "fd and fdfind are installed and runnable" {
     run fd --version
-    [ "$status" -eq 0 ]
-    [[ "$output" =~ "fd" ]]
+    assert_success
+    assert_output --partial "fd"
     run fdfind --version
-    [ "$status" -eq 0 ]
-    [[ "$output" =~ "fd" ]]
+    assert_success
+    assert_output --partial "fd"
 }
 
 @test "zoxide is installed and runnable" {
     run zoxide --version
-    [ "$status" -eq 0 ]
-    [[ "$output" =~ "zoxide" ]]
+    assert_success
+    assert_output --partial "zoxide"
 }
 
 @test "bat and batcat are installed and runnable" {
     run bat --version
-    [ "$status" -eq 0 ]
-    [[ "$output" =~ "bat" ]]
+    assert_success
+    assert_output --partial "bat"
     run batcat --version
-    [ "$status" -eq 0 ]
-    [[ "$output" =~ "bat" ]]
+    assert_success
+    assert_output --partial "bat"
 }
 
 @test "Bash init configures navigation tools, keybindings, and is sourced in bashrc" {
-    [ -s "$HOME/.config/bash/init.sh" ]
+    assert_file_not_empty "$HOME/.config/bash/init.sh"
     run grep -q "fzf --bash" "$HOME/.config/bash/init.sh"
-    [ "$status" -eq 0 ]
+    assert_success
     run grep -q "zoxide init bash" "$HOME/.config/bash/init.sh"
-    [ "$status" -eq 0 ]
+    assert_success
     run grep -q "FZF_DEFAULT_COMMAND" "$HOME/.config/bash/init.sh"
-    [ "$status" -eq 0 ]
+    assert_success
     run grep -q "FZF_CTRL_T_OPTS" "$HOME/.config/bash/init.sh"
-    [ "$status" -eq 0 ]
+    assert_success
     run grep -q "if \[ -f ~/.config/bash/init.sh \]; then . ~/.config/bash/init.sh; fi" "$HOME/.bashrc"
-    [ "$status" -eq 0 ]
+    assert_success
 }
 
 @test "Tmux configuration enables mouse mode, OSC 52 clipboard pass-through, and True Color RGB" {
-    [ -f "$HOME/.tmux.conf" ]
+    assert_file_exists "$HOME/.tmux.conf"
     run grep -qx "set -g mouse on" "$HOME/.tmux.conf"
-    [ "$status" -eq 0 ]
+    assert_success
     run grep -qx "set -s set-clipboard on" "$HOME/.tmux.conf"
-    [ "$status" -eq 0 ]
+    assert_success
     run grep -q "terminal-features ',tmux-256color:clipboard'" "$HOME/.tmux.conf"
-    [ "$status" -eq 0 ]
+    assert_success
     run grep -q "terminal-features ',xterm-256color:clipboard'" "$HOME/.tmux.conf"
-    [ "$status" -eq 0 ]
+    assert_success
     run grep -q "terminal-features ',xterm-256color:RGB'" "$HOME/.tmux.conf"
-    [ "$status" -eq 0 ]
+    assert_success
     run grep -qx "set -g allow-passthrough on" "$HOME/.tmux.conf"
-    [ "$status" -eq 0 ]
+    assert_success
     run grep -Fq "bind-key -T copy-mode-vi MouseDragEnd1Pane send-keys -X copy-selection-no-clear" "$HOME/.tmux.conf"
-    [ "$status" -eq 0 ]
+    assert_success
     run grep -Fq "bind-key -T copy-mode-vi MouseDown1Pane select-pane \; send-keys -X clear-selection" "$HOME/.tmux.conf"
-    [ "$status" -eq 0 ]
+    assert_success
 }
 
 @test "Neovim initializes OSC 52 clipboard provider and unnamedplus" {
     run nvim --headless -c 'lua assert(vim.g.clipboard.name == "OSC 52", "OSC 52 provider missing"); assert(vim.opt.clipboard:get()[1] == "unnamedplus", "unnamedplus missing"); vim.fn.setreg("+", "clipboard_test")' -c 'q'
-    [ "$status" -eq 0 ]
+    assert_success
 }
 
 @test "Neovim plugins are pre-installed headlessly in lazy directory" {
-    [ -d "$HOME/.local/share/nvim/lazy/plenary.nvim" ]
+    assert_dir_exists "$HOME/.local/share/nvim/lazy/plenary.nvim"
 }

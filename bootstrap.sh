@@ -158,14 +158,10 @@ install_ansible() {
         sed 's/^/    /' "$INSTALL_LOG"
         rm -f "$INSTALL_LOG"
         echo "==> Falling back to python3 -m pip install ansible-core..."
-        PIP_BREAK=""
-        if python3 -m pip install --help 2>&1 | grep -q -- '--break-system-packages'; then
-            PIP_BREAK="--break-system-packages"
-        fi
         if [ "$(id -u)" -eq 0 ]; then
-            python3 -m pip install $PIP_BREAK --no-cache-dir ansible-core
+            python3 -m pip install --no-cache-dir ansible-core
         else
-            python3 -m pip install --user $PIP_BREAK --no-cache-dir ansible-core
+            python3 -m pip install --user --no-cache-dir ansible-core
         fi
     fi
 }
