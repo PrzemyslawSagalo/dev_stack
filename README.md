@@ -69,7 +69,7 @@ ansible-playbook setup.yml
 | **Containers**<br>[`roles/system`](roles/system) | Docker CE and Docker Compose v2. | Enables rootless container execution for dev/prod parity. |
 | **Cloud & Cluster CLI**<br>[`roles/system`](roles/system) | AWS CLI v2, GitHub CLI (`gh`), Helm, and OpenShift (`oc`). | Provides verified, cryptographically checked cloud toolchains. |
 | **Terminal & Core CLI**<br>[`roles/system`](roles/system) | `tmux`, `ripgrep`, `fzf`, `fd`, `zoxide`, `bat`, `lazygit`, `tree-sitter`, `jq`, `yq`, `htop`, `try`, `direnv`, `uv` / `uvx`, `starship`, `agy`. | Accelerates navigation, Git workflows, and terminal productivity. |
-| **Dotfiles & Shell**<br>[`roles/dotfiles`](roles/dotfiles) | `starship.toml`, `.bash_aliases`, `~/.config/bash/init.sh`, `.tmux.conf`, `~/.ssh/config`, `~/.gitconfig`, `~/.gitignore_global`, Copilot skills & MCP config. | Ensures consistent shell behavior, prevents secret leaks, and enforces SkillSpector CI scans. |
+| **Dotfiles & Shell**<br>[`roles/dotfiles`](roles/dotfiles) | `starship.toml`, `.bash_aliases`, `~/.config/bash/init.sh`, `.tmux.conf`, `~/.ssh/config`, `~/.gitconfig`, `~/.gitignore_global`, shared AI config (`~/.config/ai/`). | Ensures consistent shell behavior, prevents secret leaks, and enforces SkillSpector CI scans. |
 | **Editor (IDE)**<br>[`roles/nvim`](roles/nvim) | Neovim v0.12+ with LSP, Treesitter, DAP, and Copilot. | Delivers a high-performance editing and AI pair programming setup. |
 
 ---
@@ -147,7 +147,7 @@ export JIRA_API_TOKEN="your-secure-token"
 
 ## Atlassian MCP Integration (Jira & Confluence)
 
-`dev_stack` configures out-of-the-box Model Context Protocol (MCP) support for Atlassian Jira and Confluence in [`roles/dotfiles/files/copilot/mcp-config.json`](roles/dotfiles/files/copilot/mcp-config.json) (mirrored to `~/.copilot/mcp-config.json` and `~/.gemini/config/mcp_config.json`).
+`dev_stack` configures out-of-the-box Model Context Protocol (MCP) support for Atlassian Jira and Confluence in [`roles/dotfiles/files/ai/mcp-config.json`](roles/dotfiles/files/ai/mcp-config.json) (deployed to `~/.config/ai/mcp-config.json` and symlinked to `~/.copilot/mcp-config.json` and `~/.gemini/config/mcp_config.json`).
 
 ### Execution Engine (`uv` & `uvx`)
 

@@ -21,12 +21,8 @@ describe("AI agent external modification - FileChangedShell autocmds", function(
 			vim.api.nvim_buf_delete(buf, { force = true })
 		end
 		if filepath then
-			pcall(os.remove, filepath)
-			local undo_pattern = vim.fn.stdpath("state") .. "/undo/*" .. vim.fn.fnamemodify(filepath, ":t") .. "*"
-			local undofiles = vim.fn.glob(undo_pattern, false, true)
-			for _, undo_path in ipairs(undofiles) do
-				pcall(os.remove, undo_path)
-			end
+			vim.fs.rm(filepath, { force = true })
+			vim.fs.rm(vim.fn.undofile(filepath), { force = true })
 		end
 	end)
 
@@ -48,9 +44,7 @@ describe("AI agent external modification - FileChangedShell autocmds", function(
 
 		-- Step 4: Event trigger (simulating returning to terminal or cursor idle)
 		vim.api.nvim_exec_autocmds("FocusGained", {})
-		vim.wait(100, function()
-			return false
-		end)
+		vim.wait(100)
 
 		-- Step 5: Reload assertion (buffer automatically updated to AI version without prompting)
 		local lines_after_reload = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
@@ -79,9 +73,7 @@ describe("AI agent external modification - FileChangedShell autocmds", function(
 
 		-- Step 3: Event trigger (simulating returning to terminal)
 		vim.api.nvim_exec_autocmds("FocusGained", {})
-		vim.wait(100, function()
-			return false
-		end)
+		vim.wait(100)
 
 		-- Step 4: Protection assertion
 		-- Buffer MUST NOT be reloaded; it must preserve user's unsaved changes
