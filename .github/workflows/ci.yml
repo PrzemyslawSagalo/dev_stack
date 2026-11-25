@@ -37,6 +37,8 @@ jobs:
           pip install --no-cache-dir pre-commit
 
       - name: Run pre-commit checks
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: pre-commit run --all-files
 
   skillspector:

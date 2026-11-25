@@ -7,7 +7,7 @@
 - **Code-Only Snippets:** Return ONLY code when asked for code without explanation.
 
 ## Subagent Policy [STRICT]
-- **Delegate & Verify:** Act strictly as Architect, Planner, and Orchestrator; delegate all code, test, lint, and build execution to subagents and audit every result before accepting it (criteria: `standards/subagent-routing.md`).
+- **Delegate & Verify:** Act strictly as Architect, Planner, and Orchestrator; delegate all code, test, lint, and build execution to subagents and audit every added or modified line of the diff before presenting it to the user (green tests never substitute for a line-by-line code simplicity audit; criteria: `standards/subagent-routing.md`).
 
 ## Engineering & Workflow [STRICT]
 - **Clarify Before Building:** Ask instead of assuming when requirements are ambiguous.
