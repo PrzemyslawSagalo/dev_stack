@@ -1,13 +1,28 @@
 local autoread_group = vim.api.nvim_create_augroup("HyperFastAutoread", { clear = true })
 
-vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter", "CursorHold", "CursorHoldI", "WinEnter", "CmdlineEnter" }, {
+vim.api.nvim_create_autocmd(
+	{ "FocusGained", "BufEnter", "CursorHold", "CursorHoldI", "WinEnter", "TermClose", "TermLeave" },
+	{
+		group = autoread_group,
+		desc = "Synchronize file state with disk",
+		callback = function()
+			if vim.fn.getcmdwintype() == "" and vim.api.nvim_get_mode().mode ~= "c" then
+				vim.schedule(function()
+					pcall(vim.cmd, "checktime")
+				end)
+			end
+		end,
+	}
+)
+
+vim.api.nvim_create_autocmd("BufWritePre", {
 	group = autoread_group,
-	desc = "Synchronize file state with disk",
-	callback = function()
-		if vim.fn.getcmdwintype() == "" and vim.api.nvim_get_mode().mode ~= "c" then
-			vim.schedule(function()
-				pcall(vim.cmd, "checktime")
-			end)
+	pattern = "*",
+	desc = "Synchronize unmodified buffer with disk before writing",
+	callback = function(args)
+		local bufnr = args.buf
+		if vim.api.nvim_buf_is_valid(bufnr) and not vim.api.nvim_get_option_value("modified", { buf = bufnr }) then
+			pcall(vim.cmd, "checktime " .. bufnr)
 		end
 	end,
 })
