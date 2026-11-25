@@ -9,6 +9,7 @@
 ### Pre-Implementation Off-The-Shelf Gate
 
 - **Verify Problem Existence First:** Never polish or replace a legacy workaround with another workaround without first verifying that the underlying issue exists in the target runtime; delete unreachable fallbacks and redundant guards outright.
+- **No Speculative Fallbacks or Self-Healing:** Never author runtime repair, fallback, or recovery branches for hypothetical states not observed in the target runtime; every added branch must map 1:1 to a verified root cause.
 - **Dependency & Standard Library Audit:** Before writing any helper function, assertion wrapper, temp-directory/cleanup boilerplate, parser, or retry loop, audit installed dependencies and ecosystem standard libraries first.
 - **No Custom Glue Over Ecosystem Libraries:** Always adopt an established off-the-shelf library or framework built-in rather than writing custom wrappers. Custom helpers are strictly a last resort and require explicit justification naming the rejected ecosystem alternatives.
 - **Single Primitive Over Multi-Step Fallbacks:** When resolving references, paths, or states, use one uniform native primitive across candidates rather than chaining distinct commands and nested fallback branches.

@@ -1,5 +1,10 @@
 local M = {}
 
+local function is_treesitter_ready(lang)
+	local ok, query = pcall(vim.treesitter.query.get, lang, "highlights")
+	return ok and query ~= nil
+end
+
 local targets = {
 	mason = function()
 		local languages = require("config.languages")
@@ -15,7 +20,7 @@ local targets = {
 		return {
 			cmd = "TSUpdateSync " .. table.concat(items, " "),
 			items = items,
-			is_installed = require("nvim-treesitter.parsers").has_parser,
+			is_installed = is_treesitter_ready,
 			label = "Treesitter parser",
 		}
 	end,

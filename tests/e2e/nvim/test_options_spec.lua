@@ -366,11 +366,43 @@ describe("neovim core options", function()
 		end
 
 		for _, lang in ipairs(languages.treesitter) do
-			it("configures and installs parser for " .. lang, function()
+			it("configures, installs, and activates treesitter highlights for " .. lang, function()
+				-- Given a scratch buffer for the configured language
+				local buf = create_test_buf()
+
+				-- When loading its highlights query and starting the treesitter highlighter
+				local query = vim.treesitter.query.get(lang, "highlights")
+				vim.treesitter.start(buf, lang)
+
+				-- Then the parser is configured, the query compiles, and the highlighter is active
 				assert.is_true(installed_map[lang], "Parser " .. lang .. " is missing from ensure_installed")
 				assert.is_true(ts_parsers.has_parser(lang), "Compiled parser for " .. lang .. " is missing on disk")
+				assert.is_not_nil(query, "Highlights query for " .. lang .. " failed to load")
+				assert.is_not_nil(vim.treesitter.highlighter.active[buf])
+				vim.treesitter.stop(buf)
 			end)
 		end
+
+		it("starts Python treesitter highlighter and parses PEP 654 except* syntax without query errors", function()
+			-- Given a Python buffer containing PEP 654 except* syntax
+			local buf = create_test_buf()
+			vim.api.nvim_buf_set_lines(buf, 0, -1, false, {
+				"try:",
+				"    pass",
+				"except* ValueError as exc:",
+				"    pass",
+			})
+			vim.bo[buf].filetype = "python"
+
+			-- When starting the Python treesitter highlighter and parsing the buffer
+			vim.treesitter.start(buf, "python")
+			local trees = vim.treesitter.get_parser(buf, "python"):parse()
+
+			-- Then the highlighter is active and the syntax tree parses without errors
+			assert.is_not_nil(vim.treesitter.highlighter.active[buf])
+			assert.is_false(trees[1]:root():has_error())
+			vim.treesitter.stop(buf)
+		end)
 
 		it("registers treesitter language aliases from languages.treesitter_filetypes", function()
 			for parser, fts in pairs(languages.treesitter_filetypes) do
