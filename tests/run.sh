@@ -27,7 +27,7 @@ if ! docker info >/dev/null 2>&1; then
     exit 1
 fi
 
-docker run --rm -t \
+docker run --rm \
     -v "$REPO_DIR:/dev_stack:ro" \
     "$IMAGE" \
     bash -c '

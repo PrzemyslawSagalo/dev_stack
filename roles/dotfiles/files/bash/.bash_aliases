@@ -1,6 +1,6 @@
 # shellcheck shell=bash
 # dotfiles
-alias ddu='curl -fsSL https://raw.githubusercontent.com/PrzemyslawSagalo/dev_stack/main/bootstrap.sh | bash'
+alias ddu='bash -c "$(curl -fsSL https://raw.githubusercontent.com/PrzemyslawSagalo/dev_stack/main/bootstrap.sh)"'
 
 # Git
 alias gs='git status'
