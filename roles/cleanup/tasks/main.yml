@@ -86,3 +86,12 @@
         | map(attribute='islnk') | first | default(false)
       )
   failed_when: false
+
+- name: Remove legacy shadowing Neovim site Treesitter directories
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/.local/share/nvim/site/{{ item }}"
+    state: absent
+  loop:
+    - parser
+    - queries
+  failed_when: false
