@@ -15,18 +15,19 @@ ID_LIKE=debian
 EOF
 }
 
-@test "detect_os parses Ubuntu os-release fixture" {
+@test "given an Ubuntu os-release, when invoking detect_os, then OS_ID, OS_NAME, and OS_ID_LIKE reflect Ubuntu" {
     run bash -c "
         OS_RELEASE_FILE='$OS_RELEASE_FIXTURE'
         BOOTSTRAP_SOURCE_ONLY=1 . '$BOOTSTRAP_SCRIPT'
         detect_os
         echo \"OS_ID=\$OS_ID OS_NAME=\$OS_NAME OS_ID_LIKE=\$OS_ID_LIKE\"
     "
+
     assert_success
     assert_output --partial "OS_ID=ubuntu OS_NAME=Ubuntu OS_ID_LIKE=debian"
 }
 
-@test "detect_package_manager selects debian and apt-get for Ubuntu fixture" {
+@test "given Ubuntu and apt-get in PATH, when invoking detect_package_manager, then OS_FAMILY is debian and PKG_MGR is apt-get" {
     local bin_dir="$BATS_TEST_TMPDIR/bin"
     mkdir -p "$bin_dir"
     touch "$bin_dir/apt-get"
@@ -40,6 +41,7 @@ EOF
         detect_package_manager
         echo \"FAMILY=\$OS_FAMILY MGR=\$PKG_MGR\"
     "
+
     assert_success
     assert_output --partial "FAMILY=debian MGR=apt-get"
 }
