@@ -19,6 +19,7 @@
 ## Testing Policy
 - **Explicit Requests Only:** Generate tests only when explicitly requested or part of an approved plan; never add tests while logic or design is unconfirmed.
 - **One Behavior per Test:** Verify a single behavior per test case; do not bundle multiple scenarios into one test.
+- **`Given-When-Then` Convention:** Encode Given-When-Then in the test name: `given <state>, when <action>, then <outcome>` (lowercase, one behavior per test); never generic labels (`Scenario A`, `Test 1`) and never `# Given`/`# When`/`# Then` comments or numbered step comments. In Lua Busted, nest `describe("given ...")` > `describe("when ...")` > `it("then ...")` only when several tests share the same Given/When; otherwise use one full-sentence name. Keep trivial single-assertion checks concise.
 - **Framework Assertions & Isolation Only:** Exclusively use native framework assertion libraries and built-in isolation mechanisms (`bats-support` + `bats-assert` + `bats-file` + `$BATS_TEST_TMPDIR` for Bats; `assertpy` + `pytest` fixtures for Python; `luassert` + Neovim APIs for Busted/Lua). Never define custom `assert_*`/`verify_*`/`check_*` wrappers or raw `[ "$status" -eq 0 ]`, `[ -L ... ]`, or `readlink -f` checks when a library function exists.
 
 ## Git

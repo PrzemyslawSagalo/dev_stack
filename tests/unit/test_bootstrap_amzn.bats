@@ -15,18 +15,19 @@ ID_LIKE="fedora"
 EOF
 }
 
-@test "detect_os parses Amazon Linux os-release fixture" {
+@test "given an Amazon Linux os-release, when invoking detect_os, then OS_ID, OS_NAME, and OS_ID_LIKE reflect Amazon Linux" {
     run bash -c "
         OS_RELEASE_FILE='$OS_RELEASE_FIXTURE'
         BOOTSTRAP_SOURCE_ONLY=1 . '$BOOTSTRAP_SCRIPT'
         detect_os
         echo \"OS_ID=\$OS_ID OS_NAME=\$OS_NAME OS_ID_LIKE=\$OS_ID_LIKE\"
     "
+
     assert_success
     assert_output --partial "OS_ID=amzn OS_NAME=Amazon Linux OS_ID_LIKE=fedora"
 }
 
-@test "detect_package_manager selects amazon and dnf for Amazon Linux fixture" {
+@test "given Amazon Linux and dnf in PATH, when invoking detect_package_manager, then OS_FAMILY is amazon and PKG_MGR is dnf" {
     local bin_dir="$BATS_TEST_TMPDIR/bin"
     mkdir -p "$bin_dir"
     touch "$bin_dir/dnf"
@@ -40,6 +41,7 @@ EOF
         detect_package_manager
         echo \"FAMILY=\$OS_FAMILY MGR=\$PKG_MGR\"
     "
+
     assert_success
     assert_output --partial "FAMILY=amazon MGR=dnf"
 }
