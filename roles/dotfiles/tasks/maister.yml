@@ -55,8 +55,10 @@
   changed_when: false
   failed_when: false
 
-- name: Install or update Maister plugin in Antigravity
+- name: Install Maister plugin in Antigravity
   ansible.builtin.command:
     cmd: agy plugin install https://github.com/SkillPanel/maister
-  when: dotfiles_agy_plugins.rc == 0
-  changed_when: "'maister' not in dotfiles_agy_plugins.stdout"
+  when:
+    - dotfiles_agy_plugins.rc == 0
+    - "'maister' not in dotfiles_agy_plugins.stdout"
+  changed_when: true
