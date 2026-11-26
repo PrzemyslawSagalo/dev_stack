@@ -129,6 +129,43 @@
     dest: "{{ ansible_env.HOME }}/.gitconfig"
     mode: "0644"
 
+- name: Check if ~/.gitconfig.local exists
+  ansible.builtin.stat:
+    path: "{{ ansible_env.HOME }}/.gitconfig.local"
+  register: dotfiles_gitconfig_local
+
+- name: Initialize ~/.gitconfig.local when missing
+  when: not dotfiles_gitconfig_local.stat.exists
+  block:
+    - name: Prompt for local Git user.name
+      ansible.builtin.pause:
+        prompt: "Git user.name [press Enter for global default: Przemyslaw Sagalo]"
+      register: dotfiles_git_name_prompt
+
+    - name: Prompt for local Git user.email
+      ansible.builtin.pause:
+        prompt: "Git user.email [press Enter to skip]"
+      register: dotfiles_git_email_prompt
+
+    - name: Configure local Git user identity in ~/.gitconfig.local
+      vars:
+        dotfiles_git_user_name: "{{ (dotfiles_git_name_prompt.user_input | default('')) | trim }}"
+        dotfiles_git_user_email: "{{ (dotfiles_git_email_prompt.user_input | default('')) | trim }}"
+      ansible.builtin.blockinfile:
+        path: "{{ ansible_env.HOME }}/.gitconfig.local"
+        create: true
+        mode: "0644"
+        marker: "# {mark} ANSIBLE MANAGED BLOCK - GIT USER IDENTITY"
+        block: |-
+          [user]
+          {% if (dotfiles_git_user_name | length) > 0 %}
+          	name = {{ dotfiles_git_user_name }}
+          {% endif %}
+          {% if (dotfiles_git_user_email | length) > 0 %}
+          	email = {{ dotfiles_git_user_email }}
+          {% endif %}
+      when: (dotfiles_git_user_name | length) > 0 or (dotfiles_git_user_email | length) > 0
+
 - name: Deploy .gitignore_global
   ansible.builtin.copy:
     src: git/.gitignore_global

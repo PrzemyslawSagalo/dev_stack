@@ -33,7 +33,7 @@ Supports modern Linux distributions including **Ubuntu 24.04+** and **Amazon Lin
 On a clean Linux workstation or AWS EC2 instance:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/PrzemyslawSagalo/dev_stack/main/bootstrap.sh | bash
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/PrzemyslawSagalo/dev_stack/main/bootstrap.sh)"
 ```
 
 Alternatively, if you already cloned the repository:
