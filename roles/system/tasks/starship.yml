@@ -42,8 +42,3 @@
         path: "{{ system_starship_tempdir.path }}"
         state: absent
       when: system_starship_tempdir.path is defined
-
-- name: Ensure Starship binary is executable
-  ansible.builtin.file:
-    path: /usr/local/bin/starship
-    mode: "0755"

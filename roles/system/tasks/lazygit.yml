@@ -31,8 +31,3 @@
       ansible.builtin.file:
         path: /tmp/lazygit.tar.gz
         state: absent
-
-- name: Ensure lazygit binary is executable
-  ansible.builtin.file:
-    path: /usr/local/bin/lazygit
-    mode: "0755"
