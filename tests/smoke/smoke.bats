@@ -222,6 +222,13 @@ setup() {
     assert_output --partial "yq (https://github.com/mikefarah/yq/)"
 }
 
+@test "given the dev_stack manual is installed, when locating it with man, then its installed path is returned" {
+    run man -w dev_stack
+
+    assert_success
+    assert_output --regexp '^/usr/local/(share/)?man/man7/dev_stack\.7$'
+}
+
 @test "Direnv is installed, runnable, and hooked into bashrc" {
     run command -v direnv
     assert_success

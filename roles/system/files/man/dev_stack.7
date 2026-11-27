@@ -1,0 +1,411 @@
+.TH DEV_STACK 7 "2026-11-27" "dev_stack" "Miscellaneous Information Manual"
+.SH NAME
+dev_stack \- reference for the provisioned development environment
+.SH SYNOPSIS
+.B man 7 dev_stack
+.SH DESCRIPTION
+This manual describes command-line tools, shell configuration, tmux behavior,
+Neovim mappings, and configuration files deployed by the dev_stack Ansible
+roles. Availability can depend on the target operating system and the role
+tasks selected for a run.
+.SH "TOOLS (CLI & runtimes)"
+.TP
+.B fzf
+Fuzzy finder with Bash key bindings: Ctrl-R searches command history, Ctrl-T
+selects files and previews them with
+.BR bat ,
+and Alt-C selects directories.
+.TP
+.B fd, fdfind
+File finder; the role installs
+.B fd
+and provides
+.B fdfind
+as a compatibility symlink.
+.TP
+.B zoxide
+Directory-jump tool; its Bash integration provides
+.B z
+and interactive
+.BR zi .
+.TP
+.B bat, batcat
+Command-line file viewer; the role provides
+.B batcat
+as a compatibility symlink.
+.TP
+.B ripgrep, rg
+Text-search tool and its commonly used short command name.
+.TP
+.B yq
+YAML command-line processor.
+.TP
+.B direnv
+Per-directory environment loader, configured with a Bash hook. Use
+.B direnv allow
+to trust the current
+.I .envrc
+and
+.B direnv deny
+to revoke that approval.
+.TP
+.B uv, uvx
+Python package and project tool, with its companion
+.B uvx
+executable.
+.TP
+.B try
+The
+.I binpash/try
+utility is installed at
+.BR /usr/local/bin/try .
+.TP
+.B lazygit
+Terminal interface for Git.
+.TP
+.B starship
+Shell prompt.
+.TP
+.B gh
+GitHub command-line interface.
+.TP
+.B copilot
+GitHub Copilot CLI.
+.TP
+.B agy
+Google Antigravity CLI.
+.TP
+.B tmux
+Terminal multiplexer (version 3.8); see
+.B TMUX WORKFLOWS
+below.
+.TP
+.B nvim
+Neovim text editor (version 0.12.6); see
+.B NEOVIM KEYMAPS & WORKFLOWS
+below.
+.TP
+.B aws
+AWS command-line interface.
+.TP
+.B docker
+Docker Engine and command-line client; Docker Compose is installed as the
+Compose plugin.
+.TP
+.B go
+Go toolchain.
+.TP
+.B helm
+Helm command-line tool.
+.TP
+.B oc
+OpenShift command-line client.
+.TP
+.B C/C++ tools
+The role installs GCC (
+.BR gcc ,
+.BR g++ ),
+Clang (
+.BR clang ),
+CMake (
+.BR cmake ),
+and
+.BR make
+(with platform-appropriate packages).
+.TP
+.B pyenv, python3
+Python version manager and Python runtimes. The configured versions are
+3.13.2 (default), 3.12.9, and 3.11.11.
+.TP
+.B java, sdkman
+Java 21 is installed using OpenJDK on Debian-family systems and Amazon
+Corretto on Amazon Linux; SDKMAN! is also installed for Java SDK management.
+.TP
+.B nvm, node
+Node Version Manager and Node.js; the configured Node.js version is 23.
+.TP
+.B tree-sitter
+Tree-sitter command-line tool (version 0.22.6).
+.TP
+.B luacheck
+Lua linter.
+.TP
+.B Basic utilities
+The base role installs
+.BR wget ,
+.BR zip ,
+.BR unzip ,
+.BR tar ,
+.BR git ,
+.BR make ,
+.BR jq ,
+.BR bash-completion ,
+.BR ca-certificates ,
+.BR htop ,
+.BR attr ,
+and
+.BR rsync .
+.SH "SHELL ALIASES & FUNCTIONS"
+The Bash aliases are defined in
+.IR ~/.bash_aliases .
+The following names and definitions are deployed:
+.PP
+.B "alias ddu=\fI'bash -c \(dq$(curl -fsSL https://raw.githubusercontent.com/PrzemyslawSagalo/dev_stack/main/bootstrap.sh)\(dq'\fP"
+.br
+.B "alias gs=\fI'git status'\fP"
+.br
+.B "alias gcb=\fI'git branch --show-current'\fP"
+.br
+.B "alias gpcb=\fI'git push origin $(gcb)'\fP"
+.br
+.B "alias gacw=\fI'git commit -am wip'\fP"
+.br
+.B "alias gdcb=\fI'git pull origin $(gcb)'\fP"
+.br
+.B "alias gl=\fI'git log'\fP"
+.br
+.B "alias geb=\fI'export cb=$(gcb)'\fP"
+.br
+.B "alias lg=\fI'lazygit'\fP"
+.br
+.B "alias tnwc=\fI'tmux new-window -c $(pwd)'\fP"
+.br
+.B "alias pae=\fI'source venv/bin/activate'\fP"
+.br
+.B "alias pce=\fI'python -m venv venv && pae && pip install python-toolbox-przemek'\fP"
+.br
+.B "alias putb=\fI'pip install \(dqpython-toolbox-przemek[lint,tests]\(dq'\fP"
+.br
+.B "alias ptcr=\fI'coverage report -m'\fP"
+.br
+.B "alias se=\fI'set -a && source .env && set +a'\fP"
+.br
+.B "alias nv=\fI'nvim .'\fP"
+.br
+.B "alias cop=\fI'copilot'\fP"
+.br
+.B "alias agyyolo=\fI'agy --dangerously-skip-permissions'\fP"
+.PP
+.B gsquash
+is a shell function with the signature
+.BR "gsquash [commit-hash]" .
+It collapses commits after the selected commit into that commit and preserves
+its message, using a soft reset followed by an amend. Without an argument it
+chooses the first commit ahead of the detected base branch. The working tree
+must be clean; the function rejects a non-ancestor target and histories with
+merge commits.
+.PP
+.B gacw
+commits changes to tracked files only; it does not stage untracked files.
+.B geb
+exports the current branch name in the shell variable
+.BR cb .
+.B tnwc
+opens a new tmux window rooted in the current directory.
+.B se
+sources
+.I .env
+with automatic exporting enabled while it is read.
+.SH "TMUX WORKFLOWS"
+The deployed
+.I ~/.tmux.conf
+sets the default terminal to
+.BR tmux-256color ,
+enables focus events and mouse mode, and advertises RGB true-color and
+clipboard terminal features. Clipboard settings enable OSC 52 pass-through
+to the outer terminal when that terminal supports it.
+.PP
+Copy mode uses vi keys. In copy mode,
+.B y
+copies the selection and exits; ending a mouse drag copies the selection
+without clearing it. A mouse click selects the pane and clears the selection.
+.PP
+For two monitors, tmux's native grouped-session workflow can attach both
+terminals to the same set of windows while retaining a separate current-window
+selection per session. Start the first session with
+.BR "tmux new-session -s work" .
+On the other monitor, join that session group with
+.BR "tmux new-session -t work" .
+In general, use
+.BR "tmux new-session -t <target>"
+with the existing session as
+.IR target .
+This uses tmux's built-in session grouping; no dev_stack-specific helper is
+installed for it.
+.SH "NEOVIM KEYMAPS & WORKFLOWS"
+The leader key is Space. The following core mappings come from the general
+keymap configuration:
+.TP
+.B <leader>h, <leader>j, <leader>k, <leader>l
+Move between windows left, down, up, and right.
+.TP
+.B <leader>y, <leader>p, <leader>P
+In normal mode, yank to, paste from, or paste before from the system
+clipboard. In visual mode,
+.B <leader>y
+and
+.B <leader>p
+yank to and paste from the system clipboard.
+.TP
+.B <leader><Up>, <leader><Down>, <leader><Left>, <leader><Right>
+Resize the current window by two rows or columns in the indicated direction.
+.TP
+.B <S-l>, <S-h>
+Move to the next or previous buffer.
+.TP
+.B <leader>q
+Delete the current buffer with
+.BR Bdelete .
+.TP
+.B kj
+In insert mode, leave insert mode.
+.TP
+.B >, <
+In visual mode, indent or unindent and keep the selection selected.
+.TP
+.B <A-j>, <A-k>
+In visual mode, move the selected lines down or up.
+.TP
+.B p
+In visual mode, paste without replacing the default register with the deleted
+selection.
+.TP
+.B J, K, <A-j>, <A-k>
+In visual-block mode, move the block down or up.
+.TP
+.B <C-h>, <C-j>, <C-k>, <C-l>
+In terminal mode, leave terminal input and move to the neighboring window.
+.B <Esc>
+and
+.B kj
+also leave terminal input.
+.TP
+.B :DiffOrig
+Show a vertical diff between the current buffer and the original file on disk.
+.PP
+Plugin mappings:
+.TP
+.B <leader>ff
+Telescope: find files in the current working directory.
+.TP
+.B <leader>fa
+Telescope: find files including ignored and hidden files.
+.TP
+.B <leader>fg
+Telescope: search project text with live grep.
+.TP
+.B <leader>e
+Toggle the nvim-tree explorer. In its buffer,
+.B l, <CR>, o
+opens a node,
+.B h
+closes a node, and
+.B v
+opens a file in a vertical split.
+.TP
+.B <leader>a
+Toggle Aerial's symbol outline; within an attached buffer,
+.B {
+and
+.B }
+move to the previous and next symbol.
+.TP
+.B <leader>tc, <leader>tf, <leader>ta
+Neotest: run the nearest test, the current file's tests, or all test files.
+.TP
+.B <leader>td, <leader>ts, <leader>tm
+Neotest: debug the nearest test, stop a run, or toggle the summary and output
+panel.
+.TP
+.B <leader>gl, <leader>ca
+LSP: show diagnostic details in a float, or invoke a code action.
+.TP
+.B <leader>cc
+Toggle a comment on the current line in normal mode or the selection in
+visual mode.
+.TP
+.B s, S, gs
+Leap: jump forward, jump backward, or jump from another window.
+.TP
+.B <leader>dc, <leader>do, <leader>di, <leader>du
+DAP: continue, step over, step into, or step out.
+.TP
+.B <leader>db, <leader>dk, <leader>dt, <leader>dr
+DAP: toggle a breakpoint, set a conditional breakpoint, terminate, or clear
+breakpoints.
+.TP
+.B <leader>dm, <leader>df, <leader>dx
+DAP: toggle the UI, open a floating UI element, or debug the current Python
+test method.
+.TP
+.B <M-\e>, <M-]>, <M-[>, <M-w>
+Copilot: accept a suggestion, select the next or previous suggestion, or
+dismiss it, respectively.
+.PP
+Core options disable GUI cursor-shape changes and error bells, enable absolute
+and relative line numbers, four-space
+indentation with spaces, smart indent, incremental search without persistent
+search highlighting, no line wrapping or swap file, persistent undo, a
+sign column, and terminal true color. Automatic file reload is enabled with
+a 200 ms update time. The system clipboard uses OSC 52; over SSH or tmux,
+paste uses the cached copied text.
+.SH "CONFIGURATION FILES"
+The dotfiles role deploys or manages the following paths:
+.TP
+.I ~/.tmux.conf
+Tmux terminal, color, clipboard, mouse, focus, and copy-mode settings.
+.TP
+.I ~/.config/nvim
+Neovim configuration.
+.TP
+.I ~/.bash_aliases
+Shell aliases and the
+.B gsquash
+function; sourced from
+.IR ~/.bashrc .
+.TP
+.I ~/.config/starship.toml
+Starship prompt configuration.
+.TP
+.I ~/.config/ai/
+Shared AI CLI configuration, including skills, standards, agents, commands,
+and shared configuration files. Its entries are symlinked into the
+corresponding client locations under
+.IR ~/.copilot/ ,
+.IR ~/.gemini/config/ ,
+and
+.IR ~/.config/opencode/ .
+.TP
+.I ~/.config/bash/init.sh
+Bash initialization sourced from
+.IR ~/.bashrc .
+.TP
+.I ~/.bashrc
+Interactive Bash configuration and sourcing entries.
+.TP
+.I ~/.gitconfig
+Deployed Git configuration.
+.TP
+.I ~/.gitconfig.local
+Optional local Git user identity configuration, initialized when missing.
+.TP
+.I ~/.gitignore_global
+Global Git ignore file.
+.TP
+.I ~/.ssh/config
+SSH configuration with a dotfiles-managed block.
+.TP
+.I ~/.gemini/config/
+Google Antigravity configuration and shared AI symlinks.
+.TP
+.I ~/.copilot/
+GitHub Copilot configuration and shared AI symlinks.
+.TP
+.I ~/.config/opencode/
+OpenCode configuration and shared AI symlinks.
+.SH "SEE ALSO"
+.BR bash (1),
+.BR git (1),
+.BR man (1),
+.BR tmux (1),
+.BR nvim (1)

@@ -102,3 +102,24 @@ setup() {
     assert_failure
     assert_output --partial "Failed to download or verify release package"
 }
+
+@test "given the dev_stack manual is installed, when rendering it with man, then the requested section headings are present" {
+    run env MANPAGER=cat man dev_stack
+
+    assert_success
+    assert_output --partial "NAME"
+    assert_output --partial "SHELL ALIASES"
+    assert_output --partial "TMUX"
+    assert_output --partial "NEOVIM"
+    assert_output --partial "CONFIGURATION FILES"
+}
+
+@test "given the repository dev_stack manual, when checking groff diagnostics, then no warnings or errors are emitted" {
+    local repo_root
+    repo_root="$(cd "$(dirname "$BATS_TEST_FILENAME")/../../.." && pwd)"
+
+    run groff -man -Tutf8 -ww -z "$repo_root/roles/system/files/man/dev_stack.7"
+
+    assert_success
+    assert_output ""
+}

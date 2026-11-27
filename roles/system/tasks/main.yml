@@ -66,3 +66,8 @@
   ansible.builtin.import_tasks: yq.yml
   tags:
     - yq
+
+- name: Import manual page tasks
+  ansible.builtin.import_tasks: man.yml
+  tags:
+    - man
