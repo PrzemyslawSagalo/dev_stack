@@ -105,6 +105,9 @@
   loop_control:
     label: "{{ item.dest }} -> ~/.config/ai/{{ item.src }}"
 
+- name: Configure AI tool command permissions
+  ansible.builtin.import_tasks: ai_permissions.yml
+
 - name: Configure Maister plugin for Copilot and Antigravity
   ansible.builtin.import_tasks: maister.yml
   tags: plugins

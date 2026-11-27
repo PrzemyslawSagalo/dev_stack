@@ -1,0 +1,22 @@
+{% set settings = dotfiles_antigravity_settings_content.content | default('e30=') | b64decode | from_json %}
+{% set permissions = settings.get('permissions', {}) %}
+{% set allow_commands = permissions.get('allow', []) | reject('match', '^command\\(') | list %}
+{% set deny_commands = permissions.get('deny', []) | reject('match', '^command\\(') | list %}
+{% set managed_commands = dotfiles_ai_allowed_commands + dotfiles_ai_denied_commands %}
+{% set managed_patterns = dotfiles_ai_restricted_command_patterns + dotfiles_ai_denied_command_patterns %}
+{% set ask_commands = [] %}
+{% for ask in permissions.get('ask', []) %}
+{% if not (ask | antigravity_ask_conflicts(managed_commands, managed_patterns)) %}
+{% set _ = ask_commands.append(ask) %}
+{% endif %}
+{% endfor %}
+{% for command in dotfiles_ai_allowed_commands %}
+{% set _ = allow_commands.append('command(' ~ command ~ ')') %}
+{% endfor %}
+{% for pattern in dotfiles_ai_restricted_command_patterns %}
+{% set _ = ask_commands.append(pattern | antigravity_command_rule) %}
+{% endfor %}
+{% for command in dotfiles_ai_denied_commands + dotfiles_ai_denied_command_patterns %}
+{% set _ = deny_commands.append(command | antigravity_command_rule) %}
+{% endfor %}
+{{ settings | combine({'permissions': permissions | combine({'allow': allow_commands | unique(case_sensitive=true) | list, 'ask': ask_commands | unique(case_sensitive=true) | list, 'deny': deny_commands | unique(case_sensitive=true) | list})}) | to_nice_json(indent=2, sort_keys=false) }}

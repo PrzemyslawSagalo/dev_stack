@@ -1,0 +1,94 @@
+---
+dotfiles_ai_allowed_commands:
+  - git status
+  - git diff
+  - git log
+  - git show
+  - rg
+  - ls
+  - cat
+  - head
+  - tail
+  - wc
+  - which
+  - grep
+  - bats
+  - pre-commit run
+  - gh issue view
+  - gh issue list
+  - gh pr view
+  - gh pr list
+  - gh pr checks
+  - gh pr diff
+  - gh run list
+  - gh run view
+
+dotfiles_ai_denied_commands:
+  - git push
+  - rm -rf
+  - rm -fr
+  - sudo
+
+dotfiles_ai_restricted_command_patterns:
+  - rg --pre
+  - rg --pre=*
+  - rg * --pre
+  - rg * --pre=*
+  - rg --hostname-bin
+  - rg --hostname-bin=*
+  - rg * --hostname-bin
+  - rg * --hostname-bin=*
+  - git diff --output
+  - git diff --output=*
+  - git diff * --output
+  - git diff * --output=*
+  - git diff --ext-diff
+  - git diff * --ext-diff
+  - git show --output
+  - git show --output=*
+  - git show * --output
+  - git show * --output=*
+  - git show --ext-diff
+  - git show * --ext-diff
+  - git log --output
+  - git log --output=*
+  - git log * --output
+  - git log * --output=*
+  - git log --ext-diff
+  - git log * --ext-diff
+
+dotfiles_ai_denied_command_patterns:
+  - git -C * push
+  - git -C* push
+  - git -c * push
+  - git -c* push
+  - git --git-dir * push
+  - git --git-dir=* push
+  - git --work-tree * push
+  - git --work-tree=* push
+  - git --namespace * push
+  - git --namespace=* push
+  - git -p push
+  - git -P push
+  - git --paginate push
+  - git --no-pager push
+  - /usr/bin/git push
+  - command git push
+  - env * git push
+  - rm -Rf
+  - rm -r -f
+  - rm -f -r
+  - rm -r *-f*
+  - rm -f *-r*
+  - rm -R -f
+  - rm -f -R
+  - rm -R *-f*
+  - rm -f *-R*
+  - rm --recursive --force
+  - rm --force --recursive
+  - /bin/rm -rf
+  - /usr/bin/rm -rf
+  - command rm -rf
+  - /usr/bin/sudo
+  - command sudo
+  - env * sudo

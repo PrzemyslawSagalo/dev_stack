@@ -1,0 +1,6 @@
+{
+  "allow": {{ dotfiles_ai_allowed_commands | to_nice_json(indent=2, sort_keys=false) }},
+  "deny": {{ dotfiles_ai_denied_commands | to_nice_json(indent=2, sort_keys=false) }},
+  "restricted_patterns": {{ dotfiles_ai_restricted_command_patterns | to_nice_json(indent=2, sort_keys=false) }},
+  "denied_patterns": {{ dotfiles_ai_denied_command_patterns | to_nice_json(indent=2, sort_keys=false) }}
+}
