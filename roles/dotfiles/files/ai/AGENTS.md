@@ -28,6 +28,7 @@
 ## Personal Standards
 - **Mandatory Pre-Work Reading:** Read `standards/code-quality.md` before planning or implementing any code/test changes, and `standards/subagent-routing.md` before delegating or reviewing subagent work.
 - **Lazy-Load Domain Standards** (relative to this file):
+  - `standards/ci-cd.md` — `ci-gate` aggregator job and GitHub branch protection policy.
   - `standards/infrastructure.md` — 12-Factor `infrastructure/` layout and secret management.
   - `standards/python-testing.md` — `pytest` + `assertpy`, deep data verification, strict per-method isolation.
   - `standards/workflow.md` — Ground truth verification and holistic issue deduplication.
