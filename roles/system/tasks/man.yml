@@ -1,0 +1,38 @@
+---
+- name: Install man-db
+  ansible.builtin.package:
+    name: man-db
+    state: present
+
+- name: Check man diversion
+  ansible.builtin.command: dpkg-divert --truename /usr/bin/man
+  register: system_man_diversion
+  changed_when: false
+  when: ansible_os_family == 'Debian'
+
+- name: Remove minimized man diversion
+  when:
+    - ansible_os_family == 'Debian'
+    - system_man_diversion.stdout == '/usr/bin/man.REAL'
+  block:
+    - name: Remove minimized man stub
+      ansible.builtin.file:
+        path: /usr/bin/man
+        state: absent
+
+    - name: Restore diverted man binary
+      ansible.builtin.command: dpkg-divert --quiet --remove --rename /usr/bin/man
+      changed_when: true
+
+- name: Ensure section 7 manual directory exists
+  ansible.builtin.file:
+    path: /usr/local/share/man/man7
+    state: directory
+    mode: "0755"
+
+- name: Install dev_stack section 7 manual
+  ansible.builtin.copy:
+    src: man/dev_stack.7
+    dest: /usr/local/share/man/man7/dev_stack.7
+    mode: "0644"
+  notify: Update man database

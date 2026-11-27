@@ -1,0 +1,5 @@
+---
+- name: Update man database
+  ansible.builtin.command:
+    cmd: mandb -q
+  changed_when: true
