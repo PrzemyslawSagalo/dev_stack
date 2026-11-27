@@ -15,7 +15,7 @@ ID_LIKE="fedora"
 EOF
 }
 
-@test "given an Amazon Linux os-release, when invoking detect_os, then OS_ID, OS_NAME, and OS_ID_LIKE reflect Amazon Linux" {
+@test "given an amazon linux os release, when invoking detect_os, then the os id, name, and id like reflect amazon linux" {
     run bash -c "
         OS_RELEASE_FILE='$OS_RELEASE_FIXTURE'
         BOOTSTRAP_SOURCE_ONLY=1 . '$BOOTSTRAP_SCRIPT'
@@ -27,7 +27,7 @@ EOF
     assert_output --partial "OS_ID=amzn OS_NAME=Amazon Linux OS_ID_LIKE=fedora"
 }
 
-@test "given Amazon Linux and dnf in PATH, when invoking detect_package_manager, then OS_FAMILY is amazon and PKG_MGR is dnf" {
+@test "given amazon linux and dnf in path, when invoking detect_package_manager, then the os family is amazon and the package manager is dnf" {
     local bin_dir="$BATS_TEST_TMPDIR/bin"
     mkdir -p "$bin_dir"
     touch "$bin_dir/dnf"
@@ -44,4 +44,24 @@ EOF
 
     assert_success
     assert_output --partial "FAMILY=amazon MGR=dnf"
+}
+
+@test "given amazon linux and no ansible-playbook in path, when installing ansible, then pip installs ansible-core for the user" {
+    local bin_dir="$BATS_TEST_TMPDIR/bin"
+    mkdir -p "$bin_dir"
+    cat <<'EOF' >"$bin_dir/python3"
+#!/bin/bash
+printf '%s\n' "$*"
+EOF
+    chmod +x "$bin_dir/python3"
+
+    run bash -c "
+        PATH='$bin_dir'
+        OS_FAMILY=amazon
+        BOOTSTRAP_SOURCE_ONLY=1 . '$BOOTSTRAP_SCRIPT'
+        install_ansible
+    "
+
+    assert_success
+    assert_output "-m pip install --user --no-cache-dir ansible-core"
 }
