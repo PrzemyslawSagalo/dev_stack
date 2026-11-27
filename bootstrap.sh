@@ -1,20 +1,5 @@
-#!/bin/sh
-set -eu
-
-if [ "${BOOTSTRAP_SOURCE_ONLY:-0}" != "1" ]; then
-    if [ -z "${BASH_VERSION:-}" ]; then
-        if command -v bash >/dev/null 2>&1; then
-            if [ -f "$0" ]; then
-                exec bash "$0" "$@"
-            fi
-        fi
-    fi
-fi
-
-if [ -n "${BASH_VERSION:-}" ]; then
-    # shellcheck disable=SC3040
-    set -o pipefail
-fi
+#!/usr/bin/env bash
+set -euo pipefail
 
 verify_sudo_access() {
     SUDO=""
@@ -79,11 +64,9 @@ detect_package_manager() {
 
     HAS_APT=""
     HAS_DNF=""
-    HAS_YUM=""
 
     command -v apt-get >/dev/null 2>&1 && HAS_APT="1"
     command -v dnf >/dev/null 2>&1 && HAS_DNF="1"
-    command -v yum >/dev/null 2>&1 && HAS_YUM="1"
 
     OS_FAMILY=""
     PKG_MGR=""
@@ -91,27 +74,19 @@ detect_package_manager() {
     if [ "$CANDIDATE_FAMILY" = "debian" ] && [ -n "$HAS_APT" ]; then
         OS_FAMILY="debian"
         PKG_MGR="apt-get"
-    elif [ "$CANDIDATE_FAMILY" = "amazon" ] && { [ -n "$HAS_DNF" ] || [ -n "$HAS_YUM" ]; }; then
+    elif [ "$CANDIDATE_FAMILY" = "amazon" ] && [ -n "$HAS_DNF" ]; then
         OS_FAMILY="amazon"
-        if [ -n "$HAS_DNF" ]; then
-            PKG_MGR="dnf"
-        else
-            PKG_MGR="yum"
-        fi
-    elif [ -n "$HAS_APT" ] && [ -z "$HAS_DNF" ] && [ -z "$HAS_YUM" ]; then
+        PKG_MGR="dnf"
+    elif [ -n "$HAS_APT" ] && [ -z "$HAS_DNF" ]; then
         OS_FAMILY="debian"
         PKG_MGR="apt-get"
-    elif [ -n "$HAS_DNF" ] || [ -n "$HAS_YUM" ]; then
+    elif [ -n "$HAS_DNF" ]; then
         OS_FAMILY="amazon"
-        if [ -n "$HAS_DNF" ]; then
-            PKG_MGR="dnf"
-        else
-            PKG_MGR="yum"
-        fi
+        PKG_MGR="dnf"
     else
         echo "Error: Unknown package manager or unsupported distribution '${OS_ID:-unknown}' (${OS_NAME:-Linux})." >&2
         echo "       dev_stack officially supports Ubuntu 24.04+ and Amazon Linux 2023." >&2
-        echo "       Script supports package managers: apt-get, dnf, or yum." >&2
+        echo "       Script supports package managers: apt-get, dnf." >&2
         exit 1
     fi
 }
@@ -133,37 +108,23 @@ install_ansible() {
         return 0
     fi
 
-    echo "==> Resolving Ansible installation..."
-    INSTALL_LOG=$(mktemp)
-
-    pkg_prefix="RPM"
-    if [ "$OS_FAMILY" = "debian" ]; then
-        pkg_prefix="APT"
-    fi
-
-    install_cmd="$SUDO $PKG_MGR install -y"
-    if [ "$OS_FAMILY" = "debian" ]; then
-        install_cmd="$SUDO env DEBIAN_FRONTEND=noninteractive apt-get install -y"
-    fi
-
-    if $install_cmd ansible >"$INSTALL_LOG" 2>&1; then
-        echo "==> Successfully installed ansible meta-package via $PKG_MGR."
-        rm -f "$INSTALL_LOG"
-    elif $install_cmd ansible-core >"$INSTALL_LOG" 2>&1; then
-        echo "==> Successfully installed ansible-core via $PKG_MGR."
-        rm -f "$INSTALL_LOG"
-    else
-        echo "==> $pkg_prefix packages (ansible, ansible-core) unavailable via $PKG_MGR."
-        echo "    Details from $PKG_MGR attempt:"
-        sed 's/^/    /' "$INSTALL_LOG"
-        rm -f "$INSTALL_LOG"
-        echo "==> Falling back to python3 -m pip install ansible-core..."
-        if [ "$(id -u)" -eq 0 ]; then
-            python3 -m pip install --no-cache-dir ansible-core
-        else
-            python3 -m pip install --user --no-cache-dir ansible-core
-        fi
-    fi
+    echo "==> Installing Ansible..."
+    case "$OS_FAMILY" in
+        debian)
+            $SUDO env DEBIAN_FRONTEND=noninteractive apt-get install -y ansible
+            ;;
+        amazon)
+            if [ "$(id -u)" -eq 0 ]; then
+                python3 -m pip install --no-cache-dir ansible-core
+            else
+                python3 -m pip install --user --no-cache-dir ansible-core
+            fi
+            ;;
+        *)
+            echo "Error: Unsupported OS family '${OS_FAMILY:-}'." >&2
+            exit 1
+            ;;
+    esac
 }
 
 configure_python_path() {
