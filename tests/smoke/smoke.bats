@@ -120,6 +120,7 @@ setup() {
     run copilot skill list
     assert_success
     assert_output --partial "conventional-commit"
+    assert_output --partial "issue-author"
 }
 
 @test "GitHub Copilot CLI symlinks to ~/.config/ai exist" {

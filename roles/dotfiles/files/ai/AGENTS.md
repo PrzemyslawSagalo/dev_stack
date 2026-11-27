@@ -24,6 +24,7 @@
 
 ## Git
 - **Conventional Commits:** Draft commit messages using the `conventional-commit` skill.
+- **Issues:** Draft new issues using the `issue-author` skill.
 
 ## Personal Standards
 - **Mandatory Pre-Work Reading:** Read `standards/code-quality.md` before planning or implementing any code/test changes, and `standards/subagent-routing.md` before delegating or reviewing subagent work.
