@@ -32,8 +32,3 @@
       ansible.builtin.file:
         path: /tmp/copilot.tgz
         state: absent
-
-- name: Ensure GitHub Copilot CLI binary is executable
-  ansible.builtin.file:
-    path: /usr/local/bin/copilot
-    mode: "0755"

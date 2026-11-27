@@ -32,8 +32,3 @@
       ansible.builtin.file:
         path: /tmp/helm.tar.gz
         state: absent
-
-- name: Ensure Helm binary is executable
-  ansible.builtin.file:
-    path: /usr/local/bin/helm
-    mode: "0755"

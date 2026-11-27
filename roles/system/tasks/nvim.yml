@@ -168,11 +168,6 @@
         path: /tmp/neovim
         state: absent
 
-- name: Check if Luacheck binary is installed
-  ansible.builtin.stat:
-    path: /usr/local/bin/luacheck
-  register: system_luacheck_bin
-
 - name: Download Luacheck binary
   ansible.builtin.get_url:
     url: "{{ system_default_pkg_metadata.luacheck.url }}"
@@ -183,4 +178,3 @@
   until: system_luacheck_download is success
   retries: 3
   delay: 5
-  when: not system_luacheck_bin.stat.exists

@@ -32,11 +32,6 @@
         path: /tmp/fzf.tar.gz
         state: absent
 
-- name: Ensure fzf binary is executable
-  ansible.builtin.file:
-    path: /usr/local/bin/fzf
-    mode: "0755"
-
 - name: Check if fd binary is installed
   ansible.builtin.stat:
     path: /usr/local/bin/fd
@@ -71,11 +66,6 @@
       ansible.builtin.file:
         path: /tmp/fd.tar.gz
         state: absent
-
-- name: Ensure fd binary is executable
-  ansible.builtin.file:
-    path: /usr/local/bin/fd
-    mode: "0755"
 
 - name: Ensure fd symlink exists for fdfind compatibility
   ansible.builtin.file:
@@ -118,11 +108,6 @@
         path: /tmp/zoxide.tar.gz
         state: absent
 
-- name: Ensure zoxide binary is executable
-  ansible.builtin.file:
-    path: /usr/local/bin/zoxide
-    mode: "0755"
-
 - name: Check if bat binary is installed
   ansible.builtin.stat:
     path: /usr/local/bin/bat
@@ -157,11 +142,6 @@
       ansible.builtin.file:
         path: /tmp/bat.tar.gz
         state: absent
-
-- name: Ensure bat binary is executable
-  ansible.builtin.file:
-    path: /usr/local/bin/bat
-    mode: "0755"
 
 - name: Ensure bat symlink exists for batcat compatibility
   ansible.builtin.file:

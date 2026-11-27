@@ -56,13 +56,3 @@
         path: "{{ system_uv_tempdir.path }}"
         state: absent
       when: system_uv_tempdir.path is defined
-
-- name: Ensure uv binary is executable
-  ansible.builtin.file:
-    path: /usr/local/bin/uv
-    mode: "0755"
-
-- name: Ensure uvx binary is executable
-  ansible.builtin.file:
-    path: /usr/local/bin/uvx
-    mode: "0755"
