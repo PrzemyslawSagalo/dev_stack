@@ -1,0 +1,95 @@
+---
+- name: Resolve Copilot home directory
+  ansible.builtin.set_fact:
+    dotfiles_copilot_home: "{{ lookup('env', 'COPILOT_HOME') | default(ansible_env.COPILOT_HOME | default(ansible_env.HOME ~ '/.copilot', true), true) }}"
+
+- name: Ensure shared AI configuration directory exists
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/.config/ai"
+    state: directory
+    mode: "0755"
+
+- name: Render shared AI command permissions
+  ansible.builtin.template:
+    src: ai_permissions.json.j2
+    dest: "{{ ansible_env.HOME }}/.config/ai/permissions.json"
+    mode: "0644"
+
+- name: Ensure Copilot hooks directory exists
+  ansible.builtin.file:
+    path: "{{ dotfiles_copilot_home }}/hooks"
+    state: directory
+    mode: "0755"
+
+- name: Install Copilot pre-tool-use permission hook
+  ansible.builtin.copy:
+    src: copilot/pre_tool_use.py
+    dest: "{{ dotfiles_copilot_home }}/hooks/pre_tool_use.py"
+    mode: "0755"
+
+- name: Render Copilot pre-tool-use hook configuration
+  ansible.builtin.template:
+    src: copilot_permissions_hook.json.j2
+    dest: "{{ dotfiles_copilot_home }}/hooks/permissions.json"
+    mode: "0644"
+
+- name: Ensure Antigravity CLI settings directory exists
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/.gemini/antigravity-cli"
+    state: directory
+    mode: "0755"
+
+- name: Check existing Antigravity CLI settings
+  ansible.builtin.stat:
+    path: "{{ ansible_env.HOME }}/.gemini/antigravity-cli/settings.json"
+  register: dotfiles_antigravity_settings_stat
+
+- name: Read existing Antigravity CLI settings
+  ansible.builtin.slurp:
+    src: "{{ ansible_env.HOME }}/.gemini/antigravity-cli/settings.json"
+  register: dotfiles_antigravity_settings_content
+  when: dotfiles_antigravity_settings_stat.stat.exists
+
+- name: Render Antigravity CLI command permissions
+  ansible.builtin.template:
+    src: antigravity_settings.json.j2
+    dest: "{{ ansible_env.HOME }}/.gemini/antigravity-cli/settings.json"
+    mode: "0600"
+
+- name: Ensure OpenCode configuration directory exists
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/.config/opencode"
+    state: directory
+    mode: "0755"
+
+- name: Check existing OpenCode JSONC configuration
+  ansible.builtin.stat:
+    path: "{{ ansible_env.HOME }}/.config/opencode/opencode.jsonc"
+  register: dotfiles_opencode_jsonc_stat
+
+- name: Check existing OpenCode JSON configuration
+  ansible.builtin.stat:
+    path: "{{ ansible_env.HOME }}/.config/opencode/opencode.json"
+  register: dotfiles_opencode_json_stat
+
+- name: Select OpenCode configuration path
+  ansible.builtin.set_fact:
+    dotfiles_opencode_config_path: "{{ ansible_env.HOME }}/.config/opencode/opencode.jsonc"
+  when: dotfiles_opencode_jsonc_stat.stat.exists
+
+- name: Select OpenCode JSON configuration path
+  ansible.builtin.set_fact:
+    dotfiles_opencode_config_path: "{{ ansible_env.HOME }}/.config/opencode/opencode.json"
+  when: not dotfiles_opencode_jsonc_stat.stat.exists
+
+- name: Read existing OpenCode configuration
+  ansible.builtin.slurp:
+    src: "{{ dotfiles_opencode_config_path }}"
+  register: dotfiles_opencode_settings_content
+  when: dotfiles_opencode_jsonc_stat.stat.exists or dotfiles_opencode_json_stat.stat.exists
+
+- name: Render OpenCode bash command permissions
+  ansible.builtin.template:
+    src: opencode.json.j2
+    dest: "{{ dotfiles_opencode_config_path }}"
+    mode: "0600"

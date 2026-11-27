@@ -38,9 +38,9 @@ docker run --rm \
         if [ -f /etc/debian_version ]; then
             export DEBIAN_FRONTEND=noninteractive
             apt-get update -qq
-            apt-get install -y -qq sudo bash git
+            apt-get install -y -qq sudo bash git python3
         else
-            dnf install -y -q sudo bash shadow-utils git
+            dnf install -y -q sudo bash shadow-utils git python3
         fi
 
         echo "==> [Setup: User] Provisioning devuser..."

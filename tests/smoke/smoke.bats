@@ -5,10 +5,14 @@ setup() {
     bats_load_library bats-assert
     bats_load_library bats-file
 
-    unset COPILOT_HOME
     if [ -f "$HOME/.profile" ]; then
         # shellcheck disable=SC1090,SC1091
         source "$HOME/.profile" 2>/dev/null || true
+    fi
+    COPILOT_HOME_DIR="${COPILOT_HOME:-$HOME/.copilot}"
+    OPENCODE_CONFIG_FILE="$HOME/.config/opencode/opencode.json"
+    if [ -f "$HOME/.config/opencode/opencode.jsonc" ]; then
+        OPENCODE_CONFIG_FILE="$HOME/.config/opencode/opencode.jsonc"
     fi
 }
 
@@ -121,6 +125,66 @@ setup() {
     assert_success
     assert_output --partial "conventional-commit"
     assert_output --partial "issue-author"
+}
+
+@test "given deployed AI permissions, when checking the shared allow policy, then git status is allowed" {
+    assert_file_exists "$HOME/.config/ai/permissions.json"
+    run jq -e '.allow | index("git status") != null' "$HOME/.config/ai/permissions.json"
+    assert_success
+}
+
+@test "given deployed AI permissions, when checking the shared deny policy, then git push is denied" {
+    run jq -e '.deny | index("git push") != null' "$HOME/.config/ai/permissions.json"
+    assert_success
+}
+
+@test "given Copilot hook deployment, when checking its config, then the bash hook command is registered" {
+    assert_file_exists "$COPILOT_HOME_DIR/hooks/permissions.json"
+    run jq -e '.version == 1 and .hooks.preToolUse[0].matcher == "bash" and .hooks.preToolUse[0].command == "python3 \"$COPILOT_HOOK_DIR/pre_tool_use.py\""' "$COPILOT_HOME_DIR/hooks/permissions.json"
+    assert_success
+}
+
+@test "given Copilot hook deployment, when checking its script, then the permission hook exists" {
+    assert_file_exists "$COPILOT_HOME_DIR/hooks/pre_tool_use.py"
+}
+
+@test "given deployed Copilot permissions, when checking git status, then the hook allows it" {
+    run bash -c "printf '%s\n' \"\$1\" | AI_PERMISSIONS_FILE=\"\$2\" \"\$3\"" _ '{"toolArgs":{"command":"git status"}}' "$HOME/.config/ai/permissions.json" "$COPILOT_HOME_DIR/hooks/pre_tool_use.py"
+    assert_success
+    assert_output '{"permissionDecision":"allow"}'
+}
+
+@test "given deployed Copilot permissions, when checking git push, then the hook denies it" {
+    run bash -c "printf '%s\n' \"\$1\" | AI_PERMISSIONS_FILE=\"\$2\" \"\$3\"" _ '{"toolArgs":{"command":"git push"}}' "$HOME/.config/ai/permissions.json" "$COPILOT_HOME_DIR/hooks/pre_tool_use.py"
+    assert_success
+    assert_output --partial '"permissionDecision":"deny"'
+}
+
+@test "given deployed Antigravity permissions, when checking its allow settings, then git status is allowed" {
+    assert_file_exists "$HOME/.gemini/antigravity-cli/settings.json"
+    run jq -e '.permissions.allow | index("command(git status)") != null' "$HOME/.gemini/antigravity-cli/settings.json"
+    assert_success
+}
+
+@test "given deployed Antigravity permissions, when checking its deny settings, then git push is denied" {
+    run jq -e '.permissions.deny | index("command(git push)") != null' "$HOME/.gemini/antigravity-cli/settings.json"
+    assert_success
+}
+
+@test "given deployed OpenCode permissions, when checking its default bash policy, then commands require approval" {
+    assert_file_exists "$OPENCODE_CONFIG_FILE"
+    run jq -e '.permission.bash["*"] == "ask"' "$OPENCODE_CONFIG_FILE"
+    assert_success
+}
+
+@test "given deployed OpenCode permissions, when checking its allow policy, then git status is allowed" {
+    run jq -e '.permission.bash["git status"] == "allow" and .permission.bash["git status *"] == "allow"' "$OPENCODE_CONFIG_FILE"
+    assert_success
+}
+
+@test "given deployed OpenCode permissions, when checking its deny policy, then git push is denied" {
+    run jq -e '.permission.bash["git push"] == "deny" and .permission.bash["git push *"] == "deny"' "$OPENCODE_CONFIG_FILE"
+    assert_success
 }
 
 @test "GitHub Copilot CLI symlinks to ~/.config/ai exist" {

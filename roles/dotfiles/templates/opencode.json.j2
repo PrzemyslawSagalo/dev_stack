@@ -1,0 +1,44 @@
+{% set settings = dotfiles_opencode_settings_content.content | default('e30=') | b64decode | from_jsonc %}
+{% set settings = {'$schema': 'https://opencode.ai/config.json'} | combine(settings) %}
+{% set permissions = settings.get('permission', {}) %}
+{% if permissions is string %}
+{% set permissions = {'*': permissions} %}
+{% endif %}
+{% set permissions = permissions | dict2items | rejectattr('key', 'equalto', 'bash') | list | items2dict %}
+{% set bash_permissions = {'*': 'ask'} %}
+{% for command in dotfiles_ai_allowed_commands %}
+{% set _ = bash_permissions.update({command: 'allow', command ~ ' *': 'allow'}) %}
+{% endfor %}
+{% for pattern in dotfiles_ai_restricted_command_patterns %}
+{% set _ = bash_permissions.update({pattern: 'ask'}) %}
+{% if not pattern.endswith('*') %}
+{% set _ = bash_permissions.update({pattern ~ ' *': 'ask'}) %}
+{% endif %}
+{% endfor %}
+{% for pattern in dotfiles_ai_denied_commands + dotfiles_ai_denied_command_patterns %}
+{% set _ = bash_permissions.update({pattern: 'deny'}) %}
+{% if not pattern.endswith('*') %}
+{% set _ = bash_permissions.update({pattern ~ ' *': 'deny'}) %}
+{% endif %}
+{% endfor %}
+{% if settings.get('permissions') is sequence and settings.get('permissions') is not string and settings.get('permissions') is not mapping %}
+{% set preserved_permissions = [] %}
+{% for rule in settings.permissions %}
+{% set shell_rule = false %}
+{% if rule is mapping %}
+{% if rule.get('action') in ['shell', 'bash'] or rule.get('tool') in ['shell', 'bash'] or rule.get('permission') in ['shell', 'bash'] or rule.get('name') in ['shell', 'bash'] or rule.get('type') in ['shell', 'bash'] %}
+{% set shell_rule = true %}
+{% endif %}
+{% elif rule is string and (rule in ['shell', 'bash'] or rule.startswith('shell ') or rule.startswith('bash ')) %}
+{% set shell_rule = true %}
+{% endif %}
+{% if not shell_rule %}
+{% set _ = preserved_permissions.append(rule) %}
+{% endif %}
+{% endfor %}
+{% for resource, effect in bash_permissions.items() %}
+{% set _ = preserved_permissions.append({'action': 'shell', 'resource': resource, 'effect': effect}) %}
+{% endfor %}
+{% set settings = settings | combine({'permissions': preserved_permissions}) %}
+{% endif %}
+{{ settings | combine({'permission': permissions | combine({'bash': bash_permissions})}) | to_nice_json(indent=2, sort_keys=false) }}
