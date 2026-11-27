@@ -15,7 +15,7 @@ ID_LIKE=debian
 EOF
 }
 
-@test "given an Ubuntu os-release, when invoking detect_os, then OS_ID, OS_NAME, and OS_ID_LIKE reflect Ubuntu" {
+@test "given an ubuntu os release, when invoking detect_os, then the os id, name, and id like reflect ubuntu" {
     run bash -c "
         OS_RELEASE_FILE='$OS_RELEASE_FIXTURE'
         BOOTSTRAP_SOURCE_ONLY=1 . '$BOOTSTRAP_SCRIPT'
@@ -27,7 +27,7 @@ EOF
     assert_output --partial "OS_ID=ubuntu OS_NAME=Ubuntu OS_ID_LIKE=debian"
 }
 
-@test "given Ubuntu and apt-get in PATH, when invoking detect_package_manager, then OS_FAMILY is debian and PKG_MGR is apt-get" {
+@test "given ubuntu and apt-get in path, when invoking detect_package_manager, then the os family is debian and the package manager is apt-get" {
     local bin_dir="$BATS_TEST_TMPDIR/bin"
     mkdir -p "$bin_dir"
     touch "$bin_dir/apt-get"
@@ -44,4 +44,47 @@ EOF
 
     assert_success
     assert_output --partial "FAMILY=debian MGR=apt-get"
+}
+
+@test "given debian and unset sudo, when installing ansible, then apt-get installs ansible noninteractively" {
+    local bin_dir="$BATS_TEST_TMPDIR/bin"
+    mkdir -p "$bin_dir"
+    ln -s /usr/bin/env "$bin_dir/env"
+    cat <<'EOF' >"$bin_dir/apt-get"
+#!/bin/bash
+printf '%s %s\n' "$DEBIAN_FRONTEND" "$*"
+EOF
+    chmod +x "$bin_dir/apt-get"
+
+    run bash -c "
+        PATH='$bin_dir'
+        unset SUDO
+        OS_FAMILY=debian
+        BOOTSTRAP_SOURCE_ONLY=1 . '$BOOTSTRAP_SCRIPT'
+        install_ansible
+    "
+
+    assert_success
+    assert_output "noninteractive install -y ansible"
+}
+
+@test "given debian and sudo, when installing ansible, then apt-get runs through sudo" {
+    local bin_dir="$BATS_TEST_TMPDIR/bin"
+    mkdir -p "$bin_dir"
+    cat <<'EOF' >"$bin_dir/sudo"
+#!/bin/bash
+printf '%s\n' "$*"
+EOF
+    chmod +x "$bin_dir/sudo"
+
+    run bash -c "
+        PATH='$bin_dir'
+        SUDO=sudo
+        OS_FAMILY=debian
+        BOOTSTRAP_SOURCE_ONLY=1 . '$BOOTSTRAP_SCRIPT'
+        install_ansible
+    "
+
+    assert_success
+    assert_output "env DEBIAN_FRONTEND=noninteractive apt-get install -y ansible"
 }
