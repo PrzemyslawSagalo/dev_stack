@@ -143,3 +143,18 @@ jobs:
 
       - name: Run containerized smoke test
         run: ./tests/run.sh smoke "${{ matrix.distro }}"
+
+  ci-gate:
+    name: ci-gate
+    needs: [lint, skillspector, test_unit, test_e2e, test_smoke]
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Fail if any upstream job did not succeed
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') || contains(needs.*.result, 'skipped')
+        env:
+          UPSTREAM_RESULTS: ${{ toJSON(needs) }}
+        run: |
+          echo "Upstream CI jobs did not succeed: $UPSTREAM_RESULTS" >&2
+          exit 1
